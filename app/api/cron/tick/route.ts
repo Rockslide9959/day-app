@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
 async function handleTick(req: NextRequest) {
   const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret");
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized", source: "cron-route", hasSecret: Boolean(process.env.CRON_SECRET) },
+      { status: 401 }
+    );
   }
 
   const now = new Date();
