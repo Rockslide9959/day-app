@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Reminder {
+  id         String   @id @default(cuid())
+  title      String
+  notes      String?
+  dueAt      DateTime
+  // "none" | "daily" | "weekly" | "weekdays"
+  recurrence String   @default("none")
+  notified   Boolean  @default(false)
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([dueAt])
+}
+
+model ScheduleItem {
+  id        String   @id @default(cuid())
+  title     String
+  notes     String?
+  // ISO date, e.g. "2026-08-12"
+  date      String
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Todo {
+  id        String   @id @default(cuid())
+  title     String
+  date      String
+  completed Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Routine {
+  id        String        @id @default(cuid())
+  name      String
+  icon      String        @default("✅")
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  steps     RoutineStep[]
+  runs      RoutineRun[]
+}
+
+model RoutineStep {
+  id        String   @id @default(cuid())
+  routineId String
+  routine   Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  title     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([routineId])
+}
+
+model RoutineRun {
+  id                 String   @id @default(cuid())
+  routineId          String
+  routine            Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  date               String
+  // comma-joined RoutineStep ids
+  completedStepIds   String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([routineId, date])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
