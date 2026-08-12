@@ -13,19 +13,10 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleTick(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    const stored = process.env.CRON_SECRET || "";
-    return NextResponse.json(
-      {
-        error: "Unauthorized",
-        source: "cron-route",
-        storedLength: stored.length,
-        receivedLength: (secret || "").length,
-        trimmedMatch: (secret || "").trim() === stored.trim(),
-      },
-      { status: 401 }
-    );
+  const secret = (req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret") || "").trim();
+  const expected = (process.env.CRON_SECRET || "").trim();
+  if (!expected || secret !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const now = new Date();
