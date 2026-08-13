@@ -20,6 +20,7 @@ model User {
   routines          Routine[]
   eventCategories   EventCategory[]
   pushSubscriptions PushSubscription[]
+  timers            Timer[]
 }
 
 model Reminder {
@@ -156,6 +157,34 @@ model RoutineRun {
   updatedAt          DateTime @updatedAt
 
   @@unique([routineId, date])
+}
+
+// A simple stopwatch or countdown timer, optionally attached to a
+// ScheduleItem or Todo. `linkedType`/`linkedId` are a loose reference
+// (not a real FK) since they can point at either model.
+model Timer {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label  String
+  // "stopwatch" | "countdown"
+  mode   String
+  // Target duration in seconds — set for countdown timers, null for stopwatches.
+  durationSeconds Int?
+  // Seconds banked from prior run segments (i.e. accrued while paused).
+  accumulatedSeconds Int @default(0)
+  // When the current run segment began; null while paused/completed.
+  startedAt DateTime?
+  // "running" | "paused" | "completed"
+  status String @default("running")
+  // "schedule" | "todo", paired with linkedId — null for standalone timers.
+  linkedType String?
+  linkedId   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([linkedType, linkedId])
 }
 
 model PushSubscription {

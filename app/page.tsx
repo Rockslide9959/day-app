@@ -7,6 +7,9 @@ import { busyDayStats, dailySummary, nowNextEvent, upcomingEvents } from "@/lib/
 import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
 import { CalendarEvent } from "@/components/calendar/types";
+import { Timer } from "@/components/timers/types";
+import TimerCard from "@/components/timers/TimerCard";
+import NewTimerForm from "@/components/timers/NewTimerForm";
 
 type Reminder = {
   id: string;
@@ -26,6 +29,8 @@ export default function TodayPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineDone, setRoutineDone] = useState<Record<string, number>>({});
+  const [timers, setTimers] = useState<Timer[]>([]);
+  const [showNewTimer, setShowNewTimer] = useState(false);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -36,16 +41,18 @@ export default function TodayPage() {
 
   const load = useCallback(async () => {
     try {
-      const [remindersRes, eventsRes, todosRes, routinesRes] = await Promise.all([
+      const [remindersRes, eventsRes, todosRes, routinesRes, timersRes] = await Promise.all([
         fetch("/api/reminders").then((r) => r.json()),
         fetch(`/api/schedule?from=${today}&to=${addDaysToDateStr(today, UPCOMING_WINDOW_DAYS)}`).then((r) => r.json()),
         fetch(`/api/todos?date=${today}`).then((r) => r.json()),
         fetch("/api/routines").then((r) => r.json()),
+        fetch("/api/timers").then((r) => r.json()),
       ]);
       setReminders(remindersRes);
       setEvents(eventsRes);
       setTodos(todosRes);
       setRoutines(routinesRes);
+      setTimers(timersRes);
 
       const doneEntries = await Promise.all(
         routinesRes.map(async (r: Routine) => {
@@ -84,6 +91,26 @@ export default function TodayPage() {
     });
   }
 
+  function upsertTimer(timer: Timer) {
+    setTimers((prev) => {
+      const exists = prev.some((t) => t.id === timer.id);
+      return exists ? prev.map((t) => (t.id === timer.id ? timer : t)) : [timer, ...prev];
+    });
+  }
+
+  function removeTimer(id: string) {
+    setTimers((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  async function quickStartTodoTimer(todo: Todo) {
+    const res = await fetch("/api/timers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: todo.title, mode: "stopwatch", linkedType: "todo", linkedId: todo.id }),
+    });
+    if (res.ok) upsertTimer(await res.json());
+  }
+
   async function addTodo(e: React.FormEvent) {
     e.preventDefault();
     if (!newTodo.trim()) return;
@@ -110,6 +137,9 @@ export default function TodayPage() {
   const dayStats = busyDayStats(todayEvents);
   const summary = dailySummary(todayEvents);
   const upcoming = upcomingEvents(events, today, UPCOMING_WINDOW_DAYS);
+  const sortedTimers = [...timers].sort((a, b) =>
+    (a.status === "completed") === (b.status === "completed") ? 0 : a.status === "completed" ? 1 : -1
+  );
 
   if (loading) {
     return <div className="p-6 text-zinc-400">Loading…</div>;
@@ -168,6 +198,38 @@ export default function TodayPage() {
           </div>
         </Section>
       )}
+
+      <Section title="Timers">
+        {sortedTimers.length === 0 && !showNewTimer ? (
+          <EmptyRow text="No timers running" />
+        ) : (
+          <ul className="space-y-2">
+            {sortedTimers.map((t) => (
+              <li key={t.id}>
+                <TimerCard timer={t} onUpdated={upsertTimer} onDeleted={removeTimer} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {showNewTimer ? (
+          <div className="mt-2">
+            <NewTimerForm
+              onCreated={(t) => {
+                upsertTimer(t);
+                setShowNewTimer(false);
+              }}
+              onCancel={() => setShowNewTimer(false)}
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNewTimer(true)}
+            className="mt-2 w-full rounded-xl border border-dashed border-zinc-200 py-2.5 text-sm text-zinc-500 dark:border-zinc-800"
+          >
+            + New timer
+          </button>
+        )}
+      </Section>
 
       <Section title="Schedule" href="/calendar">
         {todayEvents.length === 0 ? (
@@ -262,10 +324,10 @@ export default function TodayPage() {
             {[...openTodos, ...completedTodos].map((t) => (
               <li
                 key={t.id}
-                onClick={() => toggleTodo(t)}
                 className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
               >
                 <span
+                  onClick={() => toggleTodo(t)}
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
                     t.completed
                       ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
@@ -275,7 +337,8 @@ export default function TodayPage() {
                   {t.completed && "✓"}
                 </span>
                 <span
-                  className={`text-sm ${
+                  onClick={() => toggleTodo(t)}
+                  className={`flex-1 text-sm ${
                     t.completed
                       ? "text-zinc-400 line-through"
                       : "text-zinc-900 dark:text-zinc-50"
@@ -283,6 +346,15 @@ export default function TodayPage() {
                 >
                   {t.title}
                 </span>
+                {!t.completed && (
+                  <button
+                    onClick={() => quickStartTodoTimer(t)}
+                    title="Start a stopwatch for this to-do"
+                    className="shrink-0 text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  >
+                    ⏱
+                  </button>
+                )}
               </li>
             ))}
           </ul>

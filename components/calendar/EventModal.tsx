@@ -6,6 +6,9 @@ import { categoryChipStyle, priorityMeta } from "./categories";
 import { formatTime12h } from "@/lib/dates";
 import { CategoryDef, isDeadlineCategory } from "@/lib/calendar/categories";
 import { findConflicts } from "@/lib/calendar/conflicts";
+import { Timer } from "@/components/timers/types";
+import TimerCard from "@/components/timers/TimerCard";
+import NewTimerForm from "@/components/timers/NewTimerForm";
 
 const REMINDER_OPTIONS = [
   { value: "", label: "No reminder" },
@@ -613,8 +616,32 @@ function EventDetails({
   error: string;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [timers, setTimers] = useState<Timer[]>([]);
+  const [showNewTimer, setShowNewTimer] = useState(false);
   const multiDay = event.endDate && event.endDate !== event.date;
   const pMeta = priorityMeta(event.priority);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/timers?linkedType=schedule&linkedId=${event.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setTimers(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id]);
+
+  function upsertTimer(timer: Timer) {
+    setTimers((prev) =>
+      prev.some((t) => t.id === timer.id) ? prev.map((t) => (t.id === timer.id ? timer : t)) : [timer, ...prev]
+    );
+  }
+
+  function removeTimer(id: string) {
+    setTimers((prev) => prev.filter((t) => t.id !== id));
+  }
 
   return (
     <div className="space-y-3">
@@ -672,6 +699,39 @@ function EventDetails({
           Reminder: {event.reminderMinutesBefore === 0 ? "at time of event" : `${event.reminderMinutesBefore} min before`}
         </p>
       )}
+
+      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Timer</p>
+        {timers.length > 0 && (
+          <ul className="space-y-2">
+            {timers.map((t) => (
+              <li key={t.id}>
+                <TimerCard timer={t} showLink={false} onUpdated={upsertTimer} onDeleted={removeTimer} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {showNewTimer ? (
+          <NewTimerForm
+            defaultLabel={event.title}
+            linkedType="schedule"
+            linkedId={event.id}
+            onCreated={(t) => {
+              upsertTimer(t);
+              setShowNewTimer(false);
+            }}
+            onCancel={() => setShowNewTimer(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowNewTimer(true)}
+            className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 dark:border-zinc-800"
+          >
+            + Start timer for this event
+          </button>
+        )}
+      </div>
 
       {error && <p className="text-xs text-red-500">{error}</p>}
 
