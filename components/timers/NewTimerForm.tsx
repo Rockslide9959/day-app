@@ -17,11 +17,13 @@ export default function NewTimerForm({
   onCreated: (timer: Timer) => void;
   onCancel: () => void;
 }) {
-  const [mode, setMode] = useState<"stopwatch" | "countdown">("stopwatch");
+  const [mode, setMode] = useState<"stopwatch" | "countdown" | "pomodoro">("stopwatch");
   const [label, setLabel] = useState(defaultLabel);
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
   const [seconds, setSeconds] = useState("0");
+  const [workMinutes, setWorkMinutes] = useState("25");
+  const [breakMinutes, setBreakMinutes] = useState("5");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +32,9 @@ export default function NewTimerForm({
     setError("");
 
     let durationSeconds: number | undefined;
+    let workSeconds: number | undefined;
+    let breakSeconds: number | undefined;
+
     if (mode === "countdown") {
       const total = parseDurationParts(hours, minutes, seconds);
       if (total == null) {
@@ -37,9 +42,19 @@ export default function NewTimerForm({
         return;
       }
       durationSeconds = total;
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
+    } else if (mode === "pomodoro") {
+      const work = parseDurationParts("0", workMinutes, "0");
+      const brk = parseDurationParts("0", breakMinutes, "0");
+      if (work == null || brk == null) {
+        setError("Enter work and break durations greater than 0");
+        return;
       }
+      workSeconds = work;
+      breakSeconds = brk;
+    }
+
+    if (mode !== "stopwatch" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
     }
 
     setSaving(true);
@@ -48,9 +63,11 @@ export default function NewTimerForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          label: label.trim() || (mode === "countdown" ? "Countdown" : "Stopwatch"),
+          label: label.trim() || (mode === "countdown" ? "Countdown" : mode === "pomodoro" ? "Pomodoro" : "Stopwatch"),
           mode,
           durationSeconds,
+          workSeconds,
+          breakSeconds,
           linkedType,
           linkedId,
         }),
@@ -70,7 +87,7 @@ export default function NewTimerForm({
       className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900"
     >
       <div className="flex gap-1.5">
-        {(["stopwatch", "countdown"] as const).map((m) => (
+        {(["stopwatch", "countdown", "pomodoro"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -81,7 +98,7 @@ export default function NewTimerForm({
                 : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
             }`}
           >
-            {m === "stopwatch" ? "Stopwatch" : "Countdown"}
+            {m === "stopwatch" ? "Stopwatch" : m === "countdown" ? "Countdown" : "Pomodoro"}
           </button>
         ))}
       </div>
@@ -125,6 +142,33 @@ export default function NewTimerForm({
               step="1"
               value={seconds}
               onChange={(e) => setSeconds(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+          </label>
+        </div>
+      )}
+
+      {mode === "pomodoro" && (
+        <div className="flex gap-2">
+          <label className="flex-1 text-xs text-zinc-500">
+            Work (minutes)
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={workMinutes}
+              onChange={(e) => setWorkMinutes(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+          </label>
+          <label className="flex-1 text-xs text-zinc-500">
+            Break (minutes)
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={breakMinutes}
+              onChange={(e) => setBreakMinutes(e.target.value)}
               className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
             />
           </label>

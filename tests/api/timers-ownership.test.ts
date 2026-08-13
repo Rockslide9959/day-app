@@ -113,4 +113,53 @@ describe("timer ownership enforcement", () => {
       })
     );
   });
+
+  it("advances a pomodoro from work to break and bumps the round count, scoped to the requester", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-A");
+    prismaMock.timer.findFirst.mockResolvedValue({
+      id: "t-2",
+      userId: "user-A",
+      mode: "pomodoro",
+      status: "running",
+      phase: "work",
+      cyclesCompleted: 2,
+      workSeconds: 1500,
+      breakSeconds: 300,
+      accumulatedSeconds: 1500,
+      startedAt: new Date(),
+      durationSeconds: null,
+    });
+    prismaMock.timer.update.mockResolvedValue({ id: "t-2", phase: "break" });
+
+    const res = await patchTimer(req("http://localhost/api/timers/t-2", "PATCH", { action: "advance-phase" }), {
+      params: Promise.resolve({ id: "t-2" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.timer.findFirst).toHaveBeenCalledWith({ where: { id: "t-2", userId: "user-A" } });
+    expect(prismaMock.timer.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "t-2" },
+        data: expect.objectContaining({ phase: "break", cyclesCompleted: 3, status: "running" }),
+      })
+    );
+  });
+
+  it("rejects advance-phase for a non-pomodoro timer", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-A");
+    prismaMock.timer.findFirst.mockResolvedValue({
+      id: "t-3",
+      userId: "user-A",
+      mode: "countdown",
+      status: "running",
+      durationSeconds: 60,
+    });
+
+    const res = await patchTimer(req("http://localhost/api/timers/t-3", "PATCH", { action: "advance-phase" }), {
+      params: Promise.resolve({ id: "t-3" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.timer.update).not.toHaveBeenCalled();
+  });
 });

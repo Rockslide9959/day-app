@@ -8,6 +8,7 @@ const TABS = [
   { href: "/calendar", label: "Calendar", icon: "📅" },
   { href: "/schedule", label: "Schedule", icon: "🗓️" },
   { href: "/todos", label: "To-Do", icon: "✅" },
+  { href: "/timers", label: "Timers", icon: "⏱️" },
   { href: "/reminders", label: "Reminders", icon: "🔔" },
   { href: "/routines", label: "Routines", icon: "🔁" },
 ];

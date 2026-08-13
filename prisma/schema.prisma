@@ -159,19 +159,29 @@ model RoutineRun {
   @@unique([routineId, date])
 }
 
-// A simple stopwatch or countdown timer, optionally attached to a
-// ScheduleItem or Todo. `linkedType`/`linkedId` are a loose reference
-// (not a real FK) since they can point at either model.
+// A stopwatch, countdown, or pomodoro/focus timer, optionally attached
+// to a ScheduleItem or Todo. `linkedType`/`linkedId` are a loose
+// reference (not a real FK) since they can point at either model.
 model Timer {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   label  String
-  // "stopwatch" | "countdown"
+  // "stopwatch" | "countdown" | "pomodoro"
   mode   String
-  // Target duration in seconds — set for countdown timers, null for stopwatches.
+  // Target duration in seconds — set for countdown timers, null otherwise.
   durationSeconds Int?
-  // Seconds banked from prior run segments (i.e. accrued while paused).
+  // Pomodoro work/break interval lengths in seconds — null for other modes.
+  workSeconds  Int?
+  breakSeconds Int?
+  // Which pomodoro interval is currently active — "work" | "break".
+  // Null for other modes.
+  phase String?
+  // Completed work intervals, for a pomodoro's round counter. Unused by
+  // other modes.
+  cyclesCompleted Int @default(0)
+  // Seconds banked from prior run segments — accrued while paused, or
+  // (for a pomodoro) from phases already finished.
   accumulatedSeconds Int @default(0)
   // When the current run segment began; null while paused/completed.
   startedAt DateTime?

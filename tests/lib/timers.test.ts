@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   elapsedSeconds,
   formatClock,
-  isCountdownComplete,
+  isPhaseComplete,
   parseDurationParts,
+  phaseDurationSeconds,
   remainingSeconds,
   TimerState,
 } from "@/lib/timers";
@@ -15,6 +16,9 @@ function timer(overrides: Partial<TimerState>): TimerState {
     mode: "stopwatch",
     status: "running",
     durationSeconds: null,
+    workSeconds: null,
+    breakSeconds: null,
+    phase: null,
     accumulatedSeconds: 0,
     startedAt: new Date(BASE).toISOString(),
     ...overrides,
@@ -38,6 +42,28 @@ describe("elapsedSeconds", () => {
   });
 });
 
+describe("phaseDurationSeconds", () => {
+  it("is durationSeconds for a countdown", () => {
+    expect(phaseDurationSeconds(timer({ mode: "countdown", durationSeconds: 60 }))).toBe(60);
+  });
+
+  it("is workSeconds during a pomodoro's work phase", () => {
+    expect(
+      phaseDurationSeconds(timer({ mode: "pomodoro", phase: "work", workSeconds: 1500, breakSeconds: 300 }))
+    ).toBe(1500);
+  });
+
+  it("is breakSeconds during a pomodoro's break phase", () => {
+    expect(
+      phaseDurationSeconds(timer({ mode: "pomodoro", phase: "break", workSeconds: 1500, breakSeconds: 300 }))
+    ).toBe(300);
+  });
+
+  it("is null for a stopwatch", () => {
+    expect(phaseDurationSeconds(timer({ mode: "stopwatch" }))).toBeNull();
+  });
+});
+
 describe("remainingSeconds", () => {
   it("counts down from durationSeconds for a running countdown", () => {
     const t = timer({ mode: "countdown", durationSeconds: 60, accumulatedSeconds: 0 });
@@ -49,31 +75,54 @@ describe("remainingSeconds", () => {
     expect(remainingSeconds(t, BASE + 90_000)).toBe(0);
   });
 
+  it("counts down the active pomodoro phase", () => {
+    const work = timer({ mode: "pomodoro", phase: "work", workSeconds: 1500, breakSeconds: 300 });
+    expect(remainingSeconds(work, BASE + 100_000)).toBe(1400);
+
+    const brk = timer({ mode: "pomodoro", phase: "break", workSeconds: 1500, breakSeconds: 300 });
+    expect(remainingSeconds(brk, BASE + 100_000)).toBe(200);
+  });
+
   it("is always zero for a stopwatch", () => {
     const t = timer({ mode: "stopwatch", accumulatedSeconds: 500 });
     expect(remainingSeconds(t, BASE + 10_000)).toBe(0);
   });
 });
 
-describe("isCountdownComplete", () => {
+describe("isPhaseComplete", () => {
   it("is true once a running countdown hits zero", () => {
     const t = timer({ mode: "countdown", durationSeconds: 60 });
-    expect(isCountdownComplete(t, BASE + 60_000)).toBe(true);
+    expect(isPhaseComplete(t, BASE + 60_000)).toBe(true);
   });
 
   it("is false before expiry", () => {
     const t = timer({ mode: "countdown", durationSeconds: 60 });
-    expect(isCountdownComplete(t, BASE + 30_000)).toBe(false);
+    expect(isPhaseComplete(t, BASE + 30_000)).toBe(false);
   });
 
   it("is false once already marked completed (no repeat firing)", () => {
     const t = timer({ mode: "countdown", durationSeconds: 60, status: "completed", startedAt: null, accumulatedSeconds: 60 });
-    expect(isCountdownComplete(t, BASE + 90_000)).toBe(false);
+    expect(isPhaseComplete(t, BASE + 90_000)).toBe(false);
+  });
+
+  it("is true once a running pomodoro work phase runs out", () => {
+    const t = timer({ mode: "pomodoro", phase: "work", workSeconds: 1500, breakSeconds: 300 });
+    expect(isPhaseComplete(t, BASE + 1500_000)).toBe(true);
+  });
+
+  it("is true once a running pomodoro break phase runs out", () => {
+    const t = timer({ mode: "pomodoro", phase: "break", workSeconds: 1500, breakSeconds: 300 });
+    expect(isPhaseComplete(t, BASE + 300_000)).toBe(true);
+  });
+
+  it("is false for a paused pomodoro even past its phase duration", () => {
+    const t = timer({ mode: "pomodoro", phase: "work", workSeconds: 60, status: "paused", accumulatedSeconds: 90, startedAt: null });
+    expect(isPhaseComplete(t, BASE)).toBe(false);
   });
 
   it("is false for a stopwatch regardless of elapsed time", () => {
     const t = timer({ mode: "stopwatch", accumulatedSeconds: 99999 });
-    expect(isCountdownComplete(t, BASE + 90_000)).toBe(false);
+    expect(isPhaseComplete(t, BASE + 90_000)).toBe(false);
   });
 });
 

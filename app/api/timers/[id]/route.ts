@@ -4,7 +4,7 @@ import { getCurrentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const ACTIONS = ["start", "pause", "reset", "complete"] as const;
+const ACTIONS = ["start", "pause", "reset", "complete", "advance-phase"] as const;
 type Action = (typeof ACTIONS)[number];
 
 export async function PATCH(
@@ -48,7 +48,12 @@ export async function PATCH(
         break;
       }
       case "reset":
-        data = { status: "paused", accumulatedSeconds: 0, startedAt: null };
+        data = {
+          status: "paused",
+          accumulatedSeconds: 0,
+          startedAt: null,
+          ...(current.mode === "pomodoro" ? { phase: "work", cyclesCompleted: 0 } : {}),
+        };
         break;
       case "complete":
         data = {
@@ -60,6 +65,20 @@ export async function PATCH(
               : current.accumulatedSeconds,
         };
         break;
+      case "advance-phase": {
+        if (current.mode !== "pomodoro") {
+          return NextResponse.json({ error: "Only pomodoro timers have phases" }, { status: 400 });
+        }
+        const finishedWork = current.phase !== "break";
+        data = {
+          phase: finishedWork ? "break" : "work",
+          cyclesCompleted: finishedWork ? current.cyclesCompleted + 1 : current.cyclesCompleted,
+          accumulatedSeconds: 0,
+          startedAt: now,
+          status: "running",
+        };
+        break;
+      }
     }
 
     const updated = await prisma.timer.update({ where: { id }, data });

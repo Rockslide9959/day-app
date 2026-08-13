@@ -9,7 +9,6 @@ import { isDeadlineCategory } from "@/lib/calendar/categories";
 import { CalendarEvent } from "@/components/calendar/types";
 import { Timer } from "@/components/timers/types";
 import TimerCard from "@/components/timers/TimerCard";
-import NewTimerForm from "@/components/timers/NewTimerForm";
 
 type Reminder = {
   id: string;
@@ -30,7 +29,6 @@ export default function TodayPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineDone, setRoutineDone] = useState<Record<string, number>>({});
   const [timers, setTimers] = useState<Timer[]>([]);
-  const [showNewTimer, setShowNewTimer] = useState(false);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -137,9 +135,7 @@ export default function TodayPage() {
   const dayStats = busyDayStats(todayEvents);
   const summary = dailySummary(todayEvents);
   const upcoming = upcomingEvents(events, today, UPCOMING_WINDOW_DAYS);
-  const sortedTimers = [...timers].sort((a, b) =>
-    (a.status === "completed") === (b.status === "completed") ? 0 : a.status === "completed" ? 1 : -1
-  );
+  const activeTimers = timers.filter((t) => t.status !== "completed");
 
   if (loading) {
     return <div className="p-6 text-zinc-400">Loading…</div>;
@@ -199,35 +195,17 @@ export default function TodayPage() {
         </Section>
       )}
 
-      <Section title="Timers">
-        {sortedTimers.length === 0 && !showNewTimer ? (
+      <Section title="Timers" href="/timers">
+        {activeTimers.length === 0 ? (
           <EmptyRow text="No timers running" />
         ) : (
           <ul className="space-y-2">
-            {sortedTimers.map((t) => (
+            {activeTimers.slice(0, 3).map((t) => (
               <li key={t.id}>
                 <TimerCard timer={t} onUpdated={upsertTimer} onDeleted={removeTimer} />
               </li>
             ))}
           </ul>
-        )}
-        {showNewTimer ? (
-          <div className="mt-2">
-            <NewTimerForm
-              onCreated={(t) => {
-                upsertTimer(t);
-                setShowNewTimer(false);
-              }}
-              onCancel={() => setShowNewTimer(false)}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowNewTimer(true)}
-            className="mt-2 w-full rounded-xl border border-dashed border-zinc-200 py-2.5 text-sm text-zinc-500 dark:border-zinc-800"
-          >
-            + New timer
-          </button>
         )}
       </Section>
 

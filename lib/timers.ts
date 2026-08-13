@@ -1,13 +1,17 @@
 export type TimerState = {
-  mode: string; // "stopwatch" | "countdown"
+  mode: string; // "stopwatch" | "countdown" | "pomodoro"
   status: string; // "running" | "paused" | "completed"
   durationSeconds: number | null;
+  workSeconds: number | null;
+  breakSeconds: number | null;
+  phase: string | null; // "work" | "break" — pomodoro only
   accumulatedSeconds: number;
   startedAt: string | null; // ISO timestamp
 };
 
 // Total seconds this timer has run, including the current in-progress
-// segment if it's running.
+// segment if it's running. For a pomodoro this is scoped to the current
+// phase — accumulatedSeconds resets to 0 each time the phase switches.
 export function elapsedSeconds(timer: TimerState, nowMs: number): number {
   if (timer.status === "running" && timer.startedAt) {
     const runningFor = Math.max(0, (nowMs - new Date(timer.startedAt).getTime()) / 1000);
@@ -16,14 +20,27 @@ export function elapsedSeconds(timer: TimerState, nowMs: number): number {
   return timer.accumulatedSeconds;
 }
 
-// Seconds left on a countdown timer; 0 for stopwatches or once expired.
-export function remainingSeconds(timer: TimerState, nowMs: number): number {
-  if (timer.mode !== "countdown" || timer.durationSeconds == null) return 0;
-  return Math.max(0, timer.durationSeconds - elapsedSeconds(timer, nowMs));
+// Duration of the segment currently in progress: the countdown target,
+// or whichever pomodoro phase (work/break) is active. Null for a
+// stopwatch, which has no fixed duration.
+export function phaseDurationSeconds(timer: TimerState): number | null {
+  if (timer.mode === "countdown") return timer.durationSeconds;
+  if (timer.mode === "pomodoro") return timer.phase === "break" ? timer.breakSeconds : timer.workSeconds;
+  return null;
 }
 
-export function isCountdownComplete(timer: TimerState, nowMs: number): boolean {
-  if (timer.mode !== "countdown" || timer.durationSeconds == null) return false;
+// Seconds left in the current segment; 0 for a stopwatch or once expired.
+export function remainingSeconds(timer: TimerState, nowMs: number): number {
+  const duration = phaseDurationSeconds(timer);
+  if (duration == null) return 0;
+  return Math.max(0, duration - elapsedSeconds(timer, nowMs));
+}
+
+// True once the current segment (a countdown, or a pomodoro work/break
+// phase) has run out while still marked running.
+export function isPhaseComplete(timer: TimerState, nowMs: number): boolean {
+  const duration = phaseDurationSeconds(timer);
+  if (duration == null) return false;
   return timer.status === "running" && remainingSeconds(timer, nowMs) <= 0;
 }
 
