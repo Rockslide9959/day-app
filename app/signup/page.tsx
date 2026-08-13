@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -27,7 +28,7 @@ export default function SignupPage() {
     });
     setLoading(false);
     if (res.ok) {
-      router.replace("/");
+      router.replace(params.get("next") || "/");
       router.refresh();
     } else {
       const data = await res.json().catch(() => ({}));
@@ -77,11 +78,22 @@ export default function SignupPage() {
         </button>
         <p className="mt-4 text-center text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-zinc-900 dark:text-zinc-50">
+          <Link
+            href={params.get("next") ? `/login?next=${encodeURIComponent(params.get("next")!)}` : "/login"}
+            className="font-medium text-zinc-900 dark:text-zinc-50"
+          >
             Log in
           </Link>
         </p>
       </form>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

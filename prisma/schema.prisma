@@ -21,6 +21,7 @@ model User {
   eventCategories   EventCategory[]
   pushSubscriptions PushSubscription[]
   timers            Timer[]
+  eventShares       EventShare[]
 }
 
 model Reminder {
@@ -86,8 +87,28 @@ model ScheduleItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  shares EventShare[]
+
   @@index([date])
   @@index([userId])
+}
+
+// A shareable link for a ScheduleItem: whoever holds the token can
+// preview the event and, once logged in, add their own independent
+// copy of it to their calendar. Not a live/synced link — see
+// /api/invites/[token] for the accept-as-copy behavior. Cascades with
+// the event, so deleting it revokes every link pointing at it.
+model EventShare {
+  id             String       @id @default(cuid())
+  scheduleItemId String
+  scheduleItem   ScheduleItem @relation(fields: [scheduleItemId], references: [id], onDelete: Cascade)
+  createdByUserId String
+  createdBy      User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  token          String       @unique
+  createdAt      DateTime     @default(now())
+
+  @@index([scheduleItemId])
+  @@index([createdByUserId])
 }
 
 // A user-defined event category, layered on top of the app's built-in

@@ -33,6 +33,8 @@ const RECURRENCE_OPTIONS = [
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
+type EventShare = { id: string; token: string; createdAt: string };
+
 export type EventDraft = {
   title: string;
   notes: string;
@@ -618,6 +620,9 @@ function EventDetails({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [timers, setTimers] = useState<Timer[]>([]);
   const [showNewTimer, setShowNewTimer] = useState(false);
+  const [shares, setShares] = useState<EventShare[]>([]);
+  const [sharing, setSharing] = useState(false);
+  const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
   const multiDay = event.endDate && event.endDate !== event.date;
   const pMeta = priorityMeta(event.priority);
 
@@ -633,6 +638,18 @@ function EventDetails({
     };
   }, [event.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/schedule/${event.id}/share`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setShares(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id]);
+
   function upsertTimer(timer: Timer) {
     setTimers((prev) =>
       prev.some((t) => t.id === timer.id) ? prev.map((t) => (t.id === timer.id ? timer : t)) : [timer, ...prev]
@@ -641,6 +658,32 @@ function EventDetails({
 
   function removeTimer(id: string) {
     setTimers((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  async function createShareLink() {
+    setSharing(true);
+    try {
+      const res = await fetch(`/api/schedule/${event.id}/share`, { method: "POST" });
+      if (res.ok) {
+        const share = await res.json();
+        setShares((prev) => [share, ...prev]);
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function revokeShare(id: string) {
+    setShares((prev) => prev.filter((s) => s.id !== id));
+    await fetch(`/api/shares/${id}`, { method: "DELETE" });
+  }
+
+  function copyShareLink(share: EventShare) {
+    const url = `${window.location.origin}/invite/${share.token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedShareId(share.id);
+      setTimeout(() => setCopiedShareId((id) => (id === share.id ? null : id)), 1500);
+    });
   }
 
   return (
@@ -731,6 +774,48 @@ function EventDetails({
             + Start timer for this event
           </button>
         )}
+      </div>
+
+      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Share</p>
+        {shares.length > 0 && (
+          <ul className="space-y-2">
+            {shares.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs shadow-sm dark:bg-zinc-900"
+              >
+                <span className="truncate text-zinc-500">
+                  {typeof window !== "undefined" ? window.location.host : ""}/invite/{s.token}
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => copyShareLink(s)}
+                    className="rounded-lg border border-zinc-200 px-2 py-1 font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                  >
+                    {copiedShareId === s.id ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => revokeShare(s.id)}
+                    className="rounded-lg px-2 py-1 text-zinc-300 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          onClick={createShareLink}
+          disabled={sharing}
+          className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-800"
+        >
+          {sharing ? "Generating…" : "+ Get share link"}
+        </button>
       </div>
 
       {error && <p className="text-xs text-red-500">{error}</p>}

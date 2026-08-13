@@ -67,7 +67,10 @@ function LoginForm() {
         </button>
         <p className="mt-4 text-center text-sm text-zinc-500">
           No account?{" "}
-          <Link href="/signup" className="font-medium text-zinc-900 dark:text-zinc-50">
+          <Link
+            href={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next")!)}` : "/signup"}
+            className="font-medium text-zinc-900 dark:text-zinc-50"
+          >
             Sign up
           </Link>
         </p>
