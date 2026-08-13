@@ -319,15 +319,26 @@ export default function CalendarPage() {
         />
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900">
-            <div className="flex items-center gap-1">
-              <button onClick={goPrev} className="px-2 py-1 text-zinc-400" aria-label="Previous">
+          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-2 py-2 shadow-sm dark:bg-zinc-900">
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={goPrev}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                aria-label="Previous"
+              >
                 ←
               </button>
-              <button onClick={goToday} className="rounded-lg px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <button
+                onClick={goToday}
+                className="rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
                 Today
               </button>
-              <button onClick={goNext} className="px-2 py-1 text-zinc-400" aria-label="Next">
+              <button
+                onClick={goNext}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                aria-label="Next"
+              >
                 →
               </button>
             </div>
@@ -337,7 +348,7 @@ export default function CalendarPage() {
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`rounded-md px-2 py-1 font-medium capitalize ${
+                  className={`rounded-md px-2.5 py-1.5 font-medium capitalize ${
                     viewMode === mode
                       ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
                       : "text-zinc-500"

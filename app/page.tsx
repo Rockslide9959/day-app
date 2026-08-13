@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { addDaysToDateStr, formatTime12h, todayStr } from "@/lib/dates";
+import { addDaysToDateStr, formatDurationMinutes, formatTime12h, todayStr } from "@/lib/dates";
 import { busyDayStats, dailySummary, nowNextEvent, upcomingEvents } from "@/lib/calendar/dashboard";
 import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
@@ -143,7 +143,7 @@ export default function TodayPage() {
           <div className="rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{next.title}</p>
             <p className="text-xs text-zinc-500">
-              {formatTime12h(next.startTime)} · Starts in {minutesUntilNext} minute{minutesUntilNext === 1 ? "" : "s"}
+              {formatTime12h(next.startTime)} · Starts in {formatDurationMinutes(minutesUntilNext ?? 0)}
             </p>
           </div>
         </Section>

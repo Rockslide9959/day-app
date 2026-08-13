@@ -6,7 +6,9 @@ import { CalendarEvent } from "./types";
 import { categoryDotStyle } from "./categories";
 import { CategoryDef } from "@/lib/calendar/categories";
 
-const HOUR_HEIGHT = 48; // px per hour
+const HOUR_HEIGHT = 60; // px per hour
+const GUTTER_WIDTH = 52; // px, hour-label column
+const MIN_EVENT_MINUTES = 30; // minimum visual block height, for tap targets
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 function hourLabel(h: number) {
@@ -59,16 +61,16 @@ export default function TimeGrid({
     <div className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-zinc-900">
       <div
         className="grid border-b border-zinc-100 text-center dark:border-zinc-800"
-        style={{ gridTemplateColumns: `48px repeat(${dates.length}, 1fr)` }}
+        style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${dates.length}, 1fr)` }}
       >
         <div />
         {dates.map((date) => (
-          <div key={date} className="py-2">
-            <div className="text-[11px] text-zinc-400">
+          <div key={date} className="py-2.5">
+            <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {new Date(date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short" })}
             </div>
             <div
-              className={`mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
+              className={`mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                 date === today
                   ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
                   : "text-zinc-700 dark:text-zinc-200"
@@ -83,21 +85,21 @@ export default function TimeGrid({
       {hasAllDay && (
         <div
           className="grid border-b border-zinc-100 dark:border-zinc-800"
-          style={{ gridTemplateColumns: `48px repeat(${dates.length}, 1fr)` }}
+          style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${dates.length}, 1fr)` }}
         >
-          <div className="py-1 text-center text-[10px] text-zinc-400">All day</div>
+          <div className="py-1.5 text-center text-xs text-zinc-500 dark:text-zinc-400">All day</div>
           {dates.map((date) => (
-            <div key={date} className="flex flex-col gap-0.5 border-l border-zinc-100 p-0.5 dark:border-zinc-800">
+            <div key={date} className="flex flex-col gap-1 border-l border-zinc-100 p-1 dark:border-zinc-800">
               {(allDayByDate.get(date) || []).map((ev) => (
                 <button
                   key={ev.occurrenceId}
                   onClick={() => onSelectEvent(ev)}
                   title={ev.title}
-                  className={`flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] hover:opacity-80 ${
+                  className={`flex min-h-[28px] items-center gap-1.5 truncate rounded-md px-2 py-1 text-left text-xs hover:opacity-80 ${
                     ev.completed ? "text-zinc-400 line-through" : "text-zinc-700 dark:text-zinc-200"
                   }`}
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={categoryDotStyle(ev.category, categories)} />
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={categoryDotStyle(ev.category, categories)} />
                   <span className="truncate">{ev.title}</span>
                 </button>
               ))}
@@ -109,14 +111,14 @@ export default function TimeGrid({
       <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto">
         <div
           className="relative grid"
-          style={{ gridTemplateColumns: `48px repeat(${dates.length}, 1fr)` }}
+          style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${dates.length}, 1fr)` }}
         >
           <div>
             {HOURS.map((h) => (
               <div
                 key={h}
                 style={{ height: HOUR_HEIGHT }}
-                className="relative -top-2 pr-1 text-right text-[10px] text-zinc-400"
+                className="relative -top-2 pr-2 text-right text-xs text-zinc-500 dark:text-zinc-400"
               >
                 {h !== 0 && hourLabel(h)}
               </div>
@@ -134,7 +136,7 @@ export default function TimeGrid({
               ))}
               {(eventsByDate.get(date) || []).map((ev) => {
                 const startMin = timeToMinutes(ev.startTime);
-                const endMin = Math.max(timeToMinutes(ev.endTime), startMin + 20);
+                const endMin = Math.max(timeToMinutes(ev.endTime), startMin + MIN_EVENT_MINUTES);
                 const top = (startMin / 60) * HOUR_HEIGHT;
                 const height = ((endMin - startMin) / 60) * HOUR_HEIGHT;
                 return (
@@ -145,14 +147,14 @@ export default function TimeGrid({
                       onSelectEvent(ev);
                     }}
                     style={{ top, height }}
-                    className={`absolute left-0.5 right-0.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left text-[11px] shadow-sm ${
+                    className={`absolute left-0.5 right-0.5 overflow-hidden rounded-md px-2 py-1 text-left text-xs shadow-sm ${
                       ev.completed
                         ? "bg-zinc-50 text-zinc-400 line-through dark:bg-zinc-800/40"
                         : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                     }`}
                   >
-                    <span className="flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={categoryDotStyle(ev.category, categories)} />
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={categoryDotStyle(ev.category, categories)} />
                       <span className="truncate font-medium">{ev.title}</span>
                       {(ev.priority === "high" || ev.priority === "urgent") && (
                         <span>{ev.priority === "urgent" ? "🔴" : "🟠"}</span>

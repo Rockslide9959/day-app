@@ -39,9 +39,9 @@ export default function MonthView({
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-zinc-900">
-      <div className="grid grid-cols-7 border-b border-zinc-100 text-center text-[11px] font-medium text-zinc-400 dark:border-zinc-800">
+      <div className="grid grid-cols-7 border-b border-zinc-100 text-center text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-          <div key={i} className="py-2">
+          <div key={i} className="py-2.5">
             {d}
           </div>
         ))}
@@ -51,32 +51,33 @@ export default function MonthView({
           const dayEvents = eventsByDate.get(date) || [];
           const inMonth = isSameMonth(date, anchorDate);
           const isToday = date === today;
+          const maxVisible = 3;
           return (
             <button
               key={date}
               onClick={() => onSelectDate(date)}
-              className={`flex min-h-[64px] flex-col items-stretch gap-0.5 border-b border-r border-zinc-100 p-1 text-left last:border-r-0 dark:border-zinc-800 ${
+              className={`flex min-h-[84px] flex-col items-stretch gap-1 border-b border-r border-zinc-100 p-1 text-left last:border-r-0 sm:min-h-[104px] sm:p-1.5 dark:border-zinc-800 ${
                 inMonth ? "" : "opacity-40"
               }`}
             >
               <span
-                className={`self-start px-1.5 py-0.5 text-[11px] font-medium ${
+                className={`self-start px-1.5 py-0.5 text-xs font-medium sm:text-sm ${
                   isToday
                     ? "rounded-full bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                    : "text-zinc-500"
+                    : "text-zinc-500 dark:text-zinc-400"
                 }`}
               >
                 {Number(date.slice(8, 10))}
               </span>
-              <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                {dayEvents.slice(0, 3).map((ev) => (
+              <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+                {dayEvents.slice(0, maxVisible).map((ev) => (
                   <span
                     key={ev.occurrenceId}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectEvent(ev);
                     }}
-                    className={`flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+                    className={`flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-[11px] leading-tight hover:bg-zinc-100 sm:text-xs dark:hover:bg-zinc-800 ${
                       ev.completed ? "text-zinc-400 line-through" : "text-zinc-700 dark:text-zinc-200"
                     }`}
                   >
@@ -85,9 +86,9 @@ export default function MonthView({
                     {(ev.priority === "high" || ev.priority === "urgent") && <span>{ev.priority === "urgent" ? "🔴" : "🟠"}</span>}
                   </span>
                 ))}
-                {dayEvents.length > 3 && (
-                  <span className="px-1 text-[10px] text-zinc-400">
-                    +{dayEvents.length - 3} more
+                {dayEvents.length > maxVisible && (
+                  <span className="px-1.5 text-[11px] font-medium text-zinc-400 sm:text-xs">
+                    +{dayEvents.length - maxVisible} more
                   </span>
                 )}
               </div>

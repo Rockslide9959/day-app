@@ -130,6 +130,18 @@ export function formatTime12h(time: string): string {
   return m === 0 ? `${hour12} ${period}` : `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
+// 127 -> "2 hours and 7 minutes", 60 -> "1 hour", 37 -> "37 minutes"
+export function formatDurationMinutes(totalMinutes: number): string {
+  const minutes = Math.max(0, Math.round(totalMinutes));
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  const hoursLabel = `${hours} hour${hours === 1 ? "" : "s"}`;
+  if (remainder === 0) return hoursLabel;
+  return `${hoursLabel} and ${remainder} minute${remainder === 1 ? "" : "s"}`;
+}
+
 // "570" -> "09:30"
 export function minutesToTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
