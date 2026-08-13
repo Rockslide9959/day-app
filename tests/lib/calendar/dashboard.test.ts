@@ -26,16 +26,27 @@ describe("nowNextEvent", () => {
     ];
     // 9:00am -> during the lecture
     const result = nowNextEvent(events, 9 * 60);
-    expect(result.current?.title).toBe("Lecture");
+    expect(result.current.map((e) => e.title)).toEqual(["Lecture"]);
     expect(result.next?.title).toBe("Assignment work");
     expect(result.minutesUntilNext).toBe(90);
   });
 
-  it("returns no current event between meetings", () => {
+  it("returns no current events between meetings", () => {
     const events = [ev({ title: "Lecture", startTime: "08:00", endTime: "09:30" })];
     const result = nowNextEvent(events, 9 * 60 + 45);
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual([]);
     expect(result.next).toBeNull();
+  });
+
+  it("returns every event currently overlapping, not just one", () => {
+    const events = [
+      ev({ title: "Team standup", startTime: "09:00", endTime: "09:30" }),
+      ev({ title: "1:1 with manager", startTime: "09:15", endTime: "10:00" }),
+      ev({ title: "Later meeting", startTime: "14:00", endTime: "15:00" }),
+    ];
+    // 9:20am -> both the standup and the 1:1 are running
+    const result = nowNextEvent(events, 9 * 60 + 20);
+    expect(result.current.map((e) => e.title).sort()).toEqual(["1:1 with manager", "Team standup"]);
   });
 });
 

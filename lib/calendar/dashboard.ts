@@ -18,13 +18,17 @@ export type DashboardEvent = {
 export function nowNextEvent<T extends DashboardEvent>(
   todayEvents: T[],
   nowMinutes: number
-): { current: T | null; next: T | null; minutesUntilNext: number | null } {
+): { current: T[]; next: T | null; minutesUntilNext: number | null } {
   const timed = [...todayEvents]
     .filter((e) => !e.allDay)
     .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-  const current =
-    timed.find((e) => timeToMinutes(e.startTime) <= nowMinutes && nowMinutes < timeToMinutes(e.endTime)) || null;
+  // Everything overlapping right now — there can be more than one (e.g.
+  // two meetings double-booked), so this is every match, not just the
+  // first.
+  const current = timed.filter(
+    (e) => timeToMinutes(e.startTime) <= nowMinutes && nowMinutes < timeToMinutes(e.endTime)
+  );
   const next = timed.find((e) => timeToMinutes(e.startTime) > nowMinutes) || null;
   const minutesUntilNext = next ? timeToMinutes(next.startTime) - nowMinutes : null;
 
