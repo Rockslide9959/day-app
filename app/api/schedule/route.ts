@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { todayStr } from "@/lib/dates";
 import { expandEventOccurrences } from "@/lib/calendar/recurrence";
+import { getCurrentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
 
@@ -15,6 +19,7 @@ export async function GET(req: NextRequest) {
     // that starts before `to` and (if bounded) doesn't end before `from`.
     const items = await prisma.scheduleItem.findMany({
       where: {
+        userId,
         OR: [
           {
             recurrence: "none",
@@ -41,13 +46,16 @@ export async function GET(req: NextRequest) {
 
   const date = req.nextUrl.searchParams.get("date") || todayStr();
   const items = await prisma.scheduleItem.findMany({
-    where: { date },
+    where: { userId, date },
     orderBy: { startTime: "asc" },
   });
   return NextResponse.json(items);
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json();
   const {
     title,
@@ -75,6 +83,7 @@ export async function POST(req: NextRequest) {
   }
   const item = await prisma.scheduleItem.create({
     data: {
+      userId,
       title,
       notes: notes || null,
       date: date || todayStr(),

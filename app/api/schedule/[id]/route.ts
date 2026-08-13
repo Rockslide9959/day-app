@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const body = await req.json();
 
@@ -14,7 +18,7 @@ export async function PATCH(
   // separate, narrower operation from editing the series itself — it
   // only ever touches completedDates, never the other fields.
   if (typeof body.toggleCompletedDate === "string") {
-    const current = await prisma.scheduleItem.findUnique({ where: { id } });
+    const current = await prisma.scheduleItem.findFirst({ where: { id, userId } });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const dates = new Set(current.completedDates.split(",").filter(Boolean));
     if (dates.has(body.toggleCompletedDate)) dates.delete(body.toggleCompletedDate);
@@ -53,7 +57,9 @@ export async function PATCH(
     data.estimatedHours = body.estimatedHours;
   }
 
-  const item = await prisma.scheduleItem.update({ where: { id }, data });
+  const result = await prisma.scheduleItem.updateMany({ where: { id, userId }, data });
+  if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const item = await prisma.scheduleItem.findUnique({ where: { id } });
   return NextResponse.json(item);
 }
 
@@ -61,7 +67,11 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
-  await prisma.scheduleItem.delete({ where: { id } });
+  const result = await prisma.scheduleItem.deleteMany({ where: { id, userId } });
+  if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

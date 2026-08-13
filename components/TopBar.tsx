@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 export default function TopBar() {
   const pathname = usePathname();
 
-  if (pathname === "/login") return null;
+  if (pathname === "/login" || pathname === "/signup") return null;
 
   return (
     <Link

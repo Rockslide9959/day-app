@@ -28,12 +28,14 @@ async function handleTick(req: NextRequest) {
     return NextResponse.json({ sent: 0 });
   }
 
-  const subscriptions = isPushConfigured()
-    ? await prisma.pushSubscription.findMany()
-    : [];
-
   let sent = 0;
   for (const reminder of due) {
+    // Each reminder only ever pushes to its own owner's devices — this
+    // now serves multiple accounts, so there's no single global
+    // subscription list anymore.
+    const subscriptions = isPushConfigured()
+      ? await prisma.pushSubscription.findMany({ where: { userId: reminder.userId } })
+      : [];
     for (const sub of subscriptions) {
       try {
         await sendPush(

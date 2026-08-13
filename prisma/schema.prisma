@@ -7,8 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reminders         Reminder[]
+  scheduleItems     ScheduleItem[]
+  todos             Todo[]
+  routines          Routine[]
+  eventCategories   EventCategory[]
+  pushSubscriptions PushSubscription[]
+}
+
 model Reminder {
   id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title      String
   notes      String?
   dueAt      DateTime
@@ -20,10 +37,13 @@ model Reminder {
   updatedAt  DateTime @updatedAt
 
   @@index([dueAt])
+  @@index([userId])
 }
 
 model ScheduleItem {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   notes     String?
   // ISO date, e.g. "2026-08-12"
@@ -66,20 +86,28 @@ model ScheduleItem {
   updatedAt DateTime @updatedAt
 
   @@index([date])
+  @@index([userId])
 }
 
 // A user-defined event category, layered on top of the app's built-in
 // defaults (which aren't stored as rows — see lib/calendar/categories.ts).
+// Unique per-user so two accounts can each have their own "Side Project".
 model EventCategory {
   id        String   @id @default(cuid())
-  name      String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
   colorHex  String
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
+
+  @@unique([userId, name])
 }
 
 model Todo {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   date      String
   completed Boolean  @default(false)
@@ -88,10 +116,13 @@ model Todo {
   updatedAt DateTime @updatedAt
 
   @@index([date])
+  @@index([userId])
 }
 
 model Routine {
   id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   icon      String        @default("✅")
   sortOrder Int           @default(0)
@@ -99,6 +130,8 @@ model Routine {
   updatedAt DateTime      @updatedAt
   steps     RoutineStep[]
   runs      RoutineRun[]
+
+  @@index([userId])
 }
 
 model RoutineStep {
@@ -127,8 +160,12 @@ model RoutineRun {
 
 model PushSubscription {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   endpoint  String   @unique
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }

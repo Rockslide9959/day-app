@@ -1,16 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#3b82f6");
   const [error, setError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setUsername(data?.username ?? null))
+      .catch(() => {});
+  }, []);
+
+  async function logout() {
+    setLoggingOut(true);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +71,27 @@ export default function SettingsPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
       <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Settings</h1>
+
+      <Section title="Account">
+        <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+          <span className="text-sm text-zinc-800 dark:text-zinc-100">
+            {username ? (
+              <>
+                Logged in as <span className="font-medium">{username}</span>
+              </>
+            ) : (
+              "…"
+            )}
+          </span>
+          <button
+            onClick={logout}
+            disabled={loggingOut}
+            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 disabled:opacity-50 dark:border-zinc-700"
+          >
+            {loggingOut ? "Logging out…" : "Log out"}
+          </button>
+        </div>
+      </Section>
 
       <Section title="Categories">
         <p className="mb-3 text-xs text-zinc-500">

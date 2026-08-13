@@ -26,7 +26,7 @@ git push -u origin main
 | Key | Value |
 |---|---|
 | `DATABASE_URL` | your Neon connection string |
-| `APP_PASSCODE` | **change this from the `1234` placeholder** to a real PIN before deploying |
+| `AUTH_SECRET` | the long random string already in `.env.local` — changing it later logs everyone out |
 | `CRON_SECRET` | the long random string already in `.env.local` |
 | `VAPID_PUBLIC_KEY` | from `.env.local` |
 | `VAPID_PRIVATE_KEY` | from `.env.local` |
@@ -50,7 +50,7 @@ Vercel's free plan only runs cron jobs once a day, which isn't enough for timely
 ## 4. Install it on your Android phone
 
 1. Open `https://day-app-six.vercel.app` in Chrome on your phone.
-2. Enter your passcode.
+2. Log in with your account (or sign up if it's your first time on this device).
 3. Tap the Chrome menu (⋮) → **Add to Home Screen** → **Install**. This makes it a real installed app, which Android needs for reliable background push notifications.
 4. Open the installed app from your home screen, go to **Reminders**, and tap **Turn on** under Notifications. Allow the permission prompt.
 5. To verify end-to-end: create a reminder ~2 minutes in the future and lock your phone. The notification should arrive on schedule.

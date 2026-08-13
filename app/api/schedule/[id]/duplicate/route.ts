@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,12 +8,16 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
-  const original = await prisma.scheduleItem.findUnique({ where: { id } });
+  const original = await prisma.scheduleItem.findFirst({ where: { id, userId } });
   if (!original) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const copy = await prisma.scheduleItem.create({
     data: {
+      userId,
       title: original.title,
       notes: original.notes,
       date: original.date,
