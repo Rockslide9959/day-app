@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Timer } from "./types";
-import { parseMinutesToSeconds } from "@/lib/timers";
+import { parseDurationParts } from "@/lib/timers";
 
 export default function NewTimerForm({
   defaultLabel = "",
@@ -19,7 +19,9 @@ export default function NewTimerForm({
 }) {
   const [mode, setMode] = useState<"stopwatch" | "countdown">("stopwatch");
   const [label, setLabel] = useState(defaultLabel);
+  const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
+  const [seconds, setSeconds] = useState("0");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -29,12 +31,12 @@ export default function NewTimerForm({
 
     let durationSeconds: number | undefined;
     if (mode === "countdown") {
-      const seconds = parseMinutesToSeconds(minutes);
-      if (seconds == null) {
-        setError("Enter a duration in minutes greater than 0");
+      const total = parseDurationParts(hours, minutes, seconds);
+      if (total == null) {
+        setError("Enter a duration greater than 0");
         return;
       }
-      durationSeconds = seconds;
+      durationSeconds = total;
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
@@ -92,17 +94,41 @@ export default function NewTimerForm({
       />
 
       {mode === "countdown" && (
-        <label className="block text-xs text-zinc-500">
-          Minutes
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={minutes}
-            onChange={(e) => setMinutes(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-          />
-        </label>
+        <div className="flex gap-2">
+          <label className="flex-1 text-xs text-zinc-500">
+            Hours
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+          </label>
+          <label className="flex-1 text-xs text-zinc-500">
+            Minutes
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+          </label>
+          <label className="flex-1 text-xs text-zinc-500">
+            Seconds
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={seconds}
+              onChange={(e) => setSeconds(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+          </label>
+        </div>
       )}
 
       {error && <p className="text-xs text-red-500">{error}</p>}

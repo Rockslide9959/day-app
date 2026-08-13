@@ -3,7 +3,7 @@ import {
   elapsedSeconds,
   formatClock,
   isCountdownComplete,
-  parseMinutesToSeconds,
+  parseDurationParts,
   remainingSeconds,
   TimerState,
 } from "@/lib/timers";
@@ -95,20 +95,32 @@ describe("formatClock", () => {
   });
 });
 
-describe("parseMinutesToSeconds", () => {
-  it("converts whole minutes to seconds", () => {
-    expect(parseMinutesToSeconds("25")).toBe(1500);
+describe("parseDurationParts", () => {
+  it("combines hours, minutes, and seconds into a total", () => {
+    expect(parseDurationParts("1", "30", "0")).toBe(5400);
+    expect(parseDurationParts("0", "0", "45")).toBe(45);
+    expect(parseDurationParts("2", "0", "0")).toBe(7200);
   });
 
-  it("supports fractional minutes", () => {
-    expect(parseMinutesToSeconds("1.5")).toBe(90);
+  it("treats blank fields as zero", () => {
+    expect(parseDurationParts("", "5", "")).toBe(300);
+    expect(parseDurationParts("1", "", "")).toBe(3600);
   });
 
-  it("rejects empty, zero, negative, and non-numeric input", () => {
-    expect(parseMinutesToSeconds("")).toBeNull();
-    expect(parseMinutesToSeconds("   ")).toBeNull();
-    expect(parseMinutesToSeconds("0")).toBeNull();
-    expect(parseMinutesToSeconds("-5")).toBeNull();
-    expect(parseMinutesToSeconds("abc")).toBeNull();
+  it("allows minutes/seconds over 59 and just sums the total", () => {
+    expect(parseDurationParts("0", "90", "0")).toBe(5400);
+    expect(parseDurationParts("0", "0", "125")).toBe(125);
+  });
+
+  it("rejects when every field is blank or the total is zero", () => {
+    expect(parseDurationParts("", "", "")).toBeNull();
+    expect(parseDurationParts("0", "0", "0")).toBeNull();
+  });
+
+  it("rejects negative or non-numeric input in any field", () => {
+    expect(parseDurationParts("-1", "0", "0")).toBeNull();
+    expect(parseDurationParts("0", "-1", "0")).toBeNull();
+    expect(parseDurationParts("0", "0", "-1")).toBeNull();
+    expect(parseDurationParts("abc", "0", "0")).toBeNull();
   });
 });

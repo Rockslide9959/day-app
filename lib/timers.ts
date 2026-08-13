@@ -39,11 +39,20 @@ export function formatClock(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-// "25" -> 1500, "1.5" -> 90, "" / "0" / "-5" / "abc" -> null
-export function parseMinutesToSeconds(input: string): number | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  const minutes = Number(trimmed);
-  if (!Number.isFinite(minutes) || minutes <= 0) return null;
-  return Math.round(minutes * 60);
+// Combines separate hours/minutes/seconds string inputs (each optional —
+// blank is treated as 0) into a total duration in seconds.
+// ("1", "30", "") -> 5400, ("", "", "45") -> 45, ("", "", "") -> null
+export function parseDurationParts(
+  hoursInput: string,
+  minutesInput: string,
+  secondsInput: string
+): number | null {
+  const values = [hoursInput, minutesInput, secondsInput].map((s) => {
+    const trimmed = s.trim();
+    return trimmed === "" ? 0 : Number(trimmed);
+  });
+  if (!values.every((n) => Number.isFinite(n) && n >= 0)) return null;
+  const [hours, minutes, seconds] = values;
+  const total = Math.round(hours * 3600 + minutes * 60 + seconds);
+  return total > 0 ? total : null;
 }
