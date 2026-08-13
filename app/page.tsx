@@ -195,20 +195,6 @@ export default function TodayPage() {
         </Section>
       )}
 
-      <Section title="Timers" href="/timers">
-        {activeTimers.length === 0 ? (
-          <EmptyRow text="No timers running" />
-        ) : (
-          <ul className="space-y-2">
-            {activeTimers.slice(0, 3).map((t) => (
-              <li key={t.id}>
-                <TimerCard timer={t} onUpdated={upsertTimer} onDeleted={removeTimer} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
       <Section title="Schedule" href="/calendar">
         {todayEvents.length === 0 ? (
           <EmptyRow text="Nothing scheduled today" />
@@ -358,6 +344,20 @@ export default function TodayPage() {
                     {routineDone[r.id] || 0}/{r.steps.length}
                   </span>
                 </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title="Timers" href="/timers">
+        {activeTimers.length === 0 ? (
+          <EmptyRow text="No timers running" />
+        ) : (
+          <ul className="space-y-2">
+            {activeTimers.slice(0, 3).map((t) => (
+              <li key={t.id}>
+                <TimerCard timer={t} onUpdated={upsertTimer} onDeleted={removeTimer} />
               </li>
             ))}
           </ul>
