@@ -49,7 +49,7 @@ Vercel's free plan only runs cron jobs once a day, which isn't enough for timely
 
 ## 4. Install it on your Android phone
 
-1. Open `https://<your-app>.vercel.app` in Chrome on your phone.
+1. Open `https://day-app-six.vercel.app` in Chrome on your phone.
 2. Enter your passcode.
 3. Tap the Chrome menu (⋮) → **Add to Home Screen** → **Install**. This makes it a real installed app, which Android needs for reliable background push notifications.
 4. Open the installed app from your home screen, go to **Reminders**, and tap **Turn on** under Notifications. Allow the permission prompt.
