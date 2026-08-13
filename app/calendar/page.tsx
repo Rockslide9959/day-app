@@ -15,6 +15,7 @@ import MonthView from "@/components/calendar/MonthView";
 import WeekView from "@/components/calendar/WeekView";
 import DayView from "@/components/calendar/DayView";
 import EventModal, { EventDraft } from "@/components/calendar/EventModal";
+import DayAgendaModal from "@/components/calendar/DayAgendaModal";
 import CategoryFilter from "@/components/calendar/CategoryFilter";
 import FreeTimeFinder from "@/components/calendar/FreeTimeFinder";
 import { filterVisibleEvents } from "@/lib/calendarFilter";
@@ -81,6 +82,7 @@ export default function CalendarPage() {
   const [modalState, setModalState] = useState<
     | { mode: "view"; event: CalendarEvent }
     | { mode: "create"; date: string; startTime?: string }
+    | { mode: "day"; date: string }
     | null
   >(null);
 
@@ -379,7 +381,7 @@ export default function CalendarPage() {
               anchorDate={anchorDate}
               events={visibleEvents}
               categories={categories}
-              onSelectDate={(date) => setModalState({ mode: "create", date })}
+              onSelectDate={(date) => setModalState({ mode: "day", date })}
               onSelectEvent={(event) => setModalState({ mode: "view", event })}
             />
           ) : viewMode === "week" ? (
@@ -411,7 +413,7 @@ export default function CalendarPage() {
         +
       </button>
 
-      {modalState && (
+      {modalState && (modalState.mode === "view" || modalState.mode === "create") && (
         <EventModal
           event={modalState.mode === "view" ? modalState.event : null}
           createDefaults={
@@ -428,6 +430,17 @@ export default function CalendarPage() {
           onDuplicate={handleDuplicate}
           onToggleComplete={handleToggleComplete}
           onAddCategory={handleAddCategory}
+        />
+      )}
+
+      {modalState && modalState.mode === "day" && (
+        <DayAgendaModal
+          date={modalState.date}
+          events={visibleEvents}
+          categories={categories}
+          onClose={() => setModalState(null)}
+          onSelectEvent={(event) => setModalState({ mode: "view", event })}
+          onAddEvent={(date) => setModalState({ mode: "create", date })}
         />
       )}
 
