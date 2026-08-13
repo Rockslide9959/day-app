@@ -4,6 +4,31 @@ import { useEffect, useRef, useState } from "react";
 import { Timer } from "./types";
 import { elapsedSeconds, formatClock, isCountdownComplete, remainingSeconds } from "@/lib/timers";
 
+// Best-effort only — must never throw. This app always has an active
+// service worker registered (for push), and Chrome refuses a direct
+// `new Notification()` call in that case ("Illegal constructor"), so we
+// go through the service worker's showNotification when we can and fall
+// back otherwise. A failure here must never stop the caller from
+// persisting the timer as completed — the in-page "Done" badge is the
+// alert that always works regardless of notification support.
+async function notifyTimerDone(label: string, timerId: string) {
+  try {
+    if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") {
+      return;
+    }
+    if ("serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.showNotification("Timer finished", { body: label, tag: `timer-${timerId}` });
+        return;
+      }
+    }
+    new Notification("Timer finished", { body: label, tag: `timer-${timerId}` });
+  } catch {
+    // Ignored — see comment above.
+  }
+}
+
 export default function TimerCard({
   timer,
   showLink = true,
@@ -38,9 +63,7 @@ export default function TimerCard({
   useEffect(() => {
     if (!done || completingRef.current) return;
     completingRef.current = true;
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      new Notification("Timer finished", { body: timer.label, tag: `timer-${timer.id}` });
-    }
+    notifyTimerDone(timer.label, timer.id);
     patch("complete");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
