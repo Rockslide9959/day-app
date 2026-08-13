@@ -8,9 +8,11 @@ export const config = {
      * - /login (the passcode entry page)
      * - /api/auth/login (passcode submit endpoint)
      * - /api/cron/tick (protected by its own shared secret, not the cookie)
+     * - /api/calendar/feed.ics (protected by its own shared secret — external
+     *   calendar apps polling this URL can't carry the passcode cookie)
      * - static assets and PWA files
      */
-    "/((?!login|api/auth/login|api/cron/tick|manifest.json|sw.js|icons|_next/static|_next/image|favicon.ico).*)",
+    "/((?!login|api/auth/login|api/cron/tick|api/calendar/feed.ics|manifest.json|sw.js|icons|_next/static|_next/image|favicon.ico).*)",
   ],
 };
 

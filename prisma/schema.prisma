@@ -30,10 +30,52 @@ model ScheduleItem {
   date      String
   startTime String
   endTime   String
+  // Multi-day support; defaults to `date` when absent (same-day event)
+  endDate   String?
+  allDay    Boolean  @default(false)
+  location  String?
+  // Free-form category name — one of the app's defaults or a custom
+  // EventCategory.name the user created in Settings.
+  category  String?
+  reminderMinutesBefore Int?
+  // "low" | "normal" | "high" | "urgent"
+  priority  String   @default("normal")
+
+  // --- Recurrence ---
+  // "none" | "daily" | "weekly" | "monthly" | "weekdays" | "custom"
+  recurrence         String    @default("none")
+  // Comma-joined weekday numbers (0=Sun..6=Sat), used by "weekly"/"custom"
+  // (e.g. Mon/Wed/Fri gym = "1,3,5"). Null for other recurrence types.
+  recurrenceDays      String?
+  // Optional bound on how far the series repeats; open-ended if null
+  // (expansion is still bounded by whatever range is being queried).
+  recurrenceEndDate  String?
+
+  // --- Completion ---
+  // Non-recurring events: whether it's done.
+  completed      Boolean @default(false)
+  // Recurring events: per-occurrence completion, comma-joined "YYYY-MM-DD"
+  // (same convention as RoutineRun.completedStepIds elsewhere in this app).
+  completedDates String  @default("")
+
+  // --- Study features (Assignment/Test/Exam categories) ---
+  subject        String?
+  estimatedHours Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])
+}
+
+// A user-defined event category, layered on top of the app's built-in
+// defaults (which aren't stored as rows — see lib/calendar/categories.ts).
+model EventCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  colorHex  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Todo {

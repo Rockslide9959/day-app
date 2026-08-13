@@ -2,7 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { todayStr } from "@/lib/dates";
+import { addDaysToDateStr, formatTime12h, todayStr } from "@/lib/dates";
+import { busyDayStats, dailySummary, nowNextEvent, upcomingEvents } from "@/lib/calendar/dashboard";
+import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
+import { isDeadlineCategory } from "@/lib/calendar/categories";
+import { CalendarEvent } from "@/components/calendar/types";
 
 type Reminder = {
   id: string;
@@ -11,52 +15,63 @@ type Reminder = {
   dueAt: string;
   recurrence: string;
 };
-type ScheduleItem = {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-};
 type Todo = { id: string; title: string; completed: boolean };
 type Routine = { id: string; name: string; icon: string; steps: { id: string }[] };
 
+const UPCOMING_WINDOW_DAYS = 14;
+
 export default function TodayPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineDone, setRoutineDone] = useState<Record<string, number>>({});
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  });
   const today = todayStr();
 
   const load = useCallback(async () => {
-    const [remindersRes, scheduleRes, todosRes, routinesRes] = await Promise.all([
-      fetch("/api/reminders").then((r) => r.json()),
-      fetch(`/api/schedule?date=${today}`).then((r) => r.json()),
-      fetch(`/api/todos?date=${today}`).then((r) => r.json()),
-      fetch("/api/routines").then((r) => r.json()),
-    ]);
-    setReminders(remindersRes);
-    setSchedule(scheduleRes);
-    setTodos(todosRes);
-    setRoutines(routinesRes);
+    try {
+      const [remindersRes, eventsRes, todosRes, routinesRes] = await Promise.all([
+        fetch("/api/reminders").then((r) => r.json()),
+        fetch(`/api/schedule?from=${today}&to=${addDaysToDateStr(today, UPCOMING_WINDOW_DAYS)}`).then((r) => r.json()),
+        fetch(`/api/todos?date=${today}`).then((r) => r.json()),
+        fetch("/api/routines").then((r) => r.json()),
+      ]);
+      setReminders(remindersRes);
+      setEvents(eventsRes);
+      setTodos(todosRes);
+      setRoutines(routinesRes);
 
-    const doneEntries = await Promise.all(
-      routinesRes.map(async (r: Routine) => {
-        const res = await fetch(`/api/routines/${r.id}/run?date=${today}`).then((r) =>
-          r.json()
-        );
-        return [r.id, res.completedStepIds.length] as const;
-      })
-    );
-    setRoutineDone(Object.fromEntries(doneEntries));
+      const doneEntries = await Promise.all(
+        routinesRes.map(async (r: Routine) => {
+          const res = await fetch(`/api/routines/${r.id}/run?date=${today}`).then((r) => r.json());
+          return [r.id, res.completedStepIds.length] as const;
+        })
+      );
+      setRoutineDone(Object.fromEntries(doneEntries));
+    } catch {
+      // Leave whatever loaded successfully in place; sections below all
+      // handle empty data gracefully rather than hanging on "Loading…".
+    }
     setLoading(false);
   }, [today]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const d = new Date();
+      setNowMinutes(d.getHours() * 60 + d.getMinutes());
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function toggleTodo(todo: Todo) {
     setTodos((prev) =>
@@ -90,21 +105,21 @@ export default function TodayPage() {
     (r) => r.steps.length > 0 && (routineDone[r.id] || 0) < r.steps.length
   );
 
+  const todayEvents = events.filter((e) => e.date === today).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const { current, next, minutesUntilNext } = nowNextEvent(todayEvents, nowMinutes);
+  const dayStats = busyDayStats(todayEvents);
+  const summary = dailySummary(todayEvents);
+  const upcoming = upcomingEvents(events, today, UPCOMING_WINDOW_DAYS);
+
   if (loading) {
     return <div className="p-6 text-zinc-400">Loading…</div>;
   }
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-        Today
-      </h1>
+      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Today</h1>
       <p className="mb-6 text-sm text-zinc-500">
-        {new Date().toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
+        {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
       </p>
 
       {overdue.length > 0 && (
@@ -123,22 +138,104 @@ export default function TodayPage() {
         </Section>
       )}
 
-      <Section title="Schedule" href="/schedule">
-        {schedule.length === 0 ? (
+      {next && (
+        <Section title="Next">
+          <div className="rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{next.title}</p>
+            <p className="text-xs text-zinc-500">
+              {formatTime12h(next.startTime)} · Starts in {minutesUntilNext} minute{minutesUntilNext === 1 ? "" : "s"}
+            </p>
+          </div>
+        </Section>
+      )}
+
+      {current && (
+        <Section title="Happening now">
+          <div className="rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
+            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">{current.title}</p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400">
+              Until {formatTime12h(current.endTime)}
+            </p>
+          </div>
+        </Section>
+      )}
+
+      {dayStats.isBusy && (
+        <Section title="">
+          <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+            <span className="font-medium">Busy day</span> — {dayStats.eventCount} events scheduled
+            {dayStats.scheduledMinutes > 0 && `, ${Math.round(dayStats.scheduledMinutes / 60)}h+ booked`}
+          </div>
+        </Section>
+      )}
+
+      <Section title="Schedule" href="/calendar">
+        {todayEvents.length === 0 ? (
           <EmptyRow text="Nothing scheduled today" />
         ) : (
           <ul className="space-y-2">
-            {schedule.map((s) => (
+            {todayEvents.map((s) => (
               <li
-                key={s.id}
+                key={s.occurrenceId}
                 className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
               >
                 <span className="w-20 shrink-0 text-xs font-medium text-zinc-500">
-                  {s.startTime}–{s.endTime}
+                  {s.allDay ? "All day" : `${formatTime12h(s.startTime)}`}
                 </span>
-                <span className="text-sm text-zinc-900 dark:text-zinc-50">{s.title}</span>
+                <span className={`text-sm ${s.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
+                  {s.title}
+                </span>
+                {(s.priority === "high" || s.priority === "urgent") && (
+                  <span className="ml-auto text-xs">{s.priority === "urgent" ? "🔴" : "🟠"}</span>
+                )}
               </li>
             ))}
+          </ul>
+        )}
+      </Section>
+
+      {summary.eventCount > 0 && (
+        <Section title="">
+          <div className="rounded-xl bg-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/60">
+            {summary.eventCount} event{summary.eventCount === 1 ? "" : "s"} · Scheduled time:{" "}
+            {Math.round((summary.scheduledMinutes / 60) * 10) / 10}h
+            {summary.highPriorityCount > 0 && ` · ${summary.highPriorityCount} high-priority`}
+          </div>
+        </Section>
+      )}
+
+      <Section title="Upcoming" href="/calendar">
+        {upcoming.length === 0 ? (
+          <EmptyRow text="Nothing notable coming up in the next two weeks" />
+        ) : (
+          <ul className="space-y-2">
+            {upcoming.map((e) => {
+              const deadline = isDeadlineCategory(e.category) ? deadlineInfo(e.date, today) : null;
+              return (
+                <li
+                  key={e.occurrenceId}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                >
+                  <div>
+                    <p className="text-sm text-zinc-900 dark:text-zinc-50">{e.title}</p>
+                    <p className="text-xs text-zinc-500">
+                      {e.date === today ? "Today" : e.date} {!e.allDay && `· ${formatTime12h(e.startTime)}`}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${
+                      deadline?.urgency === "overdue"
+                        ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                        : deadline?.urgency === "soon" || deadline?.urgency === "today"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                    }`}
+                  >
+                    {deadline ? deadline.label : countdownLabel(e.date, today)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Section>
@@ -231,16 +328,18 @@ function Section({
 }) {
   return (
     <div className="mb-8">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-          {title}
-        </h2>
-        {href && (
-          <Link href={href} className="text-xs text-zinc-400 hover:text-zinc-600">
-            View all
-          </Link>
-        )}
-      </div>
+      {title && (
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {title}
+          </h2>
+          {href && (
+            <Link href={href} className="text-xs text-zinc-400 hover:text-zinc-600">
+              View all
+            </Link>
+          )}
+        </div>
+      )}
       {children}
     </div>
   );

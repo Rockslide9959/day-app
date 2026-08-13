@@ -1,0 +1,724 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { CalendarEvent } from "./types";
+import { categoryChipStyle, priorityMeta } from "./categories";
+import { formatTime12h } from "@/lib/dates";
+import { CategoryDef, isDeadlineCategory } from "@/lib/calendar/categories";
+import { findConflicts } from "@/lib/calendar/conflicts";
+
+const REMINDER_OPTIONS = [
+  { value: "", label: "No reminder" },
+  { value: "0", label: "At time of event" },
+  { value: "5", label: "5 minutes before" },
+  { value: "15", label: "15 minutes before" },
+  { value: "30", label: "30 minutes before" },
+  { value: "60", label: "1 hour before" },
+  { value: "1440", label: "1 day before" },
+];
+
+const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"];
+
+const RECURRENCE_OPTIONS = [
+  { value: "none", label: "Never" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "weekdays", label: "Weekdays (Mon–Fri)" },
+  { value: "custom", label: "Custom days" },
+];
+
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+
+export type EventDraft = {
+  title: string;
+  notes: string;
+  date: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  allDay: boolean;
+  location: string;
+  category: string;
+  priority: string;
+  reminderMinutesBefore: string;
+  recurrence: string;
+  recurrenceDays: number[];
+  recurrenceEndDate: string;
+  subject: string;
+  estimatedHours: string;
+};
+
+function draftFromEvent(event: CalendarEvent): EventDraft {
+  return {
+    title: event.title,
+    notes: event.notes || "",
+    date: event.date,
+    startTime: event.startTime,
+    endDate: event.endDate || event.date,
+    endTime: event.endTime,
+    allDay: event.allDay,
+    location: event.location || "",
+    category: event.category || "",
+    priority: event.priority || "normal",
+    reminderMinutesBefore:
+      event.reminderMinutesBefore == null ? "" : String(event.reminderMinutesBefore),
+    recurrence: event.recurrence || "none",
+    recurrenceDays: (event.recurrenceDays || "").split(",").filter(Boolean).map(Number),
+    recurrenceEndDate: event.recurrenceEndDate || "",
+    subject: event.subject || "",
+    estimatedHours: event.estimatedHours == null ? "" : String(event.estimatedHours),
+  };
+}
+
+function draftFromDefaults(defaults: { date: string; startTime?: string }): EventDraft {
+  const startTime = defaults.startTime || "09:00";
+  const [h, m] = startTime.split(":").map(Number);
+  const endHour = (h + 1) % 24;
+  const endTime = `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return {
+    title: "",
+    notes: "",
+    date: defaults.date,
+    startTime,
+    endDate: defaults.date,
+    endTime,
+    allDay: false,
+    location: "",
+    category: "",
+    priority: "normal",
+    reminderMinutesBefore: "",
+    recurrence: "none",
+    recurrenceDays: [],
+    recurrenceEndDate: "",
+    subject: "",
+    estimatedHours: "",
+  };
+}
+
+export default function EventModal({
+  event,
+  createDefaults,
+  categories,
+  existingEvents,
+  prefill,
+  offline = false,
+  onClose,
+  onSave,
+  onDelete,
+  onDuplicate,
+  onToggleComplete,
+  onAddCategory,
+}: {
+  event: CalendarEvent | null;
+  createDefaults: { date: string; startTime?: string } | null;
+  categories: CategoryDef[];
+  // Everything currently loaded, for conflict checking (independent of
+  // category filters, which shouldn't hide a real scheduling clash).
+  existingEvents: CalendarEvent[];
+  prefill?: Partial<EventDraft>;
+  offline?: boolean;
+  onClose: () => void;
+  onSave: (id: string | null, draft: EventDraft) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onDuplicate: (id: string) => Promise<void>;
+  onToggleComplete: (event: CalendarEvent) => Promise<void>;
+  onAddCategory: (name: string, colorHex: string) => Promise<void>;
+}) {
+  const isExisting = Boolean(event);
+  const [editing, setEditing] = useState(!isExisting);
+  const [draft, setDraft] = useState<EventDraft>(() =>
+    event
+      ? draftFromEvent(event)
+      : { ...draftFromDefaults(createDefaults || { date: "" }), ...prefill }
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
+
+  useEffect(() => {
+    setDraft(
+      event
+        ? draftFromEvent(event)
+        : { ...draftFromDefaults(createDefaults || { date: "" }), ...prefill }
+    );
+    setEditing(!event);
+    setError("");
+    setConflicts(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event, createDefaults]);
+
+  function set<K extends keyof EventDraft>(key: K, value: EventDraft[K]) {
+    setDraft((d) => ({ ...d, [key]: value }));
+  }
+
+  function toggleRecurrenceDay(day: number) {
+    setDraft((d) => ({
+      ...d,
+      recurrenceDays: d.recurrenceDays.includes(day)
+        ? d.recurrenceDays.filter((x) => x !== day)
+        : [...d.recurrenceDays, day].sort(),
+    }));
+  }
+
+  const detectedConflicts = useMemo(() => {
+    return findConflicts(
+      { id: event?.id, date: draft.date, endDate: draft.endDate, startTime: draft.startTime, endTime: draft.endTime, allDay: draft.allDay },
+      existingEvents
+    );
+  }, [draft.date, draft.endDate, draft.startTime, draft.endTime, draft.allDay, event?.id, existingEvents]);
+
+  async function doSave() {
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(event?.id ?? null, draft);
+    } catch {
+      setError("Couldn't save this event. Try again.");
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (draft.endDate < draft.date) {
+      setError("End date can't be before start date");
+      return;
+    }
+    if (detectedConflicts.length > 0) {
+      setConflicts(detectedConflicts);
+      return;
+    }
+    await doSave();
+  }
+
+  async function handleDelete() {
+    if (!event) return;
+    setSaving(true);
+    try {
+      await onDelete(event.id);
+    } catch {
+      setError("Couldn't delete this event. Try again.");
+      setSaving(false);
+    }
+  }
+
+  async function handleDuplicate() {
+    if (!event) return;
+    setSaving(true);
+    try {
+      await onDuplicate(event.id);
+    } catch {
+      setError("Couldn't duplicate this event. Try again.");
+    }
+    setSaving(false);
+  }
+
+  async function submitNewCategory() {
+    if (!newCategoryName.trim()) return;
+    await onAddCategory(newCategoryName.trim(), newCategoryColor);
+    set("category", newCategoryName.trim());
+    setAddingCategory(false);
+    setNewCategoryName("");
+  }
+
+  const showStudyFields = isDeadlineCategory(draft.category);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {conflicts ? (
+          <ConflictPanel
+            conflicts={conflicts}
+            onCancel={() => setConflicts(null)}
+            onChangeTime={() => setConflicts(null)}
+            onSaveAnyway={async () => {
+              setConflicts(null);
+              await doSave();
+            }}
+            saving={saving}
+          />
+        ) : !editing && event ? (
+          <EventDetails
+            event={event}
+            categories={categories}
+            onClose={onClose}
+            onEdit={() => setEditing(true)}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onToggleComplete={() => onToggleComplete(event)}
+            saving={saving}
+            offline={offline}
+            error={error}
+          />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                {isExisting ? "Edit event" : "New event"}
+              </h2>
+              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+                ✕
+              </button>
+            </div>
+
+            {isExisting && event?.isRecurringInstance && (
+              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                This is a recurring event — changes apply to the whole series.
+              </p>
+            )}
+
+            <input
+              autoFocus
+              value={draft.title}
+              onChange={(e) => set("title", e.target.value)}
+              placeholder="Event title"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            />
+
+            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={draft.allDay}
+                onChange={(e) => set("allDay", e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              All-day
+            </label>
+
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs text-zinc-500">
+                Start date
+                <input
+                  type="date"
+                  value={draft.date}
+                  onChange={(e) => set("date", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                />
+              </label>
+              {!draft.allDay && (
+                <label className="flex-1 text-xs text-zinc-500">
+                  Start time
+                  <input
+                    type="time"
+                    value={draft.startTime}
+                    onChange={(e) => set("startTime", e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs text-zinc-500">
+                End date
+                <input
+                  type="date"
+                  value={draft.endDate}
+                  onChange={(e) => set("endDate", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                />
+              </label>
+              {!draft.allDay && (
+                <label className="flex-1 text-xs text-zinc-500">
+                  End time
+                  <input
+                    type="time"
+                    value={draft.endTime}
+                    onChange={(e) => set("endTime", e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  />
+                </label>
+              )}
+            </div>
+
+            <input
+              value={draft.location}
+              onChange={(e) => set("location", e.target.value)}
+              placeholder="Location (optional)"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            />
+
+            <textarea
+              value={draft.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Description / notes (optional)"
+              rows={3}
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            />
+
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs text-zinc-500">
+                Category
+                {addingCategory ? (
+                  <div className="mt-1 flex gap-1.5">
+                    <input
+                      autoFocus
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Name"
+                      className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    />
+                    <input
+                      type="color"
+                      value={newCategoryColor}
+                      onChange={(e) => setNewCategoryColor(e.target.value)}
+                      className="h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={submitNewCategory}
+                      className="shrink-0 rounded-xl bg-zinc-900 px-2 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={draft.category}
+                    onChange={(e) => {
+                      if (e.target.value === "__add__") setAddingCategory(true);
+                      else set("category", e.target.value);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  >
+                    <option value="">None</option>
+                    {categories.map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                    <option value="__add__">+ Add custom…</option>
+                  </select>
+                )}
+              </label>
+              <label className="flex-1 text-xs text-zinc-500">
+                Priority
+                <select
+                  value={draft.priority}
+                  onChange={(e) => set("priority", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                >
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <option key={p} value={p}>
+                      {priorityMeta(p).label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {showStudyFields && (
+              <div className="flex gap-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60">
+                <label className="flex-1 text-xs text-zinc-500">
+                  Subject / module
+                  <input
+                    value={draft.subject}
+                    onChange={(e) => set("subject", e.target.value)}
+                    placeholder="e.g. PROG7311"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </label>
+                <label className="w-28 text-xs text-zinc-500">
+                  Est. hours
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={draft.estimatedHours}
+                    onChange={(e) => set("estimatedHours", e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </label>
+              </div>
+            )}
+
+            <label className="block text-xs text-zinc-500">
+              Reminder
+              <select
+                value={draft.reminderMinutesBefore}
+                onChange={(e) => set("reminderMinutesBefore", e.target.value)}
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              >
+                {REMINDER_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-xs text-zinc-500">
+              Repeats
+              <select
+                value={draft.recurrence}
+                onChange={(e) => set("recurrence", e.target.value)}
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              >
+                {RECURRENCE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {draft.recurrence === "custom" && (
+              <div>
+                <p className="mb-1 text-xs text-zinc-500">On these days</p>
+                <div className="flex gap-1.5">
+                  {WEEKDAY_LABELS.map((label, day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleRecurrenceDay(day)}
+                      className={`h-8 w-8 rounded-full text-xs font-medium ${
+                        draft.recurrenceDays.includes(day)
+                          ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {draft.recurrence !== "none" && (
+              <label className="block text-xs text-zinc-500">
+                Ends on (optional)
+                <input
+                  type="date"
+                  value={draft.recurrenceEndDate}
+                  onChange={(e) => set("recurrenceEndDate", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                />
+              </label>
+            )}
+
+            {offline && (
+              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                You&apos;re offline — reconnect to {isExisting ? "save changes to" : "create"} this
+                event.
+              </p>
+            )}
+            {error && <p className="text-xs text-red-500">{error}</p>}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={saving || offline}
+                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+              >
+                {saving ? "Saving…" : isExisting ? "Save changes" : "Create event"}
+              </button>
+              <button
+                type="button"
+                onClick={() => (isExisting ? setEditing(false) : onClose())}
+                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ConflictPanel({
+  conflicts,
+  onCancel,
+  onChangeTime,
+  onSaveAnyway,
+  saving,
+}: {
+  conflicts: CalendarEvent[];
+  onCancel: () => void;
+  onChangeTime: () => void;
+  onSaveAnyway: () => void;
+  saving: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Schedule conflict</h2>
+      <div className="space-y-2">
+        {conflicts.map((c) => (
+          <p key={c.occurrenceId} className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+            <span className="font-medium">{c.title}</span> overlaps this event from{" "}
+            {c.allDay ? "all day" : `${formatTime12h(c.startTime)} – ${formatTime12h(c.endTime)}`}.
+          </p>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button
+          onClick={onSaveAnyway}
+          disabled={saving}
+          className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+        >
+          {saving ? "Saving…" : "Save anyway"}
+        </button>
+        <button
+          onClick={onChangeTime}
+          className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+        >
+          Change time
+        </button>
+        <button onClick={onCancel} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-500 dark:border-zinc-700">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EventDetails({
+  event,
+  categories,
+  onClose,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleComplete,
+  saving,
+  offline,
+  error,
+}: {
+  event: CalendarEvent;
+  categories: CategoryDef[];
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
+  onToggleComplete: () => void;
+  saving: boolean;
+  offline: boolean;
+  error: string;
+}) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const multiDay = event.endDate && event.endDate !== event.date;
+  const pMeta = priorityMeta(event.priority);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {event.category && (
+            <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={categoryChipStyle(event.category, categories)}>
+              {event.category}
+            </span>
+          )}
+          {event.priority !== "normal" && (
+            <span className={`flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium dark:bg-zinc-800 ${pMeta.text}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${pMeta.dot}`} />
+              {pMeta.label}
+            </span>
+          )}
+          {event.recurrence !== "none" && (
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">🔁 Recurring</span>
+          )}
+        </div>
+        <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+          ✕
+        </button>
+      </div>
+
+      <h2 className={`text-lg font-semibold ${event.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
+        {event.title}
+      </h2>
+
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        {event.allDay
+          ? multiDay
+            ? `${event.date} – ${event.endDate}`
+            : `${event.date} · All day`
+          : multiDay
+            ? `${event.date} ${formatTime12h(event.startTime)} – ${event.endDate} ${formatTime12h(event.endTime)}`
+            : `${event.date} · ${formatTime12h(event.startTime)} – ${formatTime12h(event.endTime)}`}
+      </p>
+
+      {event.location && <p className="text-sm text-zinc-600 dark:text-zinc-300">📍 {event.location}</p>}
+
+      {event.subject && (
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {event.subject}
+          {event.estimatedHours != null && ` · ~${event.estimatedHours}h estimated`}
+        </p>
+      )}
+
+      {event.notes && (
+        <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">{event.notes}</p>
+      )}
+
+      {event.reminderMinutesBefore != null && (
+        <p className="text-xs text-zinc-400">
+          Reminder: {event.reminderMinutesBefore === 0 ? "at time of event" : `${event.reminderMinutesBefore} min before`}
+        </p>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button
+          onClick={onToggleComplete}
+          disabled={offline}
+          className={`rounded-xl px-3 py-2 text-sm font-medium disabled:opacity-40 ${
+            event.completed
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+              : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+          }`}
+        >
+          {event.completed ? "✓ Completed" : "Mark complete"}
+        </button>
+        <button
+          onClick={onEdit}
+          className="flex-1 rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+        >
+          Edit
+        </button>
+        <button
+          onClick={onDuplicate}
+          disabled={offline || saving}
+          className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300"
+        >
+          Duplicate
+        </button>
+        {confirmingDelete ? (
+          <button
+            onClick={onDelete}
+            disabled={saving || offline}
+            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "…" : "Confirm delete"}
+          </button>
+        ) : (
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            disabled={offline}
+            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-red-500 disabled:opacity-40 dark:border-zinc-700"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+      {offline && <p className="text-xs text-zinc-400">You&apos;re offline — reconnect to make changes.</p>}
+    </div>
+  );
+}
