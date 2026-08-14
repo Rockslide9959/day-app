@@ -17,8 +17,6 @@ import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { CalendarEvent } from "@/components/calendar/types";
-import { Timer } from "@/components/timers/types";
-import TimerCard from "@/components/timers/TimerCard";
 import { NotebookEntryFull } from "@/components/notebook/types";
 import { buildContentPreview } from "@/lib/notebookFormat";
 
@@ -42,7 +40,6 @@ export default function TodayPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineDone, setRoutineDone] = useState<Record<string, number>>({});
-  const [timers, setTimers] = useState<Timer[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [journalEntry, setJournalEntry] = useState<NotebookEntryFull | null | undefined>(undefined);
@@ -55,7 +52,7 @@ export default function TodayPage() {
 
   const load = useCallback(async () => {
     try {
-      const [remindersRes, eventsRes, todosRes, routinesRes, timersRes] = await Promise.all([
+      const [remindersRes, eventsRes, todosRes, routinesRes] = await Promise.all([
         fetch("/api/reminders").then((r) => r.json()),
         // Looks back OVERDUE_LOOKBACK_DAYS so incomplete overdue tasks from
         // before today still surface here, not just today-forward.
@@ -64,13 +61,11 @@ export default function TodayPage() {
         ).then((r) => r.json()),
         fetch(`/api/todos?date=${today}`).then((r) => r.json()),
         fetch("/api/routines").then((r) => r.json()),
-        fetch("/api/timers").then((r) => r.json()),
       ]);
       setReminders(remindersRes);
       setEvents(eventsRes);
       setTodos(todosRes);
       setRoutines(routinesRes);
-      setTimers(timersRes);
 
       const doneEntries = await Promise.all(
         routinesRes.map(async (r: Routine) => {
@@ -140,24 +135,12 @@ export default function TodayPage() {
     await load();
   }
 
-  function upsertTimer(timer: Timer) {
-    setTimers((prev) => {
-      const exists = prev.some((t) => t.id === timer.id);
-      return exists ? prev.map((t) => (t.id === timer.id ? timer : t)) : [timer, ...prev];
-    });
-  }
-
-  function removeTimer(id: string) {
-    setTimers((prev) => prev.filter((t) => t.id !== id));
-  }
-
   async function quickStartTodoTimer(todo: Todo) {
-    const res = await fetch("/api/timers", {
+    await fetch("/api/timers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ label: todo.title, mode: "stopwatch", linkedType: "todo", linkedId: todo.id }),
     });
-    if (res.ok) upsertTimer(await res.json());
   }
 
   async function writeAboutToday() {
@@ -208,7 +191,6 @@ export default function TodayPage() {
   const dayStats = busyDayStats(todayEvents);
   const summary = dailySummary(todayEvents);
   const upcoming = upcomingEvents(events, today, UPCOMING_WINDOW_DAYS);
-  const activeTimers = timers.filter((t) => t.status !== "completed");
 
   // Tasks due — kept separate from the events-only calcs above (tasks are
   // deadlines, never booked time) and from the lightweight Todo section.
@@ -478,20 +460,6 @@ export default function TodayPage() {
                     {routineDone[r.id] || 0}/{r.steps.length}
                   </span>
                 </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      <Section title="Timers" href="/timers">
-        {activeTimers.length === 0 ? (
-          <EmptyRow text="No timers running" />
-        ) : (
-          <ul className="space-y-2">
-            {activeTimers.slice(0, 3).map((t) => (
-              <li key={t.id}>
-                <TimerCard timer={t} onUpdated={upsertTimer} onDeleted={removeTimer} />
               </li>
             ))}
           </ul>

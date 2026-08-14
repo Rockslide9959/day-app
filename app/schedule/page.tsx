@@ -54,6 +54,7 @@ export default function SchedulePage() {
   const visibleItems = useMemo(() => {
     return items
       .filter((i) => isScheduleItemVisible(i))
+      .filter((i) => !(i.itemType === "task" && i.completed))
       .filter((i) => (filter === "all" ? true : filter === "events" ? i.itemType !== "task" : i.itemType === "task"))
       .sort((a, b) => {
         const aAllDay = a.allDay;
@@ -61,6 +62,16 @@ export default function SchedulePage() {
         if (aAllDay !== bAllDay) return aAllDay ? -1 : 1;
         return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
       });
+  }, [items, filter]);
+
+  // Completed tasks live in their own section instead of visibleItems —
+  // isScheduleItemVisible hides them once their due moment passes, which
+  // otherwise makes a finished task vanish with no way to see it was done.
+  const completedTasks = useMemo(() => {
+    if (filter === "events") return [];
+    return items
+      .filter((i) => i.itemType === "task" && i.completed)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
   }, [items, filter]);
 
   async function handleSave(id: string | null, draft: EventDraft) {
@@ -228,6 +239,40 @@ export default function SchedulePage() {
       >
         + New
       </button>
+
+      {completedTasks.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            Completed
+          </h2>
+          <ul className="space-y-2">
+            {completedTasks.map((item) => (
+              <li
+                key={item.occurrenceId}
+                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 opacity-70 shadow-sm dark:bg-zinc-900"
+              >
+                <input
+                  type="checkbox"
+                  checked
+                  onChange={() => handleToggleComplete(item)}
+                  aria-label={`Reopen task: ${item.title}`}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300"
+                />
+                <button
+                  onClick={() => setModalState({ mode: "view", event: item })}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <p className="text-sm text-zinc-400 line-through">{item.title}</p>
+                  <p className="text-xs text-zinc-500">
+                    {item.allDay ? "Due today" : `Due ${formatTime12h(item.startTime)}`}
+                    {item.category ? ` · ${item.category}` : ""}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {modalState && (
         <EventModal

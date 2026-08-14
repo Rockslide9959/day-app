@@ -7,12 +7,13 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "Today", icon: "🏠" },
   { href: "/calendar", label: "Calendar", icon: "📅" },
-  { href: "/notebook", label: "Notebook", icon: "📓" },
   { href: "/schedule", label: "Schedule", icon: "🗓️" },
   { href: "/todos", label: "To-Do", icon: "✅" },
-  { href: "/timers", label: "Timers", icon: "⏱️" },
+  { href: "/notebook", label: "Notebook", icon: "📓" },
   { href: "/reminders", label: "Reminders", icon: "🔔" },
+  { href: "/timers", label: "Timers", icon: "⏱️" },
   { href: "/routines", label: "Routines", icon: "🔁" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
 // Own scroll container per tab. 8 tabs at a comfortable tap width don't
