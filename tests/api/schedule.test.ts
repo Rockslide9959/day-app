@@ -356,17 +356,70 @@ describe("PATCH /api/schedule/[id] (edit)", () => {
     });
   });
 
-  it("never lets itemType be changed via PATCH, even if sent", async () => {
+  it("converts an event to a task, collapsing to a single-day due instant and clearing location", async () => {
     prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
-    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "task-1", itemType: "task" });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "evt-1", itemType: "task" });
 
     await PATCH(
-      jsonRequest("http://localhost/api/schedule/task-1", "PATCH", { itemType: "event", title: "x" }),
+      jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", {
+        itemType: "task",
+        date: "2026-08-20",
+        startTime: "17:00",
+        endTime: "18:00",
+        endDate: "2026-08-22",
+        allDay: false,
+        location: "Room 4",
+      }),
+      { params: Promise.resolve({ id: "evt-1" }) }
+    );
+
+    const data = prismaMock.scheduleItem.updateMany.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      itemType: "task",
+      date: "2026-08-20",
+      endDate: "2026-08-20",
+      startTime: "17:00",
+      endTime: "17:00",
+      location: null,
+    });
+  });
+
+  it("converts a task to an event, leaving whatever start/end range the client sends", async () => {
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "task-1", itemType: "event" });
+
+    await PATCH(
+      jsonRequest("http://localhost/api/schedule/task-1", "PATCH", {
+        itemType: "event",
+        date: "2026-08-20",
+        startTime: "17:00",
+        endTime: "18:00",
+        endDate: "2026-08-20",
+        allDay: false,
+      }),
       { params: Promise.resolve({ id: "task-1" }) }
     );
 
     const data = prismaMock.scheduleItem.updateMany.mock.calls[0][0].data;
-    expect(data).not.toHaveProperty("itemType");
+    expect(data).toMatchObject({ itemType: "event", startTime: "17:00", endTime: "18:00" });
+  });
+
+  it("rejects converting to a task without a due date, without touching the database", async () => {
+    const res = await PATCH(
+      jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { itemType: "task" }),
+      { params: Promise.resolve({ id: "evt-1" }) }
+    );
+    expect(res.status).toBe(400);
+    expect(prismaMock.scheduleItem.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid itemType on update, without touching the database", async () => {
+    const res = await PATCH(
+      jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { itemType: "reminder" }),
+      { params: Promise.resolve({ id: "evt-1" }) }
+    );
+    expect(res.status).toBe(400);
+    expect(prismaMock.scheduleItem.updateMany).not.toHaveBeenCalled();
   });
 
   it("sets completedAt when a non-recurring task is completed, and clears it on reopen", async () => {

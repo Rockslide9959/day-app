@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { validateItemType } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,25 @@ export async function PATCH(
     return NextResponse.json(item);
   }
 
+  // Converting between event and task: re-derive the fields the new type
+  // needs rather than trusting the client's raw endDate/location, so a
+  // malformed or manually-crafted request can't leave a task with a
+  // multi-day range or an event stuck at a single due instant. Completion
+  // state and recurrence are shared, compatible fields and carry over
+  // untouched.
+  if (typeof body.itemType === "string") {
+    const itemTypeError = validateItemType(body.itemType);
+    if (itemTypeError) return NextResponse.json({ error: itemTypeError }, { status: 400 });
+    if (body.itemType === "task" && typeof body.date !== "string") {
+      return NextResponse.json(
+        { error: "date (due date) is required when converting to a task" },
+        { status: 400 }
+      );
+    }
+  }
+
   const data: Record<string, unknown> = {};
+  if (typeof body.itemType === "string") data.itemType = body.itemType;
   if (typeof body.title === "string") data.title = body.title;
   if (typeof body.notes === "string" || body.notes === null) data.notes = body.notes;
   if (typeof body.date === "string") data.date = body.date;
@@ -60,6 +79,17 @@ export async function PATCH(
   if (typeof body.subject === "string" || body.subject === null) data.subject = body.subject;
   if (typeof body.estimatedHours === "number" || body.estimatedHours === null) {
     data.estimatedHours = body.estimatedHours;
+  }
+
+  if (data.itemType === "task") {
+    // date is guaranteed present here (checked above) — collapse to a
+    // single-day due instant regardless of what endDate/location the
+    // request included.
+    data.endDate = data.date;
+    data.location = null;
+    if (typeof data.startTime === "string" && data.allDay !== true) {
+      data.endTime = data.startTime;
+    }
   }
 
   const result = await prisma.scheduleItem.updateMany({ where: { id, userId }, data });

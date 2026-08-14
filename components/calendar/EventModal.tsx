@@ -85,11 +85,18 @@ function draftFromEvent(event: CalendarEvent): EventDraft {
   };
 }
 
+// Used both for the default new-event end time and when converting a task
+// (a single instant) into an event (a range) — picks a plausible 1-hour
+// block starting at the given time rather than leaving start === end.
+function addOneHour(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const endHour = (h + 1) % 24;
+  return `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function draftFromDefaults(defaults: { date: string; startTime?: string }): EventDraft {
   const startTime = defaults.startTime || "09:00";
-  const [h, m] = startTime.split(":").map(Number);
-  const endHour = (h + 1) % 24;
-  const endTime = `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const endTime = addOneHour(startTime);
   return {
     itemType: "event",
     title: "",
@@ -181,6 +188,31 @@ export default function EventModal({
   }
 
   const isTask = draft.itemType === "task";
+  // A task is always single-day — converting a multi-day event would
+  // silently drop its date range, so that conversion is blocked rather
+  // than done lossily.
+  const isMultiDayEvent = draft.itemType === "event" && draft.endDate !== draft.date;
+
+  // Switching type re-derives the fields the other type needs rather than
+  // leaving stale values: an event's start date/time become the task's due
+  // date/time (and vice versa, defaulting a plausible 1-hour block).
+  // Completion state and recurrence are shared fields already compatible
+  // with both types, so they carry over untouched.
+  function selectItemType(next: ItemType) {
+    if (next === draft.itemType) return;
+    setDraft((d) => {
+      if (next === "task") {
+        return { ...d, itemType: "task", hasDueTime: !d.allDay };
+      }
+      return {
+        ...d,
+        itemType: "event",
+        allDay: !d.hasDueTime,
+        endDate: d.date,
+        endTime: d.hasDueTime ? addOneHour(d.startTime) : d.endTime,
+      };
+    });
+  }
 
   // A task's due date/time is a deadline, not a reservation — findConflicts
   // already returns [] whenever the candidate (or a compared event) is a
@@ -308,25 +340,28 @@ export default function EventModal({
 
             <div>
               <div className="flex w-full rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
-                {ITEM_TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    disabled={isExisting}
-                    onClick={() => set("itemType", t)}
-                    className={`flex-1 rounded-md py-1.5 font-medium capitalize disabled:cursor-not-allowed disabled:opacity-60 ${
-                      draft.itemType === t
-                        ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                        : "text-zinc-500"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+                {ITEM_TYPES.map((t) => {
+                  const blocked = t === "task" && isMultiDayEvent;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={blocked}
+                      onClick={() => selectItemType(t)}
+                      className={`flex-1 rounded-md py-1.5 font-medium capitalize disabled:cursor-not-allowed disabled:opacity-60 ${
+                        draft.itemType === t
+                          ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+                          : "text-zinc-500"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
               </div>
-              {isExisting && (
+              {isMultiDayEvent && (
                 <p className="mt-1 text-[11px] text-zinc-400">
-                  Type can&apos;t be changed after creation.
+                  Shorten this to a single day (matching start/end date) to convert it to a task.
                 </p>
               )}
             </div>
