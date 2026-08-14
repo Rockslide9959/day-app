@@ -175,6 +175,13 @@ export default function NewTimerForm({
         </div>
       )}
 
+      {mode === "pomodoro" && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          💡 We recommend running Pomodoro timers on a mobile device — work/break
+          notifications are more reliable there than on desktop.
+        </p>
+      )}
+
       {error && <p className="text-xs text-red-500">{error}</p>}
 
       <div className="flex gap-2 pt-1">
