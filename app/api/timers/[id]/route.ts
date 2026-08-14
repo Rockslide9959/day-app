@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { autoTransitionData } from "@/lib/timers";
 
 export const dynamic = "force-dynamic";
 
-const ACTIONS = ["start", "pause", "reset", "complete", "advance-phase"] as const;
+// "complete" and "auto-advance-phase" are only ever sent automatically
+// (a client tab noticing its countdown/pomodoro segment ran out) — both
+// are guarded by autoTransitionData so they're a no-op if the cron sweep
+// already closed out that same segment first. "advance-phase" is the
+// manual Skip button and stays unconditional.
+const ACTIONS = ["start", "pause", "reset", "complete", "advance-phase", "auto-advance-phase"] as const;
 type Action = (typeof ACTIONS)[number];
 
 export async function PATCH(
@@ -55,16 +61,12 @@ export async function PATCH(
           ...(current.mode === "pomodoro" ? { phase: "work", cyclesCompleted: 0 } : {}),
         };
         break;
-      case "complete":
-        data = {
-          status: "completed",
-          startedAt: null,
-          accumulatedSeconds:
-            current.mode === "countdown" && current.durationSeconds != null
-              ? current.durationSeconds
-              : current.accumulatedSeconds,
-        };
+      case "complete": {
+        const transition = autoTransitionData(current, now);
+        if (!transition) return NextResponse.json(current);
+        data = transition;
         break;
+      }
       case "advance-phase": {
         if (current.mode !== "pomodoro") {
           return NextResponse.json({ error: "Only pomodoro timers have phases" }, { status: 400 });
@@ -77,6 +79,15 @@ export async function PATCH(
           startedAt: now,
           status: "running",
         };
+        break;
+      }
+      case "auto-advance-phase": {
+        if (current.mode !== "pomodoro") {
+          return NextResponse.json({ error: "Only pomodoro timers have phases" }, { status: 400 });
+        }
+        const transition = autoTransitionData(current, now);
+        if (!transition) return NextResponse.json(current);
+        data = transition;
         break;
       }
     }

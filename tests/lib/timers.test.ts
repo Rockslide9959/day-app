@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  autoTransitionData,
   elapsedSeconds,
   formatClock,
   isPhaseComplete,
@@ -123,6 +124,101 @@ describe("isPhaseComplete", () => {
   it("is false for a stopwatch regardless of elapsed time", () => {
     const t = timer({ mode: "stopwatch", accumulatedSeconds: 99999 });
     expect(isPhaseComplete(t, BASE + 90_000)).toBe(false);
+  });
+});
+
+describe("autoTransitionData", () => {
+  function timerWithCycles(overrides: Partial<TimerState> & { cyclesCompleted?: number }) {
+    return { ...timer(overrides), cyclesCompleted: overrides.cyclesCompleted ?? 0 };
+  }
+
+  it("is null before a running countdown expires", () => {
+    const t = timerWithCycles({ mode: "countdown", durationSeconds: 60 });
+    expect(autoTransitionData(t, new Date(BASE + 30_000))).toBeNull();
+  });
+
+  it("marks a countdown completed once it expires, banking the full duration", () => {
+    const t = timerWithCycles({ mode: "countdown", durationSeconds: 60 });
+    expect(autoTransitionData(t, new Date(BASE + 60_000))).toEqual({
+      status: "completed",
+      startedAt: null,
+      accumulatedSeconds: 60,
+    });
+  });
+
+  it("is null for an already-completed countdown — no repeat transition/notification", () => {
+    const t = timerWithCycles({
+      mode: "countdown",
+      durationSeconds: 60,
+      status: "completed",
+      startedAt: null,
+      accumulatedSeconds: 60,
+    });
+    expect(autoTransitionData(t, new Date(BASE + 120_000))).toBeNull();
+  });
+
+  it("flips a finished pomodoro work phase to break and bumps the round count", () => {
+    const t = timerWithCycles({
+      mode: "pomodoro",
+      phase: "work",
+      workSeconds: 1500,
+      breakSeconds: 300,
+      cyclesCompleted: 2,
+    });
+    const now = new Date(BASE + 1500_000);
+    expect(autoTransitionData(t, now)).toEqual({
+      phase: "break",
+      cyclesCompleted: 3,
+      accumulatedSeconds: 0,
+      startedAt: now,
+      status: "running",
+    });
+  });
+
+  it("flips a finished pomodoro break phase back to work without bumping the round count", () => {
+    const t = timerWithCycles({
+      mode: "pomodoro",
+      phase: "break",
+      workSeconds: 1500,
+      breakSeconds: 300,
+      cyclesCompleted: 3,
+    });
+    const now = new Date(BASE + 300_000);
+    expect(autoTransitionData(t, now)).toEqual({
+      phase: "work",
+      cyclesCompleted: 3,
+      accumulatedSeconds: 0,
+      startedAt: now,
+      status: "running",
+    });
+  });
+
+  it("is null once a client or the cron sweep has already applied the transition (idempotent)", () => {
+    // Simulates the race this exists to prevent: two callers read the same
+    // "just expired" row, the first one's transition is applied, and the
+    // second must see it's no longer complete and do nothing.
+    const t = timerWithCycles({ mode: "pomodoro", phase: "work", workSeconds: 1500, breakSeconds: 300 });
+    const now = new Date(BASE + 1500_000);
+    const applied = autoTransitionData(t, now);
+    expect(applied).not.toBeNull();
+    const afterTransition = { ...t, ...applied };
+    expect(autoTransitionData(afterTransition, now)).toBeNull();
+  });
+
+  it("is null for a stopwatch regardless of elapsed time", () => {
+    const t = timerWithCycles({ mode: "stopwatch", accumulatedSeconds: 99999 });
+    expect(autoTransitionData(t, new Date(BASE + 999_000))).toBeNull();
+  });
+
+  it("is null for a paused timer even past its duration", () => {
+    const t = timerWithCycles({
+      mode: "countdown",
+      durationSeconds: 60,
+      status: "paused",
+      accumulatedSeconds: 90,
+      startedAt: null,
+    });
+    expect(autoTransitionData(t, new Date(BASE))).toBeNull();
   });
 });
 

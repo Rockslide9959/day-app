@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPush, isPushConfigured } from "@/lib/webpush";
 import { nextOccurrence } from "@/lib/recurrence";
+import { autoTransitionData } from "@/lib/timers";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,28 @@ export async function GET(req: NextRequest) {
 }
 export async function POST(req: NextRequest) {
   return handleTick(req);
+}
+
+// Pushes to every device a given user has subscribed on — each caller
+// (reminders, timers) only ever notifies its own owner's devices, since
+// this serves multiple accounts and there's no single global subscription
+// list. Prunes subscriptions the push service reports as gone.
+async function pushToUser(userId: string, payload: { title: string; body?: string; url?: string }) {
+  if (!isPushConfigured()) return 0;
+  const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
+  let sent = 0;
+  for (const sub of subscriptions) {
+    try {
+      await sendPush({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
+      sent++;
+    } catch (err: unknown) {
+      const statusCode = (err as { statusCode?: number })?.statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+      }
+    }
+  }
+  return sent;
 }
 
 async function handleTick(req: NextRequest) {
@@ -24,32 +47,13 @@ async function handleTick(req: NextRequest) {
     where: { notified: false, completed: false, dueAt: { lte: now } },
   });
 
-  if (due.length === 0) {
-    return NextResponse.json({ sent: 0 });
-  }
-
   let sent = 0;
   for (const reminder of due) {
-    // Each reminder only ever pushes to its own owner's devices — this
-    // now serves multiple accounts, so there's no single global
-    // subscription list anymore.
-    const subscriptions = isPushConfigured()
-      ? await prisma.pushSubscription.findMany({ where: { userId: reminder.userId } })
-      : [];
-    for (const sub of subscriptions) {
-      try {
-        await sendPush(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          { title: reminder.title, body: reminder.notes || "Reminder", url: "/reminders" }
-        );
-        sent++;
-      } catch (err: unknown) {
-        const statusCode = (err as { statusCode?: number })?.statusCode;
-        if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
-        }
-      }
-    }
+    sent += await pushToUser(reminder.userId, {
+      title: reminder.title,
+      body: reminder.notes || "Reminder",
+      url: "/reminders",
+    });
 
     const next = nextOccurrence(reminder.dueAt, reminder.recurrence);
     if (next) {
@@ -65,5 +69,31 @@ async function handleTick(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sent, reminders: due.length });
+  // Timers: a stopwatch never has a phaseDuration so autoTransitionData
+  // always no-ops for it — only countdown/pomodoro rows still "running"
+  // are worth reading here.
+  const runningTimers = await prisma.timer.findMany({
+    where: { status: "running", mode: { in: ["countdown", "pomodoro"] } },
+  });
+
+  let timersSent = 0;
+  let timersTransitioned = 0;
+  for (const timer of runningTimers) {
+    const transition = autoTransitionData(timer, now);
+    if (!transition) continue;
+    timersTransitioned++;
+
+    const finishedWork = timer.mode === "pomodoro" && timer.phase !== "break";
+    const payload =
+      timer.mode === "countdown"
+        ? { title: "Timer finished", body: timer.label, url: "/timers" }
+        : finishedWork
+          ? { title: "Work session done", body: `Take a break — ${timer.label}`, url: "/timers" }
+          : { title: "Break's over", body: `Back to work — ${timer.label}`, url: "/timers" };
+
+    timersSent += await pushToUser(timer.userId, payload);
+    await prisma.timer.update({ where: { id: timer.id }, data: transition });
+  }
+
+  return NextResponse.json({ sent, reminders: due.length, timersSent, timersTransitioned });
 }

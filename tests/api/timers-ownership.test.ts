@@ -162,4 +162,82 @@ describe("timer ownership enforcement", () => {
     expect(res.status).toBe(400);
     expect(prismaMock.timer.update).not.toHaveBeenCalled();
   });
+
+  it("auto-advance-phase applies the transition once the phase has actually run out", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-A");
+    prismaMock.timer.findFirst.mockResolvedValue({
+      id: "t-4",
+      userId: "user-A",
+      mode: "pomodoro",
+      status: "running",
+      phase: "work",
+      cyclesCompleted: 0,
+      workSeconds: 1500,
+      breakSeconds: 300,
+      accumulatedSeconds: 1500,
+      startedAt: null,
+      durationSeconds: null,
+    });
+    prismaMock.timer.update.mockResolvedValue({ id: "t-4", phase: "break" });
+
+    const res = await patchTimer(
+      req("http://localhost/api/timers/t-4", "PATCH", { action: "auto-advance-phase" }),
+      { params: Promise.resolve({ id: "t-4" }) }
+    );
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.timer.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ phase: "break", status: "running" }) })
+    );
+  });
+
+  // Guards the race this action exists for: if the cron sweep (or another
+  // tab) already closed out this same segment, a client's stale "it just
+  // finished" trigger must not advance the phase a second time.
+  it("auto-advance-phase is a no-op when the phase isn't actually complete yet", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-A");
+    const current = {
+      id: "t-5",
+      userId: "user-A",
+      mode: "pomodoro",
+      status: "running",
+      phase: "work",
+      cyclesCompleted: 0,
+      workSeconds: 1500,
+      breakSeconds: 300,
+      accumulatedSeconds: 10,
+      startedAt: new Date(),
+      durationSeconds: null,
+    };
+    prismaMock.timer.findFirst.mockResolvedValue(current);
+
+    const res = await patchTimer(
+      req("http://localhost/api/timers/t-5", "PATCH", { action: "auto-advance-phase" }),
+      { params: Promise.resolve({ id: "t-5" }) }
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(expect.objectContaining({ id: "t-5", phase: "work" }));
+    expect(prismaMock.timer.update).not.toHaveBeenCalled();
+  });
+
+  it("complete is a no-op when the countdown hasn't actually expired yet", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-A");
+    prismaMock.timer.findFirst.mockResolvedValue({
+      id: "t-6",
+      userId: "user-A",
+      mode: "countdown",
+      status: "running",
+      durationSeconds: 60,
+      accumulatedSeconds: 5,
+      startedAt: new Date(),
+    });
+
+    const res = await patchTimer(req("http://localhost/api/timers/t-6", "PATCH", { action: "complete" }), {
+      params: Promise.resolve({ id: "t-6" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.timer.update).not.toHaveBeenCalled();
+  });
 });

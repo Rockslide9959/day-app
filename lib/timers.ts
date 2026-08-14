@@ -6,7 +6,7 @@ export type TimerState = {
   breakSeconds: number | null;
   phase: string | null; // "work" | "break" — pomodoro only
   accumulatedSeconds: number;
-  startedAt: string | null; // ISO timestamp
+  startedAt: string | Date | null; // ISO timestamp on the client, a Date on the server (Prisma)
 };
 
 // Total seconds this timer has run, including the current in-progress
@@ -42,6 +42,42 @@ export function isPhaseComplete(timer: TimerState, nowMs: number): boolean {
   const duration = phaseDurationSeconds(timer);
   if (duration == null) return false;
   return timer.status === "running" && remainingSeconds(timer, nowMs) <= 0;
+}
+
+// The row update to apply when a running countdown or pomodoro segment
+// has just run out — or null if it hasn't. Both a client tab (checking
+// every second while open) and the server cron sweep (checking every
+// account on a timer, whether or not anyone has the app open) call this
+// with the freshly-read row, so whichever gets there first flips the
+// state (resetting startedAt/accumulatedSeconds, or marking "completed"),
+// which makes isPhaseComplete false for the other — no separate
+// "already notified" flag needed, and no double-advance/double-push.
+export function autoTransitionData(
+  timer: TimerState & { cyclesCompleted: number },
+  now: Date
+): Record<string, unknown> | null {
+  if (!isPhaseComplete(timer, now.getTime())) return null;
+
+  if (timer.mode === "countdown") {
+    return {
+      status: "completed",
+      startedAt: null,
+      accumulatedSeconds: timer.durationSeconds ?? timer.accumulatedSeconds,
+    };
+  }
+
+  if (timer.mode === "pomodoro") {
+    const finishedWork = timer.phase !== "break";
+    return {
+      phase: finishedWork ? "break" : "work",
+      cyclesCompleted: finishedWork ? timer.cyclesCompleted + 1 : timer.cyclesCompleted,
+      accumulatedSeconds: 0,
+      startedAt: now,
+      status: "running",
+    };
+  }
+
+  return null;
 }
 
 // 65 -> "1:05", 3725 -> "1:02:05"

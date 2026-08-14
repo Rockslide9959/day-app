@@ -73,7 +73,7 @@ export default function TimerCard({
         goingToBreak ? `Take a break — ${timer.label}` : `Back to work — ${timer.label}`,
         timer.id
       );
-      patch("advance-phase");
+      patch("auto-advance-phase");
     } else {
       notify("Timer finished", timer.label, timer.id);
       patch("complete");
@@ -81,7 +81,7 @@ export default function TimerCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
-  async function patch(action: "start" | "pause" | "reset" | "complete" | "advance-phase") {
+  async function patch(action: "start" | "pause" | "reset" | "complete" | "advance-phase" | "auto-advance-phase") {
     setBusy(true);
     try {
       const res = await fetch(`/api/timers/${timer.id}`, {
