@@ -157,6 +157,13 @@ export default function TimerCard({
         </div>
       )}
 
+      {isPomodoro && (
+        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+          💡 We recommend running Pomodoro timers on a mobile device — work/break
+          notifications are more reliable there than on desktop.
+        </p>
+      )}
+
       <div className="mt-2 flex gap-2">
         {!isDone &&
           (timer.status === "running" ? (
