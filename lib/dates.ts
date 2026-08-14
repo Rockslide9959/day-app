@@ -54,10 +54,12 @@ export function addMonthsToDateStr(dateStr: string, months: number): string {
   return dateToDateStr(date);
 }
 
-// Sunday-start week containing dateStr.
+// Monday-start week containing dateStr.
 export function startOfWeek(dateStr: string): string {
   const date = dateStrToDate(dateStr);
-  date.setDate(date.getDate() - date.getDay());
+  const day = date.getDay(); // 0 (Sun) – 6 (Sat)
+  const daysSinceMonday = (day + 6) % 7;
+  date.setDate(date.getDate() - daysSinceMonday);
   return dateToDateStr(date);
 }
 
