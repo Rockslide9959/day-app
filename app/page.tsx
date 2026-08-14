@@ -213,12 +213,14 @@ export default function TodayPage() {
         <Section title="Due now">
           <ul className="space-y-2">
             {overdue.map((r) => (
-              <li
-                key={r.id}
-                className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200"
-              >
-                <span className="font-medium">{r.title}</span>
-                {r.notes && <p className="mt-0.5 text-red-700 dark:text-red-300">{r.notes}</p>}
+              <li key={r.id}>
+                <Link
+                  href="/reminders"
+                  className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200"
+                >
+                  <span className="font-medium">{r.title}</span>
+                  {r.notes && <p className="mt-0.5 text-red-700 dark:text-red-300">{r.notes}</p>}
+                </Link>
               </li>
             ))}
           </ul>
@@ -227,12 +229,15 @@ export default function TodayPage() {
 
       {next && (
         <Section title="Next">
-          <div className="rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+          <Link
+            href="/calendar"
+            className="block rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+          >
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{next.title}</p>
             <p className="text-xs text-zinc-500">
               {formatTime12h(next.startTime)} · Starts in {formatDurationMinutes(minutesUntilNext ?? 0)}
             </p>
-          </div>
+          </Link>
         </Section>
       )}
 
@@ -240,11 +245,16 @@ export default function TodayPage() {
         <Section title="Happening now">
           <ul className="space-y-2">
             {current.map((e) => (
-              <li key={e.occurrenceId} className="rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
-                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">{e.title}</p>
-                <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                  Until {formatTime12h(e.endTime)}
-                </p>
+              <li key={e.occurrenceId}>
+                <Link
+                  href="/calendar"
+                  className="block rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30"
+                >
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">{e.title}</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    Until {formatTime12h(e.endTime)}
+                  </p>
+                </Link>
               </li>
             ))}
           </ul>
@@ -282,19 +292,21 @@ export default function TodayPage() {
         ) : (
           <ul className="space-y-2">
             {todayEvents.map((s) => (
-              <li
-                key={s.occurrenceId}
-                className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
-              >
-                <span className="w-20 shrink-0 text-xs font-medium text-zinc-500">
-                  {s.allDay ? "All day" : `${formatTime12h(s.startTime)}`}
-                </span>
-                <span className={`text-sm ${s.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
-                  {s.title}
-                </span>
-                {(s.priority === "high" || s.priority === "urgent") && (
-                  <span className="ml-auto text-xs">{s.priority === "urgent" ? "🔴" : "🟠"}</span>
-                )}
+              <li key={s.occurrenceId}>
+                <Link
+                  href="/calendar"
+                  className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                >
+                  <span className="w-20 shrink-0 text-xs font-medium text-zinc-500">
+                    {s.allDay ? "All day" : `${formatTime12h(s.startTime)}`}
+                  </span>
+                  <span className={`text-sm ${s.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
+                    {s.title}
+                  </span>
+                  {(s.priority === "high" || s.priority === "urgent") && (
+                    <span className="ml-auto text-xs">{s.priority === "urgent" ? "🔴" : "🟠"}</span>
+                  )}
+                </Link>
               </li>
             ))}
           </ul>
@@ -319,27 +331,29 @@ export default function TodayPage() {
             {upcoming.map((e) => {
               const deadline = isDeadlineCategory(e.category) ? deadlineInfo(e.date, today) : null;
               return (
-                <li
-                  key={e.occurrenceId}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
-                >
-                  <div>
-                    <p className="text-sm text-zinc-900 dark:text-zinc-50">{e.title}</p>
-                    <p className="text-xs text-zinc-500">
-                      {e.date === today ? "Today" : e.date} {!e.allDay && `· ${formatTime12h(e.startTime)}`}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${
-                      deadline?.urgency === "overdue"
-                        ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
-                        : deadline?.urgency === "soon" || deadline?.urgency === "today"
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
-                    }`}
+                <li key={e.occurrenceId}>
+                  <Link
+                    href="/calendar"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
                   >
-                    {deadline ? deadline.label : countdownLabel(e.date, today)}
-                  </span>
+                    <div>
+                      <p className="text-sm text-zinc-900 dark:text-zinc-50">{e.title}</p>
+                      <p className="text-xs text-zinc-500">
+                        {e.date === today ? "Today" : e.date} {!e.allDay && `· ${formatTime12h(e.startTime)}`}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${
+                        deadline?.urgency === "overdue"
+                          ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                          : deadline?.urgency === "soon" || deadline?.urgency === "today"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                      }`}
+                    >
+                      {deadline ? deadline.label : countdownLabel(e.date, today)}
+                    </span>
+                  </Link>
                 </li>
               );
             })}
@@ -538,7 +552,7 @@ function TaskRow({
         aria-label={task.completed ? `Reopen task: ${task.title}` : `Mark task complete: ${task.title}`}
         className="h-4 w-4 shrink-0 rounded border-zinc-300"
       />
-      <span className="min-w-0 flex-1">
+      <Link href="/calendar" className="min-w-0 flex-1">
         <span
           className={`block truncate text-sm ${
             task.completed
@@ -554,7 +568,7 @@ function TaskRow({
           {overdue ? "Overdue · " : ""}
           {dueLabel}
         </span>
-      </span>
+      </Link>
     </li>
   );
 }
