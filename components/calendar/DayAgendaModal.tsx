@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { dayLabel, eventCoversDate, formatTime12h, timeToMinutes, todayStr } from "@/lib/dates";
 import { CalendarEvent } from "./types";
 import { categoryEventStyle } from "./categories";
 import { CategoryDef } from "@/lib/calendar/categories";
+import { NotebookEntryFull } from "@/components/notebook/types";
+import { buildContentPreview } from "@/lib/notebookFormat";
 
 export default function DayAgendaModal({
   date,
@@ -20,6 +24,48 @@ export default function DayAgendaModal({
   onSelectEvent: (event: CalendarEvent) => void;
   onAddEvent: (date: string) => void;
 }) {
+  const router = useRouter();
+  const [journalEntry, setJournalEntry] = useState<NotebookEntryFull | null | undefined>(undefined);
+  const [creatingJournal, setCreatingJournal] = useState(false);
+
+  // Independent of the events/tasks already passed in via props — a
+  // notebook fetch failure (or just slowness) never blocks the agenda
+  // list that's already available from `events`.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/notebook/daily?date=${date}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled) setJournalEntry(data);
+      })
+      .catch(() => {
+        // Leave as undefined — the Journal area just stays hidden.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
+
+  async function writeAboutThisDay() {
+    if (journalEntry) {
+      router.push(`/notebook/${journalEntry.id}`);
+      return;
+    }
+    setCreatingJournal(true);
+    try {
+      const res = await fetch("/api/notebook/daily", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const entry = await res.json();
+      router.push(`/notebook/${entry.id}`);
+    } catch {
+      setCreatingJournal(false);
+    }
+  }
+
   const dayEvents = events
     .filter((ev) => eventCoversDate(ev.date, ev.endDate, date))
     .sort((a, b) => {
@@ -101,6 +147,34 @@ export default function DayAgendaModal({
               );
             })}
           </ul>
+        )}
+
+        {journalEntry !== undefined && (
+          <div className="mb-4">
+            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">Journal</h3>
+            {journalEntry ? (
+              <button
+                onClick={writeAboutThisDay}
+                className="w-full rounded-xl bg-zinc-50 px-3 py-2.5 text-left dark:bg-zinc-800/60"
+              >
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{journalEntry.title}</p>
+                {journalEntry.content && (
+                  <p className="truncate text-xs text-zinc-500">{buildContentPreview(journalEntry.content, 100)}</p>
+                )}
+                <span className="mt-1 inline-block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                  Open entry →
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={writeAboutThisDay}
+                disabled={creatingJournal}
+                className="w-full rounded-xl border border-dashed border-zinc-200 py-2.5 text-sm font-medium text-zinc-500 disabled:opacity-60 dark:border-zinc-700"
+              >
+                {creatingJournal ? "Opening…" : "📓 Write about this day"}
+              </button>
+            )}
+          </div>
         )}
 
         <button

@@ -22,6 +22,7 @@ model User {
   pushSubscriptions PushSubscription[]
   timers            Timer[]
   eventShares       EventShare[]
+  notebookEntries   NotebookEntry[]
 }
 
 model Reminder {
@@ -224,6 +225,35 @@ model Timer {
 
   @@index([userId])
   @@index([linkedType, linkedId])
+}
+
+// A journal entry (tied to a local calendar date) or a general note
+// (journalDate: null). Postgres treats each NULL in a unique index as
+// distinct from every other NULL, so @@unique([userId, journalDate]) only
+// ever collides for two *dated* rows sharing the same user+date — any
+// number of undated notes (journalDate: null) coexist freely. That's
+// exactly the "max one journal entry per day, unlimited notes" rule this
+// model needs, with no extra partial-index migration required.
+model NotebookEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  content     String   @default("")
+  entryType   String   @default("note") // "note" | "journal"
+  journalDate String?
+  tags        String   @default("")
+  pinned      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+  @@index([userId, entryType])
+  @@index([userId, journalDate])
+  @@unique([userId, journalDate])
 }
 
 model PushSubscription {

@@ -60,6 +60,7 @@ export default function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<CalendarEvent[] | null>(null);
   const [showFreeTime, setShowFreeTime] = useState(false);
+  const [journalDates, setJournalDates] = useState<Set<string>>(new Set());
   const [modalState, setModalState] = useState<
     | { mode: "view"; event: CalendarEvent }
     | { mode: "create"; date: string; startTime?: string }
@@ -153,6 +154,24 @@ export default function CalendarPage() {
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  // Month-view journal indicator metadata — one request per visible
+  // range, independent of the main calendar load so a failure here never
+  // delays or breaks the core event/task display.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/notebook/dates?from=${from}&to=${to}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((dates: string[]) => {
+        if (!cancelled) setJournalDates(new Set(dates));
+      })
+      .catch(() => {
+        // Leave whatever indicators were already loaded in place.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -362,6 +381,7 @@ export default function CalendarPage() {
               anchorDate={anchorDate}
               events={visibleEvents}
               categories={categories}
+              journalDates={journalDates}
               onSelectDate={(date) => setModalState({ mode: "day", date })}
               onSelectEvent={(event) => setModalState({ mode: "view", event })}
             />

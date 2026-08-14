@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { addDaysToDateStr, formatDateLabel, formatDurationMinutes, formatTime12h, todayStr } from "@/lib/dates";
 import {
   busyDayStats,
@@ -18,6 +19,8 @@ import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { CalendarEvent } from "@/components/calendar/types";
 import { Timer } from "@/components/timers/types";
 import TimerCard from "@/components/timers/TimerCard";
+import { NotebookEntryFull } from "@/components/notebook/types";
+import { buildContentPreview } from "@/lib/notebookFormat";
 
 type Reminder = {
   id: string;
@@ -33,6 +36,7 @@ const UPCOMING_WINDOW_DAYS = 14;
 const OVERDUE_LOOKBACK_DAYS = 60;
 
 export default function TodayPage() {
+  const router = useRouter();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -41,6 +45,8 @@ export default function TodayPage() {
   const [timers, setTimers] = useState<Timer[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [journalEntry, setJournalEntry] = useState<NotebookEntryFull | null | undefined>(undefined);
+  const [creatingJournal, setCreatingJournal] = useState(false);
   const [nowMinutes, setNowMinutes] = useState(() => {
     const d = new Date();
     return d.getHours() * 60 + d.getMinutes();
@@ -83,6 +89,24 @@ export default function TodayPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Fetched independently of the Promise.all above — a notebook API
+  // failure must never block the rest of the dashboard from loading, and
+  // this way it doesn't share a rejection with reminders/events/etc.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/notebook/daily?date=${today}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled) setJournalEntry(data);
+      })
+      .catch(() => {
+        // Leave journalEntry as undefined — the section just stays hidden.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [today]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -134,6 +158,26 @@ export default function TodayPage() {
       body: JSON.stringify({ label: todo.title, mode: "stopwatch", linkedType: "todo", linkedId: todo.id }),
     });
     if (res.ok) upsertTimer(await res.json());
+  }
+
+  async function writeAboutToday() {
+    if (journalEntry) {
+      router.push(`/notebook/${journalEntry.id}`);
+      return;
+    }
+    setCreatingJournal(true);
+    try {
+      const res = await fetch("/api/notebook/daily", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: today }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const entry = await res.json();
+      router.push(`/notebook/${entry.id}`);
+    } catch {
+      setCreatingJournal(false);
+    }
   }
 
   async function addTodo(e: React.FormEvent) {
@@ -379,6 +423,41 @@ export default function TodayPage() {
           </ul>
         )}
       </Section>
+
+      {journalEntry !== undefined && (
+        <Section title="Journal" href="/notebook">
+          {journalEntry ? (
+            <button
+              onClick={writeAboutToday}
+              className="w-full rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900"
+            >
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{journalEntry.title}</p>
+              {journalEntry.content && (
+                <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">
+                  {buildContentPreview(journalEntry.content, 160)}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-zinc-400">
+                Last edited {new Date(journalEntry.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+              </p>
+              <span className="mt-2 inline-block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                Continue writing →
+              </span>
+            </button>
+          ) : (
+            <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center dark:border-zinc-800">
+              <p className="mb-3 text-sm text-zinc-400">You haven&apos;t written anything today.</p>
+              <button
+                onClick={writeAboutToday}
+                disabled={creatingJournal}
+                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+              >
+                {creatingJournal ? "Opening…" : "Write about today"}
+              </button>
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title="Routines" href="/routines">
         {pendingRoutines.length === 0 ? (

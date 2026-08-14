@@ -9,12 +9,17 @@ export default function MonthView({
   anchorDate,
   events,
   categories,
+  journalDates,
   onSelectDate,
   onSelectEvent,
 }: {
   anchorDate: string;
   events: CalendarEvent[];
   categories: CategoryDef[];
+  // Dates (within the visible range) that have a journal entry — metadata
+  // only, never entry content. Optional so callers that don't fetch it
+  // simply render no indicators.
+  journalDates?: Set<string>;
   onSelectDate: (date: string) => void;
   onSelectEvent: (event: CalendarEvent) => void;
 }) {
@@ -61,16 +66,23 @@ export default function MonthView({
                 inMonth ? "bg-white dark:bg-zinc-900" : "bg-zinc-50 dark:bg-zinc-950"
               }`}
             >
-              <span
-                className={`self-start px-1.5 py-0.5 text-xs font-semibold sm:text-sm ${
-                  isToday
-                    ? "rounded-full bg-red-500 text-white"
-                    : inMonth
-                      ? "text-zinc-700 dark:text-zinc-200"
-                      : "text-zinc-400 dark:text-zinc-600"
-                }`}
-              >
-                {Number(date.slice(8, 10))}
+              <span className="flex items-center gap-1 self-start">
+                <span
+                  className={`px-1.5 py-0.5 text-xs font-semibold sm:text-sm ${
+                    isToday
+                      ? "rounded-full bg-red-500 text-white"
+                      : inMonth
+                        ? "text-zinc-700 dark:text-zinc-200"
+                        : "text-zinc-400 dark:text-zinc-600"
+                  }`}
+                >
+                  {Number(date.slice(8, 10))}
+                </span>
+                {journalDates?.has(date) && (
+                  <span className="text-[10px]" aria-label="Has a journal entry" title="Has a journal entry">
+                    📓
+                  </span>
+                )}
               </span>
               <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
                 {dayEvents.slice(0, maxVisible).map((ev) => (
