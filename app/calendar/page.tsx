@@ -322,30 +322,29 @@ export default function CalendarPage() {
       ) : (
         <>
           <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-2 py-2 shadow-sm dark:bg-zinc-900">
-            <div className="flex items-center gap-0.5">
+            <div className="flex min-w-0 items-center gap-0.5">
               <button
                 onClick={goPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 aria-label="Previous"
               >
                 ←
               </button>
               <button
                 onClick={goToday}
-                className="rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="truncate rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
               >
-                Today
+                {title}
               </button>
               <button
                 onClick={goNext}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 aria-label="Next"
               >
                 →
               </button>
             </div>
-            <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">{title}</span>
-            <div className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+            <div className="flex shrink-0 rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
               {(["month", "week", "day"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
