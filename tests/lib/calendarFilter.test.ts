@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterVisibleEvents } from "@/lib/calendarFilter";
+import { filterVisibleEvents, normalizeCachedEvent } from "@/lib/calendarFilter";
 
 describe("filterVisibleEvents", () => {
   const events = [
@@ -26,5 +26,22 @@ describe("filterVisibleEvents", () => {
   it("accepts a plain array as well as a Set", () => {
     const result = filterVisibleEvents(events, ["University"]);
     expect(result.map((e) => e.id)).toEqual(["2", "3"]);
+  });
+});
+
+describe("normalizeCachedEvent", () => {
+  it("defaults old cached rows without itemType/completedAt to a plain event", () => {
+    const oldCachedRow = { id: "1", title: "Dentist", date: "2026-08-14" };
+    const normalized = normalizeCachedEvent(oldCachedRow);
+    expect(normalized.itemType).toBe("event");
+    expect(normalized.completedAt).toBeNull();
+    expect(normalized.id).toBe("1");
+  });
+
+  it("preserves an existing itemType/completedAt rather than overwriting them", () => {
+    const row = { id: "2", itemType: "task", completedAt: "2026-08-10T12:00:00.000Z" };
+    const normalized = normalizeCachedEvent(row);
+    expect(normalized.itemType).toBe("task");
+    expect(normalized.completedAt).toBe("2026-08-10T12:00:00.000Z");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findFreeSlots } from "@/lib/calendar/freeTime";
+import { busySlotsFromEvents, findFreeSlots } from "@/lib/calendar/freeTime";
 
 describe("findFreeSlots", () => {
   it("finds the gap between two events", () => {
@@ -42,5 +42,24 @@ describe("findFreeSlots", () => {
   it("returns nothing when the day is fully booked", () => {
     const slots = findFreeSlots([{ startTime: "08:00", endTime: "17:00" }], 30, "08:00", "17:00");
     expect(slots).toHaveLength(0);
+  });
+});
+
+describe("busySlotsFromEvents", () => {
+  it("excludes tasks — a deadline never reduces free time", () => {
+    const items = [
+      { itemType: "event", allDay: false, date: "2026-08-14", startTime: "09:00", endTime: "10:00" },
+      { itemType: "task", allDay: false, date: "2026-08-14", startTime: "09:30", endTime: "09:30" },
+      { itemType: "task", allDay: true, date: "2026-08-14", startTime: "00:00", endTime: "23:59" },
+    ];
+    expect(busySlotsFromEvents(items, "2026-08-14")).toEqual([{ startTime: "09:00", endTime: "10:00" }]);
+  });
+
+  it("excludes all-day events and items on other days", () => {
+    const items = [
+      { itemType: "event", allDay: true, date: "2026-08-14", startTime: "00:00", endTime: "23:59" },
+      { itemType: "event", allDay: false, date: "2026-08-15", startTime: "09:00", endTime: "10:00" },
+    ];
+    expect(busySlotsFromEvents(items, "2026-08-14")).toEqual([]);
   });
 });

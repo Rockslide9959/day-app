@@ -51,7 +51,12 @@ export async function PATCH(
   if (typeof body.recurrenceEndDate === "string" || body.recurrenceEndDate === null) {
     data.recurrenceEndDate = body.recurrenceEndDate;
   }
-  if (typeof body.completed === "boolean") data.completed = body.completed;
+  if (typeof body.completed === "boolean") {
+    data.completed = body.completed;
+    // Informational only — the visibility rule (lib/calendar/visibility.ts)
+    // depends on `completed` + the due date/time, not this timestamp.
+    data.completedAt = body.completed ? new Date() : null;
+  }
   if (typeof body.subject === "string" || body.subject === null) data.subject = body.subject;
   if (typeof body.estimatedHours === "number" || body.estimatedHours === null) {
     data.estimatedHours = body.estimatedHours;

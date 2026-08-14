@@ -18,9 +18,11 @@ import EventModal, { EventDraft } from "@/components/calendar/EventModal";
 import DayAgendaModal from "@/components/calendar/DayAgendaModal";
 import CategoryFilter from "@/components/calendar/CategoryFilter";
 import FreeTimeFinder from "@/components/calendar/FreeTimeFinder";
-import { filterVisibleEvents } from "@/lib/calendarFilter";
+import { filterVisibleEvents, normalizeCachedEvent } from "@/lib/calendarFilter";
 import { CalendarEvent, ViewMode } from "@/components/calendar/types";
 import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
+import { isScheduleItemVisible } from "@/lib/calendar/visibility";
+import { draftToPayload } from "@/lib/calendar/payload";
 
 const HIDDEN_CATEGORIES_KEY = "day:calendar:hiddenCategories";
 const VIEW_MODE_KEY = "day:calendar:viewMode";
@@ -30,7 +32,8 @@ function readEventCache(from: string, to: string): CalendarEvent[] | null {
   try {
     const raw = localStorage.getItem(`${CACHE_PREFIX}${from}_${to}`);
     if (!raw) return null;
-    return JSON.parse(raw).events;
+    const events = JSON.parse(raw).events;
+    return Array.isArray(events) ? events.map(normalizeCachedEvent) : null;
   } catch {
     return null;
   }
@@ -42,28 +45,6 @@ function writeEventCache(from: string, to: string, events: CalendarEvent[]) {
   } catch {
     // Storage full/unavailable — caching is a nice-to-have, not required.
   }
-}
-
-function draftToPayload(draft: EventDraft) {
-  return {
-    title: draft.title.trim(),
-    notes: draft.notes.trim() || null,
-    date: draft.date,
-    startTime: draft.allDay ? "00:00" : draft.startTime,
-    endTime: draft.allDay ? "23:59" : draft.endTime,
-    endDate: draft.endDate || draft.date,
-    allDay: draft.allDay,
-    location: draft.location.trim() || null,
-    category: draft.category || null,
-    priority: draft.priority,
-    reminderMinutesBefore:
-      draft.reminderMinutesBefore === "" ? null : Number(draft.reminderMinutesBefore),
-    recurrence: draft.recurrence,
-    recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays.join(",") : null,
-    recurrenceEndDate: draft.recurrenceEndDate || null,
-    subject: draft.subject.trim() || null,
-    estimatedHours: draft.estimatedHours === "" ? null : Number(draft.estimatedHours),
-  };
 }
 
 export default function CalendarPage() {
@@ -199,7 +180,8 @@ export default function CalendarPage() {
     });
   }
 
-  const visibleEvents = filterVisibleEvents(events, hidden);
+  const timeVisibleEvents = useMemo(() => events.filter((e) => isScheduleItemVisible(e)), [events]);
+  const visibleEvents = filterVisibleEvents(timeVisibleEvents, hidden);
 
   function goToday() {
     setAnchorDate(todayStr());
@@ -295,7 +277,7 @@ export default function CalendarPage() {
             onClick={() => setModalState({ mode: "create", date: anchorDate })}
             className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
           >
-            + New event
+            + New
           </button>
         </div>
       </div>
@@ -304,7 +286,7 @@ export default function CalendarPage() {
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search events…"
+          placeholder="Search events and tasks…"
           className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </div>
@@ -406,7 +388,7 @@ export default function CalendarPage() {
       {/* Mobile quick-add FAB */}
       <button
         onClick={() => setModalState({ mode: "create", date: anchorDate })}
-        aria-label="New event"
+        aria-label="New item"
         className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl text-white shadow-lg sm:hidden dark:bg-zinc-50 dark:text-zinc-900"
       >
         +
@@ -473,9 +455,12 @@ function SearchResults({
             className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900"
           >
             <div>
-              <p className="text-sm text-zinc-900 dark:text-zinc-50">{ev.title}</p>
+              <p className="text-sm text-zinc-900 dark:text-zinc-50">
+                {ev.itemType === "task" && <span className="mr-1">{ev.completed ? "☑" : "☐"}</span>}
+                {ev.title}
+              </p>
               <p className="text-xs text-zinc-400">
-                {ev.date}
+                {ev.itemType === "task" ? `Due ${ev.date}` : ev.date}
                 {ev.category ? ` · ${ev.category}` : ""}
               </p>
             </div>

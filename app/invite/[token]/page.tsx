@@ -6,6 +6,7 @@ import Link from "next/link";
 import { dayLabel, formatTime12h } from "@/lib/dates";
 
 type InvitePreview = {
+  itemType: string;
   title: string;
   notes: string | null;
   date: string;
@@ -77,7 +78,8 @@ export default function InvitePage() {
     );
   }
 
-  const multiDay = preview.endDate && preview.endDate !== preview.date;
+  const isTask = preview.itemType === "task";
+  const multiDay = !isTask && preview.endDate && preview.endDate !== preview.date;
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
@@ -85,22 +87,31 @@ export default function InvitePage() {
       <p className="mb-6 text-sm text-zinc-500">Shared by {preview.sharedByUsername}</p>
 
       <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900">
-        {preview.category && (
-          <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-            {preview.category}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {isTask && (
+            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              ☐ Task
+            </span>
+          )}
+          {preview.category && (
+            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              {preview.category}
+            </span>
+          )}
+        </div>
 
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{preview.title}</h2>
 
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          {preview.allDay
-            ? multiDay
-              ? `${dayLabel(preview.date)} – ${dayLabel(preview.endDate!)}`
-              : `${dayLabel(preview.date)} · All day`
-            : multiDay
-              ? `${dayLabel(preview.date)} ${formatTime12h(preview.startTime)} – ${dayLabel(preview.endDate!)} ${formatTime12h(preview.endTime)}`
-              : `${dayLabel(preview.date)} · ${formatTime12h(preview.startTime)} – ${formatTime12h(preview.endTime)}`}
+          {isTask
+            ? `Due ${dayLabel(preview.date)}${!preview.allDay ? ` · ${formatTime12h(preview.startTime)}` : ""}`
+            : preview.allDay
+              ? multiDay
+                ? `${dayLabel(preview.date)} – ${dayLabel(preview.endDate!)}`
+                : `${dayLabel(preview.date)} · All day`
+              : multiDay
+                ? `${dayLabel(preview.date)} ${formatTime12h(preview.startTime)} – ${dayLabel(preview.endDate!)} ${formatTime12h(preview.endTime)}`
+                : `${dayLabel(preview.date)} · ${formatTime12h(preview.startTime)} – ${formatTime12h(preview.endTime)}`}
         </p>
 
         {preview.location && <p className="text-sm text-zinc-600 dark:text-zinc-300">📍 {preview.location}</p>}

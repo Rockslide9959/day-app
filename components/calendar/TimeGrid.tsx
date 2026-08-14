@@ -148,6 +148,7 @@ export default function TimeGrid({
                       : ""
                   }`}
                 >
+                  {ev.itemType === "task" && <span className="shrink-0">{ev.completed ? "☑" : "☐"}</span>}
                   <span className="truncate">{ev.title}</span>
                 </button>
               ))}
@@ -173,7 +174,10 @@ export default function TimeGrid({
             ))}
           </div>
           {dates.map((date) => {
-            const layout = layoutDayEvents(eventsByDate.get(date) || []);
+            const dayItems = eventsByDate.get(date) || [];
+            const dayTimedEvents = dayItems.filter((ev) => ev.itemType !== "task");
+            const dayTimedTasks = dayItems.filter((ev) => ev.itemType === "task");
+            const layout = layoutDayEvents(dayTimedEvents);
             return (
               <div key={date} className="relative border-l border-zinc-100 dark:border-zinc-800">
                 {HOURS.map((h) => (
@@ -193,7 +197,7 @@ export default function TimeGrid({
                     <span className="h-px flex-1 bg-red-500" />
                   </div>
                 )}
-                {(eventsByDate.get(date) || []).map((ev) => {
+                {dayTimedEvents.map((ev) => {
                   const startMin = timeToMinutes(ev.startTime);
                   const endMin = Math.max(timeToMinutes(ev.endTime), startMin + MIN_EVENT_MINUTES);
                   const top = (startMin / 60) * HOUR_HEIGHT;
@@ -231,6 +235,31 @@ export default function TimeGrid({
                           {formatTime12h(ev.startTime)}–{formatTime12h(ev.endTime)}
                         </span>
                       )}
+                    </button>
+                  );
+                })}
+                {/* Tasks with a due time: a compact marker at the due moment,
+                    not a duration block — height comes from content, never
+                    from start/end, so it never implies occupied time. */}
+                {dayTimedTasks.map((task) => {
+                  const top = (timeToMinutes(task.startTime) / 60) * HOUR_HEIGHT;
+                  const dotColor = categoryEventStyle(task.category, categories).backgroundColor as string;
+                  return (
+                    <button
+                      key={task.occurrenceId}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectEvent(task);
+                      }}
+                      style={{ top, borderColor: task.completed ? undefined : dotColor }}
+                      className={`absolute left-1 right-1 z-[2] flex items-center gap-1.5 truncate rounded-md border border-dashed bg-white/95 px-1.5 py-0.5 text-left text-[11px] font-medium shadow-sm dark:bg-zinc-900/95 ${
+                        task.completed
+                          ? "border-zinc-200 text-zinc-400 line-through dark:border-zinc-700"
+                          : "text-zinc-700 dark:text-zinc-200"
+                      }`}
+                    >
+                      <span className="shrink-0">{task.completed ? "☑" : "☐"}</span>
+                      <span className="truncate">{task.title}</span>
                     </button>
                   );
                 })}

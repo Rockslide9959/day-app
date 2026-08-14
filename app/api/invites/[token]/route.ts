@@ -25,6 +25,7 @@ export async function GET(
 
   const e = share.scheduleItem;
   return NextResponse.json({
+    itemType: e.itemType,
     title: e.title,
     notes: e.notes,
     date: e.date,
@@ -59,6 +60,7 @@ export async function POST(
   const copy = await prisma.scheduleItem.create({
     data: {
       userId,
+      itemType: e.itemType,
       title: e.title,
       notes: e.notes,
       date: e.date,

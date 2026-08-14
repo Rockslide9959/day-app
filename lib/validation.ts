@@ -15,3 +15,13 @@ export function validatePassword(password: unknown): string | null {
   if (password.length < 8) return "Password must be at least 8 characters";
   return null;
 }
+
+// ScheduleItem.itemType — undefined is allowed (callers default it to
+// "event"); anything else must be one of the two supported values.
+export function validateItemType(itemType: unknown): string | null {
+  if (itemType === undefined) return null;
+  if (itemType !== "event" && itemType !== "task") {
+    return "itemType must be \"event\" or \"task\"";
+  }
+  return null;
+}

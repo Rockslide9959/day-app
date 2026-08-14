@@ -76,6 +76,32 @@ describe("ownership enforcement", () => {
     expect(res.status).toBe(200);
   });
 
+  it("returns 404 when a logged-in user tries to edit someone else's task", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-B");
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await patchSchedule(
+      req("http://localhost/api/schedule/user-A-task", "PATCH", { completed: true }),
+      { params: Promise.resolve({ id: "user-A-task" }) }
+    );
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.scheduleItem.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "user-A-task", userId: "user-B" } })
+    );
+  });
+
+  it("returns 404 when a logged-in user tries to delete someone else's task", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-B");
+    prismaMock.scheduleItem.deleteMany.mockResolvedValue({ count: 0 });
+
+    const res = await deleteSchedule(req("http://localhost/api/schedule/user-A-task", "DELETE"), {
+      params: Promise.resolve({ id: "user-A-task" }),
+    });
+
+    expect(res.status).toBe(404);
+  });
+
   it("scopes todo deletion by userId the same way", async () => {
     authMock.getCurrentUserId.mockResolvedValue("user-B");
     prismaMock.todo.deleteMany.mockResolvedValue({ count: 0 });

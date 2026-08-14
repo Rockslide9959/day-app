@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarEvent } from "./types";
 import { categoryChipStyle, priorityMeta } from "./categories";
-import { formatTime12h } from "@/lib/dates";
+import { formatDateLabel, formatTime12h } from "@/lib/dates";
 import { CategoryDef, isDeadlineCategory } from "@/lib/calendar/categories";
 import { findConflicts } from "@/lib/calendar/conflicts";
 import { Timer } from "@/components/timers/types";
@@ -32,10 +32,13 @@ const RECURRENCE_OPTIONS = [
 ];
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const ITEM_TYPES = ["event", "task"] as const;
+type ItemType = (typeof ITEM_TYPES)[number];
 
 type EventShare = { id: string; token: string; createdAt: string };
 
 export type EventDraft = {
+  itemType: ItemType;
   title: string;
   notes: string;
   date: string;
@@ -43,6 +46,9 @@ export type EventDraft = {
   endDate: string;
   endTime: string;
   allDay: boolean;
+  // Task-only: whether a due time is set. When false, the task is saved
+  // allDay with the standard "00:00"/"23:59" internal times.
+  hasDueTime: boolean;
   location: string;
   category: string;
   priority: string;
@@ -55,7 +61,9 @@ export type EventDraft = {
 };
 
 function draftFromEvent(event: CalendarEvent): EventDraft {
+  const itemType: ItemType = event.itemType === "task" ? "task" : "event";
   return {
+    itemType,
     title: event.title,
     notes: event.notes || "",
     date: event.date,
@@ -63,6 +71,7 @@ function draftFromEvent(event: CalendarEvent): EventDraft {
     endDate: event.endDate || event.date,
     endTime: event.endTime,
     allDay: event.allDay,
+    hasDueTime: itemType === "task" ? !event.allDay : false,
     location: event.location || "",
     category: event.category || "",
     priority: event.priority || "normal",
@@ -82,6 +91,7 @@ function draftFromDefaults(defaults: { date: string; startTime?: string }): Even
   const endHour = (h + 1) % 24;
   const endTime = `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   return {
+    itemType: "event",
     title: "",
     notes: "",
     date: defaults.date,
@@ -89,6 +99,7 @@ function draftFromDefaults(defaults: { date: string; startTime?: string }): Even
     endDate: defaults.date,
     endTime,
     allDay: false,
+    hasDueTime: false,
     location: "",
     category: "",
     priority: "normal",
@@ -169,12 +180,25 @@ export default function EventModal({
     }));
   }
 
+  const isTask = draft.itemType === "task";
+
+  // A task's due date/time is a deadline, not a reservation — findConflicts
+  // already returns [] whenever the candidate (or a compared event) is a
+  // task, so this naturally never flags a conflict for task drafts.
   const detectedConflicts = useMemo(() => {
     return findConflicts(
-      { id: event?.id, date: draft.date, endDate: draft.endDate, startTime: draft.startTime, endTime: draft.endTime, allDay: draft.allDay },
+      {
+        id: event?.id,
+        itemType: draft.itemType,
+        date: draft.date,
+        endDate: draft.endDate,
+        startTime: draft.startTime,
+        endTime: draft.endTime,
+        allDay: draft.allDay,
+      },
       existingEvents
     );
-  }, [draft.date, draft.endDate, draft.startTime, draft.endTime, draft.allDay, event?.id, existingEvents]);
+  }, [draft.itemType, draft.date, draft.endDate, draft.startTime, draft.endTime, draft.allDay, event?.id, existingEvents]);
 
   async function doSave() {
     setSaving(true);
@@ -182,7 +206,7 @@ export default function EventModal({
     try {
       await onSave(event?.id ?? null, draft);
     } catch {
-      setError("Couldn't save this event. Try again.");
+      setError(`Couldn't save this ${isTask ? "task" : "event"}. Try again.`);
       setSaving(false);
       return;
     }
@@ -192,10 +216,10 @@ export default function EventModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.title.trim()) {
-      setError("Title is required");
+      setError(isTask ? "Task title is required" : "Title is required");
       return;
     }
-    if (draft.endDate < draft.date) {
+    if (!isTask && draft.endDate < draft.date) {
       setError("End date can't be before start date");
       return;
     }
@@ -212,7 +236,7 @@ export default function EventModal({
     try {
       await onDelete(event.id);
     } catch {
-      setError("Couldn't delete this event. Try again.");
+      setError(`Couldn't delete this ${isTask ? "task" : "event"}. Try again.`);
       setSaving(false);
     }
   }
@@ -223,7 +247,7 @@ export default function EventModal({
     try {
       await onDuplicate(event.id);
     } catch {
-      setError("Couldn't duplicate this event. Try again.");
+      setError(`Couldn't duplicate this ${isTask ? "task" : "event"}. Try again.`);
     }
     setSaving(false);
   }
@@ -275,16 +299,41 @@ export default function EventModal({
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                {isExisting ? "Edit event" : "New event"}
+                {isExisting ? (isTask ? "Edit task" : "Edit event") : isTask ? "New task" : "New event"}
               </h2>
               <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
                 ✕
               </button>
             </div>
 
+            <div>
+              <div className="flex w-full rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+                {ITEM_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={isExisting}
+                    onClick={() => set("itemType", t)}
+                    className={`flex-1 rounded-md py-1.5 font-medium capitalize disabled:cursor-not-allowed disabled:opacity-60 ${
+                      draft.itemType === t
+                        ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+                        : "text-zinc-500"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {isExisting && (
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  Type can&apos;t be changed after creation.
+                </p>
+              )}
+            </div>
+
             {isExisting && event?.isRecurringInstance && (
               <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                This is a recurring event — changes apply to the whole series.
+                This is a recurring {isTask ? "task" : "event"} — changes apply to the whole series.
               </p>
             )}
 
@@ -292,72 +341,110 @@ export default function EventModal({
               autoFocus
               value={draft.title}
               onChange={(e) => set("title", e.target.value)}
-              placeholder="Event title"
+              placeholder={isTask ? "Task title" : "Event title"}
               className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
             />
 
-            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-              <input
-                type="checkbox"
-                checked={draft.allDay}
-                onChange={(e) => set("allDay", e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300"
-              />
-              All-day
-            </label>
-
-            <div className="flex gap-3">
-              <label className="flex-1 text-xs text-zinc-500">
-                Start date
-                <input
-                  type="date"
-                  value={draft.date}
-                  onChange={(e) => set("date", e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                />
-              </label>
-              {!draft.allDay && (
-                <label className="flex-1 text-xs text-zinc-500">
-                  Start time
+            {isTask ? (
+              <>
+                <div className="flex gap-3">
+                  <label className="flex-1 text-xs text-zinc-500">
+                    Due date
+                    <input
+                      type="date"
+                      value={draft.date}
+                      onChange={(e) => set("date", e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    />
+                  </label>
+                  {draft.hasDueTime && (
+                    <label className="flex-1 text-xs text-zinc-500">
+                      Due time
+                      <input
+                        type="time"
+                        value={draft.startTime}
+                        onChange={(e) => set("startTime", e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      />
+                    </label>
+                  )}
+                </div>
+                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
                   <input
-                    type="time"
-                    value={draft.startTime}
-                    onChange={(e) => set("startTime", e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    type="checkbox"
+                    checked={draft.hasDueTime}
+                    onChange={(e) => set("hasDueTime", e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300"
                   />
+                  Set a due time
                 </label>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <label className="flex-1 text-xs text-zinc-500">
-                End date
-                <input
-                  type="date"
-                  value={draft.endDate}
-                  onChange={(e) => set("endDate", e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                />
-              </label>
-              {!draft.allDay && (
-                <label className="flex-1 text-xs text-zinc-500">
-                  End time
+              </>
+            ) : (
+              <>
+                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
                   <input
-                    type="time"
-                    value={draft.endTime}
-                    onChange={(e) => set("endTime", e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    type="checkbox"
+                    checked={draft.allDay}
+                    onChange={(e) => set("allDay", e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300"
                   />
+                  All-day
                 </label>
-              )}
-            </div>
 
-            <input
-              value={draft.location}
-              onChange={(e) => set("location", e.target.value)}
-              placeholder="Location (optional)"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
-            />
+                <div className="flex gap-3">
+                  <label className="flex-1 text-xs text-zinc-500">
+                    Start date
+                    <input
+                      type="date"
+                      value={draft.date}
+                      onChange={(e) => set("date", e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    />
+                  </label>
+                  {!draft.allDay && (
+                    <label className="flex-1 text-xs text-zinc-500">
+                      Start time
+                      <input
+                        type="time"
+                        value={draft.startTime}
+                        onChange={(e) => set("startTime", e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <label className="flex-1 text-xs text-zinc-500">
+                    End date
+                    <input
+                      type="date"
+                      value={draft.endDate}
+                      onChange={(e) => set("endDate", e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    />
+                  </label>
+                  {!draft.allDay && (
+                    <label className="flex-1 text-xs text-zinc-500">
+                      End time
+                      <input
+                        type="time"
+                        value={draft.endTime}
+                        onChange={(e) => set("endTime", e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <input
+                  value={draft.location}
+                  onChange={(e) => set("location", e.target.value)}
+                  placeholder="Location (optional)"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+                />
+              </>
+            )}
 
             <textarea
               value={draft.notes}
@@ -519,8 +606,8 @@ export default function EventModal({
 
             {offline && (
               <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                You&apos;re offline — reconnect to {isExisting ? "save changes to" : "create"} this
-                event.
+                You&apos;re offline — reconnect to {isExisting ? "save changes to" : "create"} this{" "}
+                {isTask ? "task" : "event"}.
               </p>
             )}
             {error && <p className="text-xs text-red-500">{error}</p>}
@@ -531,7 +618,13 @@ export default function EventModal({
                 disabled={saving || offline}
                 className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
               >
-                {saving ? "Saving…" : isExisting ? "Save changes" : "Create event"}
+                {saving
+                  ? "Saving…"
+                  : isExisting
+                    ? "Save changes"
+                    : isTask
+                      ? "Create task"
+                      : "Create event"}
               </button>
               <button
                 type="button"
@@ -623,7 +716,8 @@ function EventDetails({
   const [shares, setShares] = useState<EventShare[]>([]);
   const [sharing, setSharing] = useState(false);
   const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
-  const multiDay = event.endDate && event.endDate !== event.date;
+  const isTask = event.itemType === "task";
+  const multiDay = !isTask && event.endDate && event.endDate !== event.date;
   const pMeta = priorityMeta(event.priority);
 
   useEffect(() => {
@@ -690,6 +784,11 @@ function EventDetails({
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
+          {isTask && (
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              ☐ Task
+            </span>
+          )}
           {event.category && (
             <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={categoryChipStyle(event.category, categories)}>
               {event.category}
@@ -715,13 +814,15 @@ function EventDetails({
       </h2>
 
       <p className="text-sm text-zinc-600 dark:text-zinc-300">
-        {event.allDay
-          ? multiDay
-            ? `${event.date} – ${event.endDate}`
-            : `${event.date} · All day`
-          : multiDay
-            ? `${event.date} ${formatTime12h(event.startTime)} – ${event.endDate} ${formatTime12h(event.endTime)}`
-            : `${event.date} · ${formatTime12h(event.startTime)} – ${formatTime12h(event.endTime)}`}
+        {isTask
+          ? `Due ${formatDateLabel(event.date)}${!event.allDay ? ` · ${formatTime12h(event.startTime)}` : ""}`
+          : event.allDay
+            ? multiDay
+              ? `${event.date} – ${event.endDate}`
+              : `${event.date} · All day`
+            : multiDay
+              ? `${event.date} ${formatTime12h(event.startTime)} – ${event.endDate} ${formatTime12h(event.endTime)}`
+              : `${event.date} · ${formatTime12h(event.startTime)} – ${formatTime12h(event.endTime)}`}
       </p>
 
       {event.location && <p className="text-sm text-zinc-600 dark:text-zinc-300">📍 {event.location}</p>}
@@ -830,7 +931,7 @@ function EventDetails({
               : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
           }`}
         >
-          {event.completed ? "✓ Completed" : "Mark complete"}
+          {event.completed ? (isTask ? "Reopen task" : "✓ Completed") : "Mark complete"}
         </button>
         <button
           onClick={onEdit}

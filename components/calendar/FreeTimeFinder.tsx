@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { addDaysToDateStr, formatTime12h, todayStr } from "@/lib/dates";
-import { findFreeSlots, formatDuration } from "@/lib/calendar/freeTime";
+import { busySlotsFromEvents, findFreeSlots, formatDuration } from "@/lib/calendar/freeTime";
 import { remainingStudyHours } from "@/lib/calendar/studyPlanner";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
 import { CalendarEvent } from "./types";
@@ -61,9 +61,7 @@ function FreeTimeTab({ events }: { events: CalendarEvent[] }) {
   const [duration, setDuration] = useState(60);
 
   const slots = useMemo(() => {
-    const busy = events
-      .filter((e) => e.date === date && !e.allDay)
-      .map((e) => ({ startTime: e.startTime, endTime: e.endTime }));
+    const busy = busySlotsFromEvents(events, date);
     return findFreeSlots(busy, duration);
   }, [events, date, duration]);
 

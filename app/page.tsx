@@ -2,10 +2,19 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { addDaysToDateStr, formatDurationMinutes, formatTime12h, todayStr } from "@/lib/dates";
-import { busyDayStats, dailySummary, nowNextEvent, upcomingEvents } from "@/lib/calendar/dashboard";
+import { addDaysToDateStr, formatDateLabel, formatDurationMinutes, formatTime12h, todayStr } from "@/lib/dates";
+import {
+  busyDayStats,
+  dailySummary,
+  nowNextEvent,
+  overdueTasks,
+  tasksDueToday,
+  upcomingEvents,
+  upcomingTasks,
+} from "@/lib/calendar/dashboard";
 import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
+import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { CalendarEvent } from "@/components/calendar/types";
 import { Timer } from "@/components/timers/types";
 import TimerCard from "@/components/timers/TimerCard";
@@ -21,6 +30,7 @@ type Todo = { id: string; title: string; completed: boolean };
 type Routine = { id: string; name: string; icon: string; steps: { id: string }[] };
 
 const UPCOMING_WINDOW_DAYS = 14;
+const OVERDUE_LOOKBACK_DAYS = 60;
 
 export default function TodayPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -41,7 +51,11 @@ export default function TodayPage() {
     try {
       const [remindersRes, eventsRes, todosRes, routinesRes, timersRes] = await Promise.all([
         fetch("/api/reminders").then((r) => r.json()),
-        fetch(`/api/schedule?from=${today}&to=${addDaysToDateStr(today, UPCOMING_WINDOW_DAYS)}`).then((r) => r.json()),
+        // Looks back OVERDUE_LOOKBACK_DAYS so incomplete overdue tasks from
+        // before today still surface here, not just today-forward.
+        fetch(
+          `/api/schedule?from=${addDaysToDateStr(today, -OVERDUE_LOOKBACK_DAYS)}&to=${addDaysToDateStr(today, UPCOMING_WINDOW_DAYS)}`
+        ).then((r) => r.json()),
         fetch(`/api/todos?date=${today}`).then((r) => r.json()),
         fetch("/api/routines").then((r) => r.json()),
         fetch("/api/timers").then((r) => r.json()),
@@ -89,6 +103,19 @@ export default function TodayPage() {
     });
   }
 
+  async function toggleTask(task: CalendarEvent) {
+    const body = task.isRecurringInstance
+      ? { toggleCompletedDate: task.occurrenceDate }
+      : { completed: !task.completed };
+    const res = await fetch(`/api/schedule/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return;
+    await load();
+  }
+
   function upsertTimer(timer: Timer) {
     setTimers((prev) => {
       const exists = prev.some((t) => t.id === timer.id);
@@ -130,12 +157,20 @@ export default function TodayPage() {
     (r) => r.steps.length > 0 && (routineDone[r.id] || 0) < r.steps.length
   );
 
-  const todayEvents = events.filter((e) => e.date === today).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const todayEvents = events
+    .filter((e) => e.date === today && e.itemType !== "task")
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
   const { current, next, minutesUntilNext } = nowNextEvent(todayEvents, nowMinutes);
   const dayStats = busyDayStats(todayEvents);
   const summary = dailySummary(todayEvents);
   const upcoming = upcomingEvents(events, today, UPCOMING_WINDOW_DAYS);
   const activeTimers = timers.filter((t) => t.status !== "completed");
+
+  // Tasks due — kept separate from the events-only calcs above (tasks are
+  // deadlines, never booked time) and from the lightweight Todo section.
+  const tasksToday = tasksDueToday(events, today).filter((t) => isScheduleItemVisible(t));
+  const overdueTaskItems = overdueTasks(events, today);
+  const upcomingTaskItems = upcomingTasks(events, today, UPCOMING_WINDOW_DAYS);
 
   if (loading) {
     return <div className="p-6 text-zinc-400">Loading…</div>;
@@ -196,6 +231,22 @@ export default function TodayPage() {
             <span className="font-medium">Busy day</span> — {dayStats.eventCount} events scheduled
             {dayStats.scheduledMinutes > 0 && `, ${Math.round(dayStats.scheduledMinutes / 60)}h+ booked`}
           </div>
+        </Section>
+      )}
+
+      {(overdueTaskItems.length > 0 || tasksToday.length > 0 || upcomingTaskItems.length > 0) && (
+        <Section title="Tasks due" href="/calendar">
+          <ul className="space-y-2">
+            {overdueTaskItems.map((t) => (
+              <TaskRow key={t.occurrenceId} task={t} today={today} overdue onToggle={toggleTask} />
+            ))}
+            {tasksToday.map((t) => (
+              <TaskRow key={t.occurrenceId} task={t} today={today} onToggle={toggleTask} />
+            ))}
+            {upcomingTaskItems.map((t) => (
+              <TaskRow key={t.occurrenceId} task={t} today={today} onToggle={toggleTask} />
+            ))}
+          </ul>
         </Section>
       )}
 
@@ -404,5 +455,59 @@ function EmptyRow({ text }: { text: string }) {
     <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center text-sm text-zinc-400 dark:border-zinc-800">
       {text}
     </div>
+  );
+}
+
+function TaskRow({
+  task,
+  today,
+  overdue = false,
+  onToggle,
+}: {
+  task: CalendarEvent;
+  today: string;
+  overdue?: boolean;
+  onToggle: (task: CalendarEvent) => void;
+}) {
+  const dueLabel =
+    task.date === today
+      ? task.allDay
+        ? "Due today"
+        : `Due ${formatTime12h(task.startTime)}`
+      : task.allDay
+        ? `Due ${formatDateLabel(task.date)}`
+        : `Due ${formatDateLabel(task.date)} · ${formatTime12h(task.startTime)}`;
+
+  return (
+    <li
+      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm ${
+        overdue ? "bg-red-50 dark:bg-red-950/30" : "bg-white dark:bg-zinc-900"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={task.completed}
+        onChange={() => onToggle(task)}
+        aria-label={task.completed ? `Reopen task: ${task.title}` : `Mark task complete: ${task.title}`}
+        className="h-4 w-4 shrink-0 rounded border-zinc-300"
+      />
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block truncate text-sm ${
+            task.completed
+              ? "text-zinc-400 line-through"
+              : overdue
+                ? "font-medium text-red-900 dark:text-red-200"
+                : "text-zinc-900 dark:text-zinc-50"
+          }`}
+        >
+          {task.title}
+        </span>
+        <span className={`block text-xs ${overdue ? "text-red-600 dark:text-red-400" : "text-zinc-500"}`}>
+          {overdue ? "Overdue · " : ""}
+          {dueLabel}
+        </span>
+      </span>
+    </li>
   );
 }

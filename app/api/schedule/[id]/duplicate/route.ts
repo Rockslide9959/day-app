@@ -18,6 +18,7 @@ export async function POST(
   const copy = await prisma.scheduleItem.create({
     data: {
       userId,
+      itemType: original.itemType,
       title: original.title,
       notes: original.notes,
       date: original.date,

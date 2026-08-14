@@ -13,13 +13,22 @@ export type DashboardEvent = {
   priority: string;
   completed: boolean;
   recurrence: string;
+  // Optional so existing callers/tests that only deal in events (and never
+  // set this) keep working unchanged — absent/non-"task" both mean "event".
+  itemType?: string;
 };
+
+// Tasks are deadlines, not booked time — every dashboard calculation below
+// only ever operates on events.
+function onlyEvents<T extends DashboardEvent>(events: T[]): T[] {
+  return events.filter((e) => e.itemType !== "task");
+}
 
 export function nowNextEvent<T extends DashboardEvent>(
   todayEvents: T[],
   nowMinutes: number
 ): { current: T[]; next: T | null; minutesUntilNext: number | null } {
-  const timed = [...todayEvents]
+  const timed = onlyEvents(todayEvents)
     .filter((e) => !e.allDay)
     .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
@@ -40,12 +49,13 @@ export function busyDayStats(dayEvents: DashboardEvent[]): {
   scheduledMinutes: number;
   isBusy: boolean;
 } {
-  const timed = dayEvents.filter((e) => !e.allDay);
+  const events = onlyEvents(dayEvents);
+  const timed = events.filter((e) => !e.allDay);
   const scheduledMinutes = timed.reduce(
     (sum, e) => sum + Math.max(0, timeToMinutes(e.endTime) - timeToMinutes(e.startTime)),
     0
   );
-  const eventCount = dayEvents.length;
+  const eventCount = events.length;
   // "Busy" is a judgment call, not a precise threshold — 5+ things or 6+
   // scheduled hours reads as a genuinely full day for a personal calendar.
   const isBusy = eventCount >= 5 || scheduledMinutes >= 6 * 60;
@@ -54,10 +64,11 @@ export function busyDayStats(dayEvents: DashboardEvent[]): {
 
 export function dailySummary<T extends DashboardEvent>(dayEvents: T[]) {
   const stats = busyDayStats(dayEvents);
-  const timed = [...dayEvents]
+  const events = onlyEvents(dayEvents);
+  const timed = [...events]
     .filter((e) => !e.allDay)
     .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-  const highPriorityCount = dayEvents.filter((e) => e.priority === "high" || e.priority === "urgent").length;
+  const highPriorityCount = events.filter((e) => e.priority === "high" || e.priority === "urgent").length;
 
   return {
     eventCount: stats.eventCount,
@@ -70,8 +81,9 @@ export function dailySummary<T extends DashboardEvent>(dayEvents: T[]) {
 }
 
 export function weeklyOverview(weekEvents: DashboardEvent[]) {
+  const events = onlyEvents(weekEvents);
   const byDate = new Map<string, DashboardEvent[]>();
-  for (const e of weekEvents) {
+  for (const e of events) {
     if (!byDate.has(e.date)) byDate.set(e.date, []);
     byDate.get(e.date)!.push(e);
   }
@@ -93,7 +105,7 @@ export function weeklyOverview(weekEvents: DashboardEvent[]) {
   }
 
   const minutesByCategory: Record<string, number> = {};
-  for (const e of weekEvents) {
+  for (const e of events) {
     if (e.allDay) continue;
     const cat = e.category || "Other";
     const mins = Math.max(0, timeToMinutes(e.endTime) - timeToMinutes(e.startTime));
@@ -101,10 +113,10 @@ export function weeklyOverview(weekEvents: DashboardEvent[]) {
   }
 
   return {
-    totalEvents: weekEvents.length,
+    totalEvents: events.length,
     minutesByCategory,
-    workoutCount: weekEvents.filter((e) => e.category === "Exercise").length,
-    deadlineCount: weekEvents.filter((e) => isDeadlineCategory(e.category)).length,
+    workoutCount: events.filter((e) => e.category === "Exercise").length,
+    deadlineCount: events.filter((e) => isDeadlineCategory(e.category)).length,
     busiestDate,
     lightestDate,
   };
@@ -116,7 +128,7 @@ export function weeklyOverview(weekEvents: DashboardEvent[]) {
 // one-off (non-recurring) event.
 export function upcomingEvents<T extends DashboardEvent>(events: T[], today: string, windowDays = 14): T[] {
   const cutoff = addDaysToDateStr(today, windowDays);
-  return events
+  return onlyEvents(events)
     .filter((e) => e.date > today && e.date <= cutoff)
     .filter(
       (e) => isDeadlineCategory(e.category) || e.priority === "high" || e.priority === "urgent" || e.recurrence === "none"
@@ -126,4 +138,29 @@ export function upcomingEvents<T extends DashboardEvent>(events: T[], today: str
       return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
     })
     .slice(0, 8);
+}
+
+// --- Task-specific dashboard helpers (Today/Home page) ---
+// Separate from `upcomingEvents` above (which is deliberately event-only)
+// so tasks get their own "Tasks due" surface instead of blending into the
+// events list.
+
+export function tasksDueToday<T extends DashboardEvent>(items: T[], today: string): T[] {
+  return items.filter((e) => e.itemType === "task" && e.date === today);
+}
+
+export function overdueTasks<T extends DashboardEvent>(items: T[], today: string): T[] {
+  return items
+    .filter((e) => e.itemType === "task" && !e.completed && e.date < today)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+export function upcomingTasks<T extends DashboardEvent>(items: T[], today: string, windowDays = 14): T[] {
+  const cutoff = addDaysToDateStr(today, windowDays);
+  return items
+    .filter((e) => e.itemType === "task" && !e.completed && e.date > today && e.date <= cutoff)
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
+    });
 }

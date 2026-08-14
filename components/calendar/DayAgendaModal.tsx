@@ -57,17 +57,29 @@ export default function DayAgendaModal({
         ) : (
           <ul className="mb-4 space-y-1.5">
             {dayEvents.map((ev) => {
+              const isTask = ev.itemType === "task";
               const isMultiOrAllDay = ev.allDay || ev.date !== (ev.endDate || ev.date);
+              const timeLabel = isTask
+                ? ev.allDay
+                  ? "Due today"
+                  : `Due ${formatTime12h(ev.startTime)}`
+                : isMultiOrAllDay
+                  ? "All day"
+                  : `${formatTime12h(ev.startTime)} – ${formatTime12h(ev.endTime)}`;
               return (
                 <li key={ev.occurrenceId}>
                   <button
                     onClick={() => onSelectEvent(ev)}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                   >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: categoryEventStyle(ev.category, categories).backgroundColor }}
-                    />
+                    {isTask ? (
+                      <span className="shrink-0 text-sm">{ev.completed ? "☑" : "☐"}</span>
+                    ) : (
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: categoryEventStyle(ev.category, categories).backgroundColor }}
+                      />
+                    )}
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block truncate text-sm font-medium ${
@@ -77,7 +89,7 @@ export default function DayAgendaModal({
                         {ev.title}
                       </span>
                       <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
-                        {isMultiOrAllDay ? "All day" : `${formatTime12h(ev.startTime)} – ${formatTime12h(ev.endTime)}`}
+                        {timeLabel}
                         {ev.category ? ` · ${ev.category}` : ""}
                       </span>
                     </span>
@@ -95,7 +107,7 @@ export default function DayAgendaModal({
           onClick={() => onAddEvent(date)}
           className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
         >
-          + Add event
+          + Add item
         </button>
       </div>
     </div>

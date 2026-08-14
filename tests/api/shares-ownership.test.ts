@@ -206,4 +206,70 @@ describe("invite preview and accept", () => {
       })
     );
   });
+
+  it("previews a shared task with its itemType intact", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-B");
+    prismaMock.eventShare.findUnique.mockResolvedValue({
+      token: "tok123",
+      scheduleItem: {
+        itemType: "task",
+        title: "Submit report",
+        notes: null,
+        date: "2026-08-20",
+        startTime: "17:00",
+        endTime: "17:00",
+        endDate: "2026-08-20",
+        allDay: false,
+        location: null,
+        category: "Assignment",
+        priority: "high",
+        subject: null,
+        estimatedHours: null,
+      },
+      createdBy: { username: "alice" },
+    });
+
+    const res = await getInvite(req("http://localhost/api/invites/tok123", "GET"), {
+      params: Promise.resolve({ token: "tok123" }),
+    });
+    const body = await res.json();
+
+    expect(body.itemType).toBe("task");
+  });
+
+  it("creates a task copy (not an event) when accepting an invite for a shared task", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-B");
+    prismaMock.eventShare.findUnique.mockResolvedValue({
+      token: "tok123",
+      scheduleItem: {
+        userId: "user-A",
+        itemType: "task",
+        title: "Submit report",
+        notes: null,
+        date: "2026-08-20",
+        startTime: "17:00",
+        endTime: "17:00",
+        endDate: "2026-08-20",
+        allDay: false,
+        location: null,
+        category: "Assignment",
+        reminderMinutesBefore: null,
+        priority: "high",
+        subject: null,
+        estimatedHours: null,
+      },
+    });
+    prismaMock.scheduleItem.create.mockResolvedValue({ id: "new-task", userId: "user-B", itemType: "task" });
+
+    const res = await acceptInvite(req("http://localhost/api/invites/tok123", "POST"), {
+      params: Promise.resolve({ token: "tok123" }),
+    });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.scheduleItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: "user-B", itemType: "task" }),
+      })
+    );
+  });
 });

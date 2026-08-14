@@ -48,6 +48,10 @@ model ScheduleItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   notes     String?
+  // "event" | "task" — a task's `date` is its due date, and `startTime`/
+  // `endTime` are its due time (or "00:00"/"23:59" with allDay:true when
+  // no due time is set). Tasks never span a range: endDate == date.
+  itemType  String   @default("event")
   // ISO date, e.g. "2026-08-12"
   date      String
   startTime String
@@ -75,10 +79,14 @@ model ScheduleItem {
 
   // --- Completion ---
   // Non-recurring events: whether it's done.
-  completed      Boolean @default(false)
+  completed      Boolean   @default(false)
+  // When `completed` last became true; cleared when reopened. Informational
+  // only — the task visibility rule (lib/calendar/visibility.ts) is based
+  // on `completed` + the due date/time, not this field.
+  completedAt    DateTime?
   // Recurring events: per-occurrence completion, comma-joined "YYYY-MM-DD"
   // (same convention as RoutineRun.completedStepIds elsewhere in this app).
-  completedDates String  @default("")
+  completedDates String    @default("")
 
   // --- Study features (Assignment/Test/Exam categories) ---
   subject        String?

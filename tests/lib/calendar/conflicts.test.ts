@@ -43,4 +43,22 @@ describe("findConflicts", () => {
     const conflicts = findConflicts(candidate, events);
     expect(conflicts.map((c) => c.title)).toEqual(["Lecture"]);
   });
+
+  it("never flags a conflict for a task candidate — a deadline doesn't reserve time", () => {
+    const candidate = { itemType: "task", date: "2026-08-14", startTime: "15:00", endTime: "15:00" };
+    const events = [
+      { id: "evt-2", title: "Lecture", date: "2026-08-14", startTime: "14:30", endTime: "15:30" },
+    ];
+    expect(findConflicts(candidate, events)).toEqual([]);
+  });
+
+  it("excludes tasks from the events an event candidate is compared against", () => {
+    const candidate = { date: "2026-08-14", startTime: "15:00", endTime: "16:00" };
+    const events = [
+      { id: "task-1", itemType: "task", title: "Submit report", date: "2026-08-14", startTime: "15:30", endTime: "15:30" },
+      { id: "evt-2", itemType: "event", title: "Lecture", date: "2026-08-14", startTime: "14:30", endTime: "15:30" },
+    ];
+    const conflicts = findConflicts(candidate, events);
+    expect(conflicts.map((c) => c.title)).toEqual(["Lecture"]);
+  });
 });

@@ -22,9 +22,14 @@ export function eventsOverlap(a: TimeSpan, b: TimeSpan): boolean {
   return a.startTime < b.endTime && b.startTime < a.endTime;
 }
 
-export function findConflicts<T extends TimeSpan & { id: string; title: string }>(
-  candidate: TimeSpan & { id?: string },
+// A task's due date/time is a deadline, not a reservation — it never
+// occupies time, so it can neither cause nor be flagged in a conflict.
+export function findConflicts<T extends TimeSpan & { id: string; title: string; itemType?: string }>(
+  candidate: TimeSpan & { id?: string; itemType?: string },
   events: T[]
 ): T[] {
-  return events.filter((ev) => ev.id !== candidate.id && eventsOverlap(candidate, ev));
+  if (candidate.itemType === "task") return [];
+  return events.filter(
+    (ev) => ev.itemType !== "task" && ev.id !== candidate.id && eventsOverlap(candidate, ev)
+  );
 }

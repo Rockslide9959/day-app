@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -25,5 +26,6 @@ export async function GET(req: NextRequest) {
     orderBy: [{ date: "desc" }],
     take: 50,
   });
-  return NextResponse.json(items);
+  const now = new Date();
+  return NextResponse.json(items.filter((item) => isScheduleItemVisible(item, now)));
 }

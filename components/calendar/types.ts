@@ -6,6 +6,9 @@ export type CalendarEvent = {
   occurrenceId: string;
   occurrenceDate: string;
   isRecurringInstance: boolean;
+  // "event" | "task" — a task's `date`/`startTime` represent its due
+  // date/time rather than a start of a range (see prisma/schema.prisma).
+  itemType: string;
   title: string;
   notes: string | null;
   date: string;
@@ -21,6 +24,7 @@ export type CalendarEvent = {
   recurrenceDays: string | null;
   recurrenceEndDate: string | null;
   completed: boolean;
+  completedAt: string | null;
   subject: string | null;
   estimatedHours: number | null;
 };

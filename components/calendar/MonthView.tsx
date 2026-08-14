@@ -87,6 +87,7 @@ export default function MonthView({
                         : "hover:opacity-90"
                     }`}
                   >
+                    {ev.itemType === "task" && <span className="shrink-0">{ev.completed ? "☑" : "☐"}</span>}
                     <span className="truncate">{ev.title}</span>
                     {(ev.priority === "high" || ev.priority === "urgent") && <span>{ev.priority === "urgent" ? "🔴" : "🟠"}</span>}
                   </span>

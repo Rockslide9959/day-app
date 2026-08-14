@@ -3,6 +3,17 @@ import { minutesToTime, timeToMinutes } from "@/lib/dates";
 export type BusySlot = { startTime: string; endTime: string };
 export type FreeSlot = { startTime: string; endTime: string; minutes: number };
 
+// Builds the busy list for a given day from loaded calendar items — tasks
+// are deadlines, not reservations, so they're excluded here rather than at
+// each call site, guaranteeing they never shrink free-time results.
+export function busySlotsFromEvents<
+  T extends { itemType: string; allDay: boolean; date: string; startTime: string; endTime: string }
+>(events: T[], date: string): BusySlot[] {
+  return events
+    .filter((e) => e.itemType !== "task" && e.date === date && !e.allDay)
+    .map((e) => ({ startTime: e.startTime, endTime: e.endTime }));
+}
+
 // Finds gaps of at least `durationMinutes` within [dayStart, dayEnd],
 // given a day's busy time spans. Pure local computation — no AI, no
 // external calls.
