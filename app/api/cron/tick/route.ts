@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendPush, isPushConfigured } from "@/lib/webpush";
 import { nextOccurrence } from "@/lib/recurrence";
 import { autoTransitionData } from "@/lib/timers";
+import { processScheduleReminders } from "@/lib/calendar/reminderCron";
 
 export const dynamic = "force-dynamic";
 
@@ -95,5 +96,16 @@ async function handleTick(req: NextRequest) {
     await prisma.timer.update({ where: { id: timer.id }, data: transition });
   }
 
-  return NextResponse.json({ sent, reminders: due.length, timersSent, timersTransitioned });
+  const schedule = await processScheduleReminders(now);
+
+  return NextResponse.json({
+    sent,
+    reminders: due.length,
+    timersSent,
+    timersTransitioned,
+    scheduleRemindersDue: schedule.due,
+    schedulePushesSent: schedule.sent,
+    scheduleRetries: schedule.retries,
+    scheduleSkippedCompleted: schedule.skippedCompleted,
+  });
 }

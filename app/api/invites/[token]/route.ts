@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { resolveTimeZone } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export async function GET(
 }
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const userId = await getCurrentUserId();
@@ -55,6 +56,12 @@ export async function POST(
     include: { scheduleItem: true },
   });
   if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Optional — the accepting device may be in a different timezone than
+  // whoever shared the link, so this is treated like a fresh create (falls
+  // back the same way a create with no timezone would) rather than copying
+  // the original creator's timeZone.
+  const body = await req.json().catch(() => ({}) as Record<string, unknown>);
 
   const e = share.scheduleItem;
   const copy = await prisma.scheduleItem.create({
@@ -77,6 +84,7 @@ export async function POST(
       // app/api/schedule/[id]/duplicate/route.ts).
       subject: e.subject,
       estimatedHours: e.estimatedHours,
+      timeZone: resolveTimeZone(typeof body.timeZone === "string" ? body.timeZone : null),
     },
   });
 

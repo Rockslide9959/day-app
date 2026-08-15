@@ -4,6 +4,7 @@ import { todayStr } from "@/lib/dates";
 import { expandEventOccurrences } from "@/lib/calendar/recurrence";
 import { getCurrentUserId } from "@/lib/auth";
 import { validateItemType } from "@/lib/validation";
+import { resolveTimeZone } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
       recurrenceEndDate: recurrenceEndDate || null,
       subject: subject || null,
       estimatedHours: typeof estimatedHours === "number" ? estimatedHours : null,
+      timeZone: resolveTimeZone(body.timeZone),
     },
   });
 

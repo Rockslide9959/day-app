@@ -18,6 +18,7 @@ export function draftToPayload(draft: EventDraft) {
     recurrenceEndDate: draft.recurrenceEndDate || null,
     subject: draft.subject.trim() || null,
     estimatedHours: draft.estimatedHours === "" ? null : Number(draft.estimatedHours),
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
 
   if (draft.itemType === "task") {

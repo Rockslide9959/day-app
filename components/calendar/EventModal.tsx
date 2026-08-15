@@ -31,6 +31,16 @@ const RECURRENCE_OPTIONS = [
   { value: "custom", label: "Custom days" },
 ];
 
+// Mirrors REMINDER_OPTIONS' offsets with task/event-specific phrasing, e.g.
+// "at due time" / "1 hour before start" / "30 minutes before due".
+function reminderOffsetLabel(minutes: number, isTask: boolean): string {
+  const noun = isTask ? "due" : "start";
+  if (minutes === 0) return `at ${isTask ? "due time" : "start time"}`;
+  if (minutes === 60) return `1 hour before ${noun}`;
+  if (minutes === 1440) return `1 day before ${noun}`;
+  return `${minutes} minutes before ${noun}`;
+}
+
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const ITEM_TYPES = ["event", "task"] as const;
 type ItemType = (typeof ITEM_TYPES)[number];
@@ -588,6 +598,9 @@ export default function EventModal({
                   </option>
                 ))}
               </select>
+              <span className="mt-1 block text-[11px] text-zinc-400">
+                Notifications are sent to every device where you have enabled notifications.
+              </span>
             </label>
 
             <label className="block text-xs text-zinc-500">
@@ -875,7 +888,7 @@ function EventDetails({
 
       {event.reminderMinutesBefore != null && (
         <p className="text-xs text-zinc-400">
-          Reminder: {event.reminderMinutesBefore === 0 ? "at time of event" : `${event.reminderMinutesBefore} min before`}
+          Reminder: {reminderOffsetLabel(event.reminderMinutesBefore, isTask)}
         </p>
       )}
 

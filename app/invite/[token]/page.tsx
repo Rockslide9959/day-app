@@ -51,7 +51,11 @@ export default function InvitePage() {
     setAccepting(true);
     setError("");
     try {
-      const res = await fetch(`/api/invites/${token}`, { method: "POST" });
+      const res = await fetch(`/api/invites/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
       if (!res.ok) throw new Error();
       setAccepted(true);
     } catch {

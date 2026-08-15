@@ -80,6 +80,15 @@ export default function CalendarPage() {
     } catch {
       // ignore malformed local storage
     }
+
+    // A reminder notification's click target — /calendar?date=YYYY-MM-DD —
+    // lands here rather than deep-linking a specific item's modal (which
+    // would need a larger refactor of how modalState gets seeded).
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    if (dateParam) {
+      setAnchorDate(dateParam);
+      setViewMode("day");
+    }
   }, []);
 
   useEffect(() => {

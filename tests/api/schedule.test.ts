@@ -11,6 +11,9 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
     findMany: vi.fn(),
   },
+  scheduleReminderDelivery: {
+    deleteMany: vi.fn(),
+  },
 }));
 
 const authMock = vi.hoisted(() => ({ getCurrentUserId: vi.fn().mockResolvedValue("user-1") }));
@@ -124,6 +127,40 @@ describe("POST /api/schedule (create)", () => {
           recurrenceDays: "1,3",
         }),
       })
+    );
+  });
+});
+
+describe("POST /api/schedule — timezone", () => {
+  it("stores a valid IANA timezone as sent by the client", async () => {
+    prismaMock.scheduleItem.create.mockResolvedValue({ id: "evt-1" });
+    await POST(
+      jsonRequest("http://localhost/api/schedule", "POST", {
+        title: "Dentist",
+        date: "2026-08-14",
+        startTime: "10:00",
+        endTime: "11:00",
+        timeZone: "America/New_York",
+      })
+    );
+    expect(prismaMock.scheduleItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ timeZone: "America/New_York" }) })
+    );
+  });
+
+  it("falls back to the default timezone when missing or invalid", async () => {
+    prismaMock.scheduleItem.create.mockResolvedValue({ id: "evt-1" });
+    await POST(
+      jsonRequest("http://localhost/api/schedule", "POST", {
+        title: "Dentist",
+        date: "2026-08-14",
+        startTime: "10:00",
+        endTime: "11:00",
+        timeZone: "Not/AZone",
+      })
+    );
+    expect(prismaMock.scheduleItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ timeZone: "Africa/Johannesburg" }) })
     );
   });
 });
@@ -457,6 +494,84 @@ describe("PATCH /api/schedule/[id] (edit)", () => {
   });
 });
 
+describe("PATCH /api/schedule/[id] — reminder cancellation", () => {
+  it("cancels pending reminder deliveries when a reschedule-relevant field changes", async () => {
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "evt-1" });
+
+    await PATCH(jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { startTime: "15:00" }), {
+      params: Promise.resolve({ id: "evt-1" }),
+    });
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).toHaveBeenCalledWith({
+      where: { scheduleItemId: "evt-1", status: { in: ["pending", "sending"] } },
+    });
+  });
+
+  it("cancels pending reminders when the reminder is changed to 'No reminder'", async () => {
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "evt-1" });
+
+    await PATCH(jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { reminderMinutesBefore: null }), {
+      params: Promise.resolve({ id: "evt-1" }),
+    });
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).toHaveBeenCalledWith({
+      where: { scheduleItemId: "evt-1", status: { in: ["pending", "sending"] } },
+    });
+  });
+
+  it("cancels pending reminders outright when a non-recurring item is completed", async () => {
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "task-1" });
+
+    await PATCH(jsonRequest("http://localhost/api/schedule/task-1", "PATCH", { completed: true }), {
+      params: Promise.resolve({ id: "task-1" }),
+    });
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).toHaveBeenCalledWith({
+      where: { scheduleItemId: "task-1", status: { in: ["pending", "sending"] } },
+    });
+  });
+
+  it("does not touch reminder deliveries when only an unrelated field (title) changes", async () => {
+    prismaMock.scheduleItem.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.scheduleItem.findUnique.mockResolvedValue({ id: "evt-1" });
+
+    await PATCH(jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { title: "Renamed" }), {
+      params: Promise.resolve({ id: "evt-1" }),
+    });
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("toggling one occurrence's completion cancels only that occurrence's pending reminder", async () => {
+    prismaMock.scheduleItem.findFirst.mockResolvedValue({ id: "evt-1", completedDates: "" });
+    prismaMock.scheduleItem.update.mockResolvedValue({ id: "evt-1", completedDates: "2026-08-10" });
+
+    await PATCH(
+      jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { toggleCompletedDate: "2026-08-10" }),
+      { params: Promise.resolve({ id: "evt-1" }) }
+    );
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).toHaveBeenCalledWith({
+      where: { scheduleItemId: "evt-1", status: { in: ["pending", "sending"] }, occurrenceDate: "2026-08-10" },
+    });
+  });
+
+  it("un-completing an occurrence (toggle off) doesn't cancel any reminder", async () => {
+    prismaMock.scheduleItem.findFirst.mockResolvedValue({ id: "evt-1", completedDates: "2026-08-10" });
+    prismaMock.scheduleItem.update.mockResolvedValue({ id: "evt-1", completedDates: "" });
+
+    await PATCH(
+      jsonRequest("http://localhost/api/schedule/evt-1", "PATCH", { toggleCompletedDate: "2026-08-10" }),
+      { params: Promise.resolve({ id: "evt-1" }) }
+    );
+
+    expect(prismaMock.scheduleReminderDelivery.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
 describe("DELETE /api/schedule/[id]", () => {
   it("deletes the event when owned by the requester", async () => {
     prismaMock.scheduleItem.deleteMany.mockResolvedValue({ count: 1 });
@@ -502,6 +617,36 @@ describe("POST /api/schedule/[id]/duplicate", () => {
     expect(created).not.toHaveProperty("recurrence");
     expect(created).not.toHaveProperty("completed");
     expect(created.itemType).toBe("event");
+  });
+
+  it("carries the original's timeZone over verbatim", async () => {
+    prismaMock.scheduleItem.findFirst.mockResolvedValue({
+      id: "evt-1",
+      itemType: "event",
+      title: "Gym",
+      notes: null,
+      date: "2026-08-14",
+      startTime: "17:00",
+      endTime: "18:00",
+      endDate: null,
+      allDay: false,
+      location: "Campus gym",
+      category: "Exercise",
+      reminderMinutesBefore: null,
+      priority: "normal",
+      subject: null,
+      estimatedHours: null,
+      timeZone: "America/New_York",
+    });
+    prismaMock.scheduleItem.create.mockResolvedValue({ id: "evt-2" });
+
+    await DUPLICATE(jsonRequest("http://localhost/api/schedule/evt-1/duplicate", "POST"), {
+      params: Promise.resolve({ id: "evt-1" }),
+    });
+
+    expect(prismaMock.scheduleItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ timeZone: "America/New_York" }) })
+    );
   });
 
   it("preserves itemType: \"task\" when duplicating a task", async () => {

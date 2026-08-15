@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { validateItemType } from "@/lib/validation";
+import { resolveTimeZone } from "@/lib/timezone";
+
+// Fields that, if changed, invalidate any not-yet-sent reminder — the next
+// cron tick recomputes fresh occurrence/reminder times from the now-current
+// row, so the only cleanup needed here is dropping stale pending rows
+// before they can fire at the old time. Already-`sent` rows are left alone
+// (that's the duplicate-prevention history).
+const RESCHEDULING_FIELDS = [
+  "date",
+  "startTime",
+  "allDay",
+  "reminderMinutesBefore",
+  "recurrence",
+  "recurrenceDays",
+  "recurrenceEndDate",
+  "timeZone",
+  "itemType",
+] as const;
+
+function cancelPendingReminders(scheduleItemId: string, occurrenceDate?: string) {
+  return prisma.scheduleReminderDelivery.deleteMany({
+    where: {
+      scheduleItemId,
+      status: { in: ["pending", "sending"] },
+      ...(occurrenceDate ? { occurrenceDate } : {}),
+    },
+  });
+}
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +49,18 @@ export async function PATCH(
   if (typeof body.toggleCompletedDate === "string") {
     const current = await prisma.scheduleItem.findFirst({ where: { id, userId } });
     if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const occurrenceDate = body.toggleCompletedDate;
     const dates = new Set(current.completedDates.split(",").filter(Boolean));
-    if (dates.has(body.toggleCompletedDate)) dates.delete(body.toggleCompletedDate);
-    else dates.add(body.toggleCompletedDate);
+    const nowCompleted = !dates.has(occurrenceDate);
+    if (dates.has(occurrenceDate)) dates.delete(occurrenceDate);
+    else dates.add(occurrenceDate);
     const item = await prisma.scheduleItem.update({
       where: { id },
       data: { completedDates: [...dates].sort().join(",") },
     });
+    // Suppress only this occurrence's reminder — other occurrences of the
+    // same recurring series are untouched.
+    if (nowCompleted) await cancelPendingReminders(id, occurrenceDate);
     return NextResponse.json(item);
   }
 
@@ -80,6 +113,7 @@ export async function PATCH(
   if (typeof body.estimatedHours === "number" || body.estimatedHours === null) {
     data.estimatedHours = body.estimatedHours;
   }
+  if (typeof body.timeZone === "string") data.timeZone = resolveTimeZone(body.timeZone);
 
   if (data.itemType === "task") {
     // date is guaranteed present here (checked above) — collapse to a
@@ -94,6 +128,15 @@ export async function PATCH(
 
   const result = await prisma.scheduleItem.updateMany({ where: { id, userId }, data });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // A field that affects when/whether a reminder fires changed — drop any
+  // not-yet-sent reminder so it can't fire at the old time; the next cron
+  // tick recomputes fresh from the row as it now stands. Completing the
+  // item (non-recurring) also cancels its pending reminder outright.
+  if (RESCHEDULING_FIELDS.some((f) => f in data) || data.completed === true) {
+    await cancelPendingReminders(id);
+  }
+
   const item = await prisma.scheduleItem.findUnique({ where: { id } });
   return NextResponse.json(item);
 }

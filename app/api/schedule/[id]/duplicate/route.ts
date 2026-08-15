@@ -35,6 +35,10 @@ export async function POST(
       // re-enable recurrence on if they want.
       subject: original.subject,
       estimatedHours: original.estimatedHours,
+      // Same account, presumably the same device/session — carried over
+      // verbatim rather than re-derived (unlike an invite accept, which
+      // may come from a different account/timezone entirely).
+      timeZone: original.timeZone,
     },
   });
 

@@ -93,13 +93,53 @@ model ScheduleItem {
   subject        String?
   estimatedHours Float?
 
+  // IANA zone (e.g. "Africa/Johannesburg") the item's date/startTime/endTime
+  // are local to — captured from the browser at creation time. Null for
+  // rows created before this field existed; lib/timezone.ts#resolveTimeZone
+  // falls back to Africa/Johannesburg for those.
+  timeZone String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  shares EventShare[]
+  shares             EventShare[]
+  reminderDeliveries ScheduleReminderDelivery[]
 
   @@index([date])
   @@index([userId])
+}
+
+// One row per (occurrence, device) a reminder push either was or should be
+// attempted for — see lib/calendar/reminderCron.ts. The unique constraint
+// below is the duplicate-prevention mechanism: upserting against it is
+// naturally idempotent across repeated/concurrent cron ticks, and keying by
+// device (pushEndpoint) rather than a subscription FK means one device's
+// success never blocks another's retry, and a later-pruned subscription
+// doesn't orphan the row.
+model ScheduleReminderDelivery {
+  id             String       @id @default(cuid())
+  scheduleItemId String
+  scheduleItem   ScheduleItem @relation(fields: [scheduleItemId], references: [id], onDelete: Cascade)
+  // "YYYY-MM-DD" — which occurrence (of a recurring item) this covers.
+  occurrenceDate String
+  // Calculated UTC instant the reminder was due.
+  reminderAt     DateTime
+  // PushSubscription.endpoint — not an FK, since a subscription can be
+  // deleted/recreated independently of this delivery history.
+  pushEndpoint   String
+  // "pending" | "sending" | "sent" | "failed". "sending" is a short-lived
+  // optimistic-lock state claimed just before a send attempt, guarding
+  // against two overlapping cron ticks both delivering the same row.
+  status         String       @default("pending")
+  attempts       Int          @default(0)
+  lastAttemptAt  DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([scheduleItemId, occurrenceDate, pushEndpoint])
+  @@index([scheduleItemId, occurrenceDate])
+  @@index([status, reminderAt])
 }
 
 // A shareable link for a ScheduleItem: whoever holds the token can
