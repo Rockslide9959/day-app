@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { dayLabel, eventCoversDate, formatTime12h, timeToMinutes, todayStr } from "@/lib/dates";
 import { CalendarEvent } from "./types";
-import { categoryEventStyle } from "./categories";
 import { CategoryDef } from "@/lib/calendar/categories";
 import { NotebookEntryFull } from "@/components/notebook/types";
 import { buildContentPreview } from "@/lib/notebookFormat";
+import { buildItemAriaLabel, getItemVisualStyle, priorityDotInfo } from "@/lib/calendar/itemDisplay";
+import { DASHED_TASK_OVERLAY_CLASS } from "./CalendarItemChip";
 
 export default function DayAgendaModal({
   date,
@@ -112,20 +113,20 @@ export default function DayAgendaModal({
                 : isMultiOrAllDay
                   ? "All day"
                   : `${formatTime12h(ev.startTime)} – ${formatTime12h(ev.endTime)}`;
+              const visual = getItemVisualStyle(ev, categories);
+              const dot = priorityDotInfo(ev.priority);
               return (
                 <li key={ev.occurrenceId}>
                   <button
                     onClick={() => onSelectEvent(ev)}
+                    aria-label={buildItemAriaLabel(ev, timeLabel)}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                   >
-                    {isTask ? (
-                      <span className="shrink-0 text-sm">{ev.completed ? "☑" : "☐"}</span>
-                    ) : (
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: categoryEventStyle(ev.category, categories).backgroundColor }}
-                      />
-                    )}
+                    <span
+                      aria-hidden="true"
+                      style={{ backgroundColor: visual.background, color: visual.color }}
+                      className={`relative h-8 w-8 shrink-0 rounded-md ${visual.dashed ? DASHED_TASK_OVERLAY_CLASS : ""}`}
+                    />
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block truncate text-sm font-medium ${
@@ -135,12 +136,17 @@ export default function DayAgendaModal({
                         {ev.title}
                       </span>
                       <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
-                        {timeLabel}
+                        {isTask ? "Task" : "Event"} · {timeLabel}
                         {ev.category ? ` · ${ev.category}` : ""}
+                        {ev.completed ? " · Completed" : ""}
                       </span>
                     </span>
-                    {(ev.priority === "high" || ev.priority === "urgent") && (
-                      <span className="shrink-0">{ev.priority === "urgent" ? "🔴" : "🟠"}</span>
+                    {dot && (
+                      <span
+                        aria-hidden="true"
+                        title={dot.label}
+                        className={`h-2 w-2 shrink-0 rounded-full ${dot.color === "red" ? "bg-red-500" : "bg-orange-500"}`}
+                      />
                     )}
                   </button>
                 </li>

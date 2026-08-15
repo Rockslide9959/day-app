@@ -21,7 +21,7 @@ export function categoryChipStyle(category: string | null | undefined, categorie
 // White or near-black text, whichever contrasts better against the given
 // hex background — categories carry arbitrary custom colors, so we can't
 // assume a fixed text color reads well on all of them.
-function readableTextColor(hex: string): string {
+export function readableTextColor(hex: string): string {
   const clean = hex.replace("#", "");
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
   const r = parseInt(full.slice(0, 2), 16);

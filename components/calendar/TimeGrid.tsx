@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { dayLabel, formatTime12h, timeToMinutes, todayStr } from "@/lib/dates";
 import { CalendarEvent } from "./types";
-import { categoryEventStyle } from "./categories";
 import { CategoryDef } from "@/lib/calendar/categories";
+import { buildItemAriaLabel, getItemVisualStyle, priorityDotInfo } from "@/lib/calendar/itemDisplay";
+import CalendarItemChip from "./CalendarItemChip";
 
 const HOUR_HEIGHT = 64; // px per hour
 const GUTTER_WIDTH = 56; // px, hour-label column
@@ -136,22 +137,21 @@ export default function TimeGrid({
           </div>
           {dates.map((date) => (
             <div key={date} className="flex flex-col gap-1 border-l border-zinc-100 p-1 dark:border-zinc-800">
-              {(allDayByDate.get(date) || []).map((ev) => (
-                <button
-                  key={ev.occurrenceId}
-                  onClick={() => onSelectEvent(ev)}
-                  title={ev.title}
-                  style={ev.completed ? undefined : categoryEventStyle(ev.category, categories)}
-                  className={`flex min-h-[28px] items-center gap-1.5 truncate rounded-md px-2 py-1 text-left text-xs font-medium hover:opacity-90 ${
-                    ev.completed
-                      ? "bg-zinc-100 text-zinc-400 line-through dark:bg-zinc-800 dark:text-zinc-500"
-                      : ""
-                  }`}
-                >
-                  {ev.itemType === "task" && <span className="shrink-0">{ev.completed ? "☑" : "☐"}</span>}
-                  <span className="truncate">{ev.title}</span>
-                </button>
-              ))}
+              {(allDayByDate.get(date) || []).map((ev) => {
+                const visual = getItemVisualStyle(ev, categories);
+                const dot = priorityDotInfo(ev.priority);
+                const timeLabel = ev.itemType === "task" ? "Due today" : "All day";
+                return (
+                  <button
+                    key={ev.occurrenceId}
+                    onClick={() => onSelectEvent(ev)}
+                    aria-label={buildItemAriaLabel(ev, timeLabel)}
+                    className="block min-h-[28px] text-left hover:opacity-90"
+                  >
+                    <CalendarItemChip visual={visual} title={ev.title} completed={ev.completed} dot={dot} dense />
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -204,6 +204,9 @@ export default function TimeGrid({
                   const height = ((endMin - startMin) / 60) * HOUR_HEIGHT;
                   const { col, cols } = layout.get(ev.occurrenceId) || { col: 0, cols: 1 };
                   const widthPct = 100 / cols;
+                  const visual = getItemVisualStyle(ev, categories);
+                  const dot = priorityDotInfo(ev.priority);
+                  const timeLabel = `${formatTime12h(ev.startTime)}–${formatTime12h(ev.endTime)}`;
                   return (
                     <button
                       key={ev.occurrenceId}
@@ -216,25 +219,18 @@ export default function TimeGrid({
                         height,
                         left: `calc(${col * widthPct}% + 2px)`,
                         width: `calc(${widthPct}% - 4px)`,
-                        ...(ev.completed ? {} : categoryEventStyle(ev.category, categories)),
                       }}
-                      className={`absolute z-[1] overflow-hidden rounded-md px-2 py-1 text-left text-xs shadow-sm ${
-                        ev.completed
-                          ? "bg-zinc-100 text-zinc-400 line-through dark:bg-zinc-800 dark:text-zinc-500"
-                          : "hover:opacity-90"
-                      }`}
+                      aria-label={buildItemAriaLabel(ev, timeLabel)}
+                      className="absolute z-[1] text-left shadow-sm hover:opacity-90"
                     >
-                      <span className="flex items-center gap-1.5">
-                        <span className="truncate font-semibold">{ev.title}</span>
-                        {(ev.priority === "high" || ev.priority === "urgent") && (
-                          <span>{ev.priority === "urgent" ? "🔴" : "🟠"}</span>
-                        )}
-                      </span>
-                      {height >= 36 && (
-                        <span className="block truncate text-[11px] opacity-90">
-                          {formatTime12h(ev.startTime)}–{formatTime12h(ev.endTime)}
-                        </span>
-                      )}
+                      <CalendarItemChip
+                        visual={visual}
+                        title={ev.title}
+                        completed={ev.completed}
+                        dot={dot}
+                        subtitle={height >= 36 ? timeLabel : undefined}
+                        dense
+                      />
                     </button>
                   );
                 })}
@@ -243,7 +239,9 @@ export default function TimeGrid({
                     from start/end, so it never implies occupied time. */}
                 {dayTimedTasks.map((task) => {
                   const top = (timeToMinutes(task.startTime) / 60) * HOUR_HEIGHT;
-                  const dotColor = categoryEventStyle(task.category, categories).backgroundColor as string;
+                  const visual = getItemVisualStyle(task, categories);
+                  const dot = priorityDotInfo(task.priority);
+                  const timeLabel = `Due ${formatTime12h(task.startTime)}`;
                   return (
                     <button
                       key={task.occurrenceId}
@@ -251,15 +249,18 @@ export default function TimeGrid({
                         e.stopPropagation();
                         onSelectEvent(task);
                       }}
-                      style={{ top, borderColor: task.completed ? undefined : dotColor }}
-                      className={`absolute left-1 right-1 z-[2] flex items-center gap-1.5 truncate rounded-md border border-dashed bg-white/95 px-1.5 py-0.5 text-left text-[11px] font-medium shadow-sm dark:bg-zinc-900/95 ${
-                        task.completed
-                          ? "border-zinc-200 text-zinc-400 line-through dark:border-zinc-700"
-                          : "text-zinc-700 dark:text-zinc-200"
-                      }`}
+                      style={{ top }}
+                      aria-label={buildItemAriaLabel(task, timeLabel)}
+                      className="absolute left-1 right-1 z-[2] text-left shadow-sm hover:opacity-90"
                     >
-                      <span className="shrink-0">{task.completed ? "☑" : "☐"}</span>
-                      <span className="truncate">{task.title}</span>
+                      <CalendarItemChip
+                        visual={visual}
+                        title={task.title}
+                        completed={task.completed}
+                        dot={dot}
+                        subtitle={timeLabel}
+                        dense
+                      />
                     </button>
                   );
                 })}

@@ -2,8 +2,9 @@
 
 import { getMonthGrid, isSameMonth, todayStr } from "@/lib/dates";
 import { CalendarEvent } from "./types";
-import { categoryEventStyle } from "./categories";
 import { CategoryDef } from "@/lib/calendar/categories";
+import { buildItemAriaLabel, getItemVisualStyle, moreIndicatorLabel, priorityDotInfo } from "@/lib/calendar/itemDisplay";
+import CalendarItemChip from "./CalendarItemChip";
 
 export default function MonthView({
   anchorDate,
@@ -58,11 +59,29 @@ export default function MonthView({
           const inMonth = isSameMonth(date, anchorDate);
           const isToday = date === today;
           const maxVisible = 3;
+          const remaining = dayEvents.length - maxVisible;
+          const moreLabel = remaining > 0 ? moreIndicatorLabel(remaining) : null;
+
           return (
-            <button
+            // A div (not a <button>) so the per-item buttons below aren't
+            // nested inside a button, which is invalid HTML and breaks
+            // keyboard access to individual items. role="button" + the key
+            // handler make the cell itself a valid custom control for
+            // "select this date", while each item keeps its own real
+            // <button> for "select this item".
+            <div
               key={date}
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectDate(date)}
-              className={`flex min-h-[92px] flex-col items-stretch gap-1 border-b border-r border-zinc-200 p-1 text-left last:border-r-0 sm:min-h-[112px] sm:p-1.5 dark:border-zinc-800 ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectDate(date);
+                }
+              }}
+              aria-label={`${date}${dayEvents.length > 0 ? `, ${dayEvents.length} item${dayEvents.length === 1 ? "" : "s"}` : ""}`}
+              className={`flex min-h-[92px] cursor-pointer flex-col items-stretch gap-1 border-b border-r border-zinc-200 p-1 text-left last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500 sm:min-h-[112px] sm:p-1.5 dark:border-zinc-800 ${
                 inMonth ? "bg-white dark:bg-zinc-900" : "bg-zinc-50 dark:bg-zinc-950"
               }`}
             >
@@ -84,33 +103,38 @@ export default function MonthView({
                   </span>
                 )}
               </span>
-              <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                {dayEvents.slice(0, maxVisible).map((ev) => (
-                  <span
-                    key={ev.occurrenceId}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectEvent(ev);
-                    }}
-                    style={ev.completed ? undefined : categoryEventStyle(ev.category, categories)}
-                    className={`flex items-center gap-1 truncate rounded px-1.5 py-1 text-[11px] font-medium leading-tight sm:text-xs ${
-                      ev.completed
-                        ? "bg-zinc-100 text-zinc-400 line-through dark:bg-zinc-800 dark:text-zinc-500"
-                        : "hover:opacity-90"
-                    }`}
-                  >
-                    {ev.itemType === "task" && <span className="shrink-0">{ev.completed ? "☑" : "☐"}</span>}
-                    <span className="truncate">{ev.title}</span>
-                    {(ev.priority === "high" || ev.priority === "urgent") && <span>{ev.priority === "urgent" ? "🔴" : "🟠"}</span>}
-                  </span>
-                ))}
-                {dayEvents.length > maxVisible && (
-                  <span className="px-1.5 text-[11px] font-semibold text-zinc-500 sm:text-xs dark:text-zinc-400">
-                    +{dayEvents.length - maxVisible} more
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
+                {dayEvents.slice(0, maxVisible).map((ev) => {
+                  const visual = getItemVisualStyle(ev, categories);
+                  const dot = priorityDotInfo(ev.priority);
+                  return (
+                    <button
+                      key={ev.occurrenceId}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectEvent(ev);
+                      }}
+                      aria-label={buildItemAriaLabel(ev)}
+                      className="block min-w-0 text-left"
+                    >
+                      <CalendarItemChip
+                        visual={visual}
+                        title={ev.title}
+                        completed={ev.completed}
+                        dot={dot}
+                        dense
+                      />
+                    </button>
+                  );
+                })}
+                {moreLabel && (
+                  <span className="whitespace-nowrap px-1 text-[11px] font-semibold text-zinc-500 sm:text-xs dark:text-zinc-400">
+                    <span className="sm:hidden">{moreLabel.compact}</span>
+                    <span className="hidden sm:inline">{moreLabel.full}</span>
                   </span>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

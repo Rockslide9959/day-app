@@ -17,6 +17,7 @@ import DayView from "@/components/calendar/DayView";
 import EventModal, { EventDraft } from "@/components/calendar/EventModal";
 import DayAgendaModal from "@/components/calendar/DayAgendaModal";
 import CategoryFilter from "@/components/calendar/CategoryFilter";
+import CalendarLegend from "@/components/calendar/CalendarLegend";
 import FreeTimeFinder from "@/components/calendar/FreeTimeFinder";
 import { filterVisibleEvents, normalizeCachedEvent } from "@/lib/calendarFilter";
 import { CalendarEvent, ViewMode } from "@/components/calendar/types";
@@ -311,6 +312,7 @@ export default function CalendarPage() {
       </div>
 
       <CategoryFilter categories={categories} hidden={hidden} onToggle={toggleCategory} />
+      <CalendarLegend />
 
       {searchResults ? (
         <SearchResults
