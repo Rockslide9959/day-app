@@ -95,3 +95,13 @@ export function validateNotebookContent(content: unknown): string | null {
   }
   return null;
 }
+
+// NotebookEntry.contentFormat — undefined is allowed (callers default it
+// to "plain"); anything else must be one of the two supported values.
+export function validateContentFormat(contentFormat: unknown): string | null {
+  if (contentFormat === undefined) return null;
+  if (contentFormat !== "plain" && contentFormat !== "tiptap-json") {
+    return "contentFormat must be \"plain\" or \"tiptap-json\"";
+  }
+  return null;
+}

@@ -44,39 +44,39 @@ model Reminder {
 }
 
 model ScheduleItem {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  notes     String?
+  id                    String  @id @default(cuid())
+  userId                String
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title                 String
+  notes                 String?
   // "event" | "task" — a task's `date` is its due date, and `startTime`/
   // `endTime` are its due time (or "00:00"/"23:59" with allDay:true when
   // no due time is set). Tasks never span a range: endDate == date.
-  itemType  String   @default("event")
+  itemType              String  @default("event")
   // ISO date, e.g. "2026-08-12"
-  date      String
-  startTime String
-  endTime   String
+  date                  String
+  startTime             String
+  endTime               String
   // Multi-day support; defaults to `date` when absent (same-day event)
-  endDate   String?
-  allDay    Boolean  @default(false)
-  location  String?
+  endDate               String?
+  allDay                Boolean @default(false)
+  location              String?
   // Free-form category name — one of the app's defaults or a custom
   // EventCategory.name the user created in Settings.
-  category  String?
+  category              String?
   reminderMinutesBefore Int?
   // "low" | "normal" | "high" | "urgent"
-  priority  String   @default("normal")
+  priority              String  @default("normal")
 
   // --- Recurrence ---
   // "none" | "daily" | "weekly" | "monthly" | "weekdays" | "custom"
-  recurrence         String    @default("none")
+  recurrence        String  @default("none")
   // Comma-joined weekday numbers (0=Sun..6=Sat), used by "weekly"/"custom"
   // (e.g. Mon/Wed/Fri gym = "1,3,5"). Null for other recurrence types.
-  recurrenceDays      String?
+  recurrenceDays    String?
   // Optional bound on how far the series repeats; open-ended if null
   // (expansion is still bounded by whatever range is being queried).
-  recurrenceEndDate  String?
+  recurrenceEndDate String?
 
   // --- Completion ---
   // Non-recurring events: whether it's done.
@@ -108,13 +108,13 @@ model ScheduleItem {
 // /api/invites/[token] for the accept-as-copy behavior. Cascades with
 // the event, so deleting it revokes every link pointing at it.
 model EventShare {
-  id             String       @id @default(cuid())
-  scheduleItemId String
-  scheduleItem   ScheduleItem @relation(fields: [scheduleItemId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  scheduleItemId  String
+  scheduleItem    ScheduleItem @relation(fields: [scheduleItemId], references: [id], onDelete: Cascade)
   createdByUserId String
-  createdBy      User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
-  token          String       @unique
-  createdAt      DateTime     @default(now())
+  createdBy       User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  token           String       @unique
+  createdAt       DateTime     @default(now())
 
   @@index([scheduleItemId])
   @@index([createdByUserId])
@@ -177,14 +177,14 @@ model RoutineStep {
 }
 
 model RoutineRun {
-  id                 String   @id @default(cuid())
-  routineId          String
-  routine            Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
-  date               String
+  id               String   @id @default(cuid())
+  routineId        String
+  routine          Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  date             String
   // comma-joined RoutineStep ids
-  completedStepIds   String   @default("")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  completedStepIds String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([routineId, date])
 }
@@ -193,35 +193,35 @@ model RoutineRun {
 // to a ScheduleItem or Todo. `linkedType`/`linkedId` are a loose
 // reference (not a real FK) since they can point at either model.
 model Timer {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label  String
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label              String
   // "stopwatch" | "countdown" | "pomodoro"
-  mode   String
+  mode               String
   // Target duration in seconds — set for countdown timers, null otherwise.
-  durationSeconds Int?
+  durationSeconds    Int?
   // Pomodoro work/break interval lengths in seconds — null for other modes.
-  workSeconds  Int?
-  breakSeconds Int?
+  workSeconds        Int?
+  breakSeconds       Int?
   // Which pomodoro interval is currently active — "work" | "break".
   // Null for other modes.
-  phase String?
+  phase              String?
   // Completed work intervals, for a pomodoro's round counter. Unused by
   // other modes.
-  cyclesCompleted Int @default(0)
+  cyclesCompleted    Int       @default(0)
   // Seconds banked from prior run segments — accrued while paused, or
   // (for a pomodoro) from phases already finished.
-  accumulatedSeconds Int @default(0)
+  accumulatedSeconds Int       @default(0)
   // When the current run segment began; null while paused/completed.
-  startedAt DateTime?
+  startedAt          DateTime?
   // "running" | "paused" | "completed"
-  status String @default("running")
+  status             String    @default("running")
   // "schedule" | "todo", paired with linkedId — null for standalone timers.
-  linkedType String?
-  linkedId   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  linkedType         String?
+  linkedId           String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([userId])
   @@index([linkedType, linkedId])
@@ -235,25 +235,36 @@ model Timer {
 // exactly the "max one journal entry per day, unlimited notes" rule this
 // model needs, with no extra partial-index migration required.
 model NotebookEntry {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title       String
-  content     String   @default("")
-  entryType   String   @default("note") // "note" | "journal"
-  journalDate String?
-  tags        String   @default("")
-  pinned      Boolean  @default(false)
+  title         String
+  // Always the plain-text representation — searchable, used for previews,
+  // and kept in sync with richContent (server-derived, never trusted
+  // as-is from the client) whenever contentFormat is "tiptap-json".
+  content       String  @default("")
+  // "plain" | "tiptap-json" — existing rows default to "plain" with
+  // richContent left null; an entry only gains richContent once the user
+  // edits it through the rich-text editor and that edit is saved.
+  contentFormat String  @default("plain")
+  // Validated Tiptap JSON document (see lib/richText.ts). Null whenever
+  // contentFormat is "plain". Json maps to a native Postgres `jsonb`
+  // column — no special handling needed for this datasource.
+  richContent   Json?
+  entryType     String  @default("note") // "note" | "journal"
+  journalDate   String?
+  tags          String  @default("")
+  pinned        Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([userId, journalDate])
   @@index([userId])
   @@index([userId, updatedAt])
   @@index([userId, entryType])
   @@index([userId, journalDate])
-  @@unique([userId, journalDate])
 }
 
 model PushSubscription {

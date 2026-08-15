@@ -106,6 +106,23 @@ describe("notebook ownership enforcement", () => {
     expect(prismaMock.notebookEntry.findMany.mock.calls[0][0].where.userId).toBe("user-B");
   });
 
+  it("returns 404 when a logged-in user tries to overwrite someone else's entry with rich content", async () => {
+    authMock.getCurrentUserId.mockResolvedValue("user-B");
+    prismaMock.notebookEntry.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await patchEntry(
+      req("http://localhost/api/notebook/user-A-entry", "PATCH", {
+        richContent: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "hijacked" }] }] },
+      }),
+      { params: Promise.resolve({ id: "user-A-entry" }) }
+    );
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.notebookEntry.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "user-A-entry", userId: "user-B" } })
+    );
+  });
+
   it("Previous/Next neighbor computation never crosses a user boundary", async () => {
     authMock.getCurrentUserId.mockResolvedValue("user-B");
     prismaMock.notebookEntry.findFirst.mockResolvedValue({

@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
-import {
-  validateEntryType,
-  validateJournalDate,
-  validateNotebookContent,
-  validateNotebookTags,
-  validateNotebookTitle,
-} from "@/lib/validation";
+import { validateEntryType, validateJournalDate, validateNotebookTags, validateNotebookTitle } from "@/lib/validation";
 import { notebookOrderKey } from "@/lib/notebookFormat";
+import { resolveContentUpdate } from "@/lib/richText";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +44,13 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const body = await req.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untrusted request body, shape checked field-by-field below
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
+  }
 
   const data: Record<string, unknown> = {};
 
@@ -59,11 +61,16 @@ export async function PATCH(
     data.title = title;
   }
 
-  if (typeof body.content === "string") {
-    const contentError = validateNotebookContent(body.content);
-    if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
-    data.content = body.content;
-  }
+  // Never logs body.content/body.richContent — validation errors below
+  // are structural ("richContent must be a Tiptap document", etc.), never
+  // an echo of the private writing itself.
+  const contentResult = resolveContentUpdate(body);
+  if (!contentResult.ok) return NextResponse.json({ error: contentResult.error }, { status: 400 });
+  Object.assign(data, contentResult.fields);
+  // Prisma requires the Prisma.DbNull sentinel (not a plain JS null) to
+  // set a nullable Json column to database NULL — see notes in
+  // app/api/notebook/route.ts's POST handler.
+  if (data.richContent === null) data.richContent = Prisma.DbNull;
 
   if (typeof body.tags === "string") {
     const tagsError = validateNotebookTags(body.tags);

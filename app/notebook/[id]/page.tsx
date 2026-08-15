@@ -5,40 +5,34 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { NotebookEntryFull } from "@/components/notebook/types";
 import { useAutosave } from "@/components/notebook/useAutosave";
+import { useNotebookEditor } from "@/components/notebook/useNotebookEditor";
+import RichTextEditor from "@/components/notebook/RichTextEditor";
+import EditorToolbar from "@/components/notebook/EditorToolbar";
 import { journalDateTitle } from "@/lib/notebookFormat";
+import { deriveDocPlainText, plainTextToTiptapDoc, TiptapDocument } from "@/lib/richText";
+import {
+  clearLocalNotebookDraft as clearLocalDraft,
+  LocalNotebookDraft as LocalDraft,
+  readLocalNotebookDraft as readLocalDraft,
+  writeLocalNotebookDraft as writeLocalDraft,
+} from "@/lib/notebookDraft";
 
-type Draft = { title: string; content: string; tags: string; pinned: boolean };
+type Draft = {
+  title: string;
+  content: string;
+  contentFormat: "plain" | "tiptap-json";
+  richContent: TiptapDocument;
+  tags: string;
+  pinned: boolean;
+};
 
-function draftKey(id: string): string {
-  return `day:notebook:draft:${id}`;
-}
-
-function readLocalDraft(id: string): (Draft & { savedAt: string }) | null {
-  try {
-    const raw = localStorage.getItem(draftKey(id));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed?.savedAt !== "string") return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeLocalDraft(id: string, draft: Draft) {
-  try {
-    localStorage.setItem(draftKey(id), JSON.stringify({ ...draft, savedAt: new Date().toISOString() }));
-  } catch {
-    // Storage full/unavailable — local recovery is a nice-to-have, not required.
-  }
-}
-
-function clearLocalDraft(id: string) {
-  try {
-    localStorage.removeItem(draftKey(id));
-  } catch {
-    // ignore
-  }
+// Whatever the editor should show for this entry's content — already-rich
+// entries pass their validated richContent straight through; a legacy
+// contentFormat: "plain" entry (or one with no richContent yet) gets its
+// plain text converted to an equivalent document, never parsed as HTML.
+function initialDocFor(entry: NotebookEntryFull): TiptapDocument {
+  if (entry.contentFormat === "tiptap-json" && entry.richContent) return entry.richContent;
+  return plainTextToTiptapDoc(entry.content);
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -113,24 +107,40 @@ function EntryLoader({ id }: { id: string }) {
 
 function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
   const router = useRouter();
-  const baseDraft: Draft = { title: entry.title, content: entry.content, tags: entry.tags, pinned: entry.pinned };
 
-  const [title, setTitle] = useState(baseDraft.title);
-  const [content, setContent] = useState(baseDraft.content);
-  const [tags, setTags] = useState(baseDraft.tags);
-  const [pinned, setPinned] = useState(baseDraft.pinned);
-  const [restoreDraft, setRestoreDraft] = useState<(Draft & { savedAt: string }) | null>(() => {
+  const [initialDoc] = useState<TiptapDocument>(() => initialDocFor(entry));
+  const baseContentFormat: "plain" | "tiptap-json" = entry.contentFormat === "tiptap-json" ? "tiptap-json" : "plain";
+
+  const [title, setTitle] = useState(entry.title);
+  const [richContent, setRichContent] = useState<TiptapDocument>(initialDoc);
+  const [plainText, setPlainText] = useState(entry.content);
+  const [contentFormat, setContentFormat] = useState<"plain" | "tiptap-json">(baseContentFormat);
+  const [tags, setTags] = useState(entry.tags);
+  const [pinned, setPinned] = useState(entry.pinned);
+  const [restoreDraft, setRestoreDraft] = useState<LocalDraft | null>(() => {
     const local = readLocalDraft(id);
     if (!local || new Date(local.savedAt) <= new Date(entry.updatedAt)) return null;
-    const differs = local.title !== baseDraft.title || local.content !== baseDraft.content || local.tags !== baseDraft.tags;
+    const differs = local.title !== entry.title || local.content !== entry.content || local.tags !== entry.tags;
     return differs ? local : null;
   });
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const handleEditorChange = useCallback((doc: TiptapDocument) => {
+    setRichContent(doc);
+    setPlainText(deriveDocPlainText(doc));
+    setContentFormat("tiptap-json");
+  }, []);
+
+  const editor = useNotebookEditor({
+    content: initialDoc,
+    onChange: handleEditorChange,
+    editable: !restoreDraft,
+  });
+
   const hasSkippedFirstDraftWriteRef = useRef(false);
-  const draft: Draft = { title, content, tags, pinned };
+  const draft: Draft = { title, content: plainText, contentFormat, richContent, tags, pinned };
 
   // Persist a local recovery copy on every change (skipping the render
   // right after mount, so opening an unedited entry doesn't immediately
@@ -142,14 +152,18 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
     }
     writeLocalDraft(id, draft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, title, content, tags, pinned]);
+  }, [id, title, plainText, contentFormat, richContent, tags, pinned]);
 
   const save = useCallback(
     async (value: Draft) => {
+      const payload: Record<string, unknown> =
+        value.contentFormat === "tiptap-json"
+          ? { title: value.title, richContent: value.richContent, tags: value.tags, pinned: value.pinned }
+          : { title: value.title, content: value.content, tags: value.tags, pinned: value.pinned };
       const res = await fetch(`/api/notebook/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(value),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Save failed");
     },
@@ -157,7 +171,7 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
   );
 
   const { status, flush, retry } = useAutosave<Draft>({
-    initialValue: baseDraft,
+    initialValue: { title: entry.title, content: entry.content, contentFormat: baseContentFormat, richContent: initialDoc, tags: entry.tags, pinned: entry.pinned },
     value: draft,
     save,
     enabled: !restoreDraft,
@@ -167,8 +181,14 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
   function applyRestoredDraft() {
     if (!restoreDraft) return;
     setTitle(restoreDraft.title);
-    setContent(restoreDraft.content);
     setTags(restoreDraft.tags);
+    const restoredDoc =
+      restoreDraft.contentFormat === "tiptap-json" && restoreDraft.richContent
+        ? restoreDraft.richContent
+        : plainTextToTiptapDoc(restoreDraft.content);
+    // setContent's default emitUpdate:true fires the editor's onUpdate,
+    // which syncs richContent/plainText/contentFormat state for us.
+    editor?.commands.setContent(restoredDoc);
     setRestoreDraft(null);
   }
 
@@ -267,16 +287,8 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
         className="mb-2 w-full rounded-xl border border-transparent bg-transparent px-1 text-xl font-semibold text-zinc-900 outline-none focus:border-zinc-200 focus:bg-white focus:px-3 focus:py-2 dark:text-zinc-50 dark:focus:border-zinc-700 dark:focus:bg-zinc-900"
       />
 
-      <label className="sr-only" htmlFor="entry-content">
-        Writing
-      </label>
-      <textarea
-        id="entry-content"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Start writing…"
-        className="min-h-[50vh] w-full flex-1 resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-[15px] leading-relaxed text-zinc-900 outline-none focus:border-zinc-400 sm:min-h-[58vh] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-      />
+      <EditorToolbar editor={editor} />
+      <RichTextEditor editor={editor} entryId={id} />
 
       <label className="mt-3 block text-xs text-zinc-500" htmlFor="entry-tags">
         Tags (comma-separated)

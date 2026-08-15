@@ -19,6 +19,7 @@ const authMock = vi.hoisted(() => ({ getCurrentUserId: vi.fn().mockResolvedValue
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => authMock);
 
+import type { TiptapDocument } from "@/lib/richText";
 import { GET as listNotebook, POST as createNotebook } from "@/app/api/notebook/route";
 import { PATCH as patchEntry, DELETE as deleteEntry } from "@/app/api/notebook/[id]/route";
 import { GET as getDaily, POST as postDaily } from "@/app/api/notebook/daily/route";
@@ -320,6 +321,137 @@ describe("PATCH /api/notebook/[id] (update)", () => {
     );
     expect(res.status).toBe(400);
     expect(prismaMock.notebookEntry.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+function boldDoc(text: string): TiptapDocument {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text, marks: [{ type: "bold" }] }] }],
+  };
+}
+
+describe("rich-text create/update via the API", () => {
+  it("POST /api/notebook creates a note with validated richContent and server-derived plain text", async () => {
+    prismaMock.notebookEntry.create.mockImplementation(({ data }) =>
+      Promise.resolve(makeEntry({ ...data, id: "rich-1" }))
+    );
+
+    const res = await createNotebook(
+      req("http://localhost/api/notebook", "POST", {
+        entryType: "note",
+        title: "Rich note",
+        richContent: boldDoc("hello world"),
+      })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(body.contentFormat).toBe("tiptap-json");
+    expect(body.content).toBe("hello world");
+    expect(body.richContent).toEqual(boldDoc("hello world"));
+  });
+
+  it("PATCH /api/notebook/[id] with richContent stores contentFormat, richContent and derives content", async () => {
+    prismaMock.notebookEntry.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.notebookEntry.findUnique.mockResolvedValue(
+      makeEntry({ contentFormat: "tiptap-json", content: "hello world", richContent: boldDoc("hello world") })
+    );
+
+    const res = await patchEntry(
+      req("http://localhost/api/notebook/entry-1", "PATCH", { richContent: boldDoc("hello world") }),
+      { params: Promise.resolve({ id: "entry-1" }) }
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.content).toBe("hello world");
+    const data = prismaMock.notebookEntry.updateMany.mock.calls[0][0].data;
+    expect(data.contentFormat).toBe("tiptap-json");
+    expect(data.content).toBe("hello world");
+    expect(data.richContent).toEqual(boldDoc("hello world"));
+  });
+
+  it("ignores a client-supplied `content` string when richContent is also present — the derived text wins", async () => {
+    prismaMock.notebookEntry.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.notebookEntry.findUnique.mockResolvedValue(makeEntry());
+
+    await patchEntry(
+      req("http://localhost/api/notebook/entry-1", "PATCH", {
+        content: "this should be ignored",
+        richContent: boldDoc("the real text"),
+      }),
+      { params: Promise.resolve({ id: "entry-1" }) }
+    );
+
+    const data = prismaMock.notebookEntry.updateMany.mock.calls[0][0].data;
+    expect(data.content).toBe("the real text");
+  });
+
+  it("rejects an unsupported node type in richContent without touching the database", async () => {
+    const res = await patchEntry(
+      req("http://localhost/api/notebook/entry-1", "PATCH", {
+        richContent: { type: "doc", content: [{ type: "codeBlock", content: [] }] },
+      }),
+      { params: Promise.resolve({ id: "entry-1" }) }
+    );
+    expect(res.status).toBe(400);
+    expect(prismaMock.notebookEntry.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects an arbitrary contentFormat string", async () => {
+    const res = await patchEntry(
+      req("http://localhost/api/notebook/entry-1", "PATCH", { contentFormat: "markdown" }),
+      { params: Promise.resolve({ id: "entry-1" }) }
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects contentFormat: tiptap-json without an accompanying richContent", async () => {
+    const res = await patchEntry(
+      req("http://localhost/api/notebook/entry-1", "PATCH", { contentFormat: "tiptap-json" }),
+      { params: Promise.resolve({ id: "entry-1" }) }
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a malformed JSON request body with 400, not a crash", async () => {
+    const malformedReq = new NextRequest("http://localhost/api/notebook/entry-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "{not valid json",
+    });
+    const res = await patchEntry(malformedReq, { params: Promise.resolve({ id: "entry-1" }) });
+    expect(res.status).toBe(400);
+    expect(prismaMock.notebookEntry.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("a plain content-only PATCH still leaves contentFormat/richContent untouched (no unnecessary conversion)", async () => {
+    prismaMock.notebookEntry.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.notebookEntry.findUnique.mockResolvedValue(makeEntry());
+
+    await patchEntry(req("http://localhost/api/notebook/entry-1", "PATCH", { content: "just typing" }), {
+      params: Promise.resolve({ id: "entry-1" }),
+    });
+
+    const data = prismaMock.notebookEntry.updateMany.mock.calls[0][0].data;
+    expect(data.content).toBe("just typing");
+    expect(data).not.toHaveProperty("contentFormat");
+    expect(data).not.toHaveProperty("richContent");
+  });
+
+  it("list previews contain readable plain text derived from rich content, never JSON", async () => {
+    prismaMock.notebookEntry.findMany.mockResolvedValue([
+      makeEntry({ contentFormat: "tiptap-json", content: "hello world", richContent: boldDoc("hello world") }),
+    ]);
+    prismaMock.notebookEntry.count.mockResolvedValue(1);
+
+    const res = await listNotebook(req("http://localhost/api/notebook", "GET"));
+    const body = await res.json();
+
+    expect(body.entries[0].preview).toBe("hello world");
+    expect(body.entries[0]).not.toHaveProperty("richContent");
+    expect(body.entries[0].preview).not.toMatch(/[{}[\]]/);
   });
 });
 

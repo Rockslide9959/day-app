@@ -109,6 +109,83 @@ describe("AutosaveController offline handling", () => {
   });
 });
 
+type RichDraft = {
+  title: string;
+  contentFormat: "plain" | "tiptap-json";
+  richContent: { type: "doc"; content: unknown[] };
+  tags: string;
+  pinned: boolean;
+};
+
+function draft(text: string): RichDraft {
+  return {
+    title: "Entry",
+    contentFormat: "tiptap-json",
+    richContent: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text }] }] },
+    tags: "",
+    pinned: false,
+  };
+}
+
+describe("AutosaveController with rich-text draft values", () => {
+  it("opening an entry unchanged never issues a save — the JSON document must compare reliably, not by reference", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const controller = new AutosaveController<RichDraft>({ delayMs: 900, save });
+    const initial = draft("unchanged text");
+    controller.markSaved(initial);
+
+    // A structurally-identical but distinct object instance — as if React
+    // re-rendered and rebuilt the draft object without any real edit.
+    controller.notify(draft("unchanged text"));
+    await vi.advanceTimersByTimeAsync(900);
+
+    expect(save).not.toHaveBeenCalled();
+    expect(controller.getStatus()).toBe("saved");
+  });
+
+  it("editing rich content triggers exactly one debounced save with the latest document", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const controller = new AutosaveController<RichDraft>({ delayMs: 900, save });
+    controller.markSaved(draft(""));
+
+    controller.notify(draft("h"));
+    controller.notify(draft("he"));
+    controller.notify(draft("hello"));
+    await vi.advanceTimersByTimeAsync(900);
+
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(draft("hello"));
+  });
+
+  it("a failed autosave preserves the rich content for a later retry", async () => {
+    const save = vi.fn().mockRejectedValue(new Error("network down"));
+    const controller = new AutosaveController<RichDraft>({ delayMs: 900, save });
+    controller.markSaved(draft(""));
+
+    controller.notify(draft("important unsaved writing"));
+    await controller.flush();
+
+    expect(controller.getStatus()).toBe("error");
+    expect(controller.hasUnsavedChanges()).toBe(true);
+  });
+
+  it("retry saves the latest rich content, not a stale earlier version", async () => {
+    const save = vi.fn().mockRejectedValueOnce(new Error("network down")).mockResolvedValueOnce(undefined);
+    const controller = new AutosaveController<RichDraft>({ delayMs: 900, save });
+    controller.markSaved(draft(""));
+
+    controller.notify(draft("first draft"));
+    await controller.flush();
+    expect(controller.getStatus()).toBe("error");
+
+    controller.notify(draft("final version"));
+    await controller.retry();
+
+    expect(controller.getStatus()).toBe("saved");
+    expect(save).toHaveBeenLastCalledWith(draft("final version"));
+  });
+});
+
 describe("AutosaveController stale-response guard", () => {
   it("an older in-flight save completing later does not clobber a newer save's status", async () => {
     let resolveFirst!: () => void;

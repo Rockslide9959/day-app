@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
-import {
-  validateEntryType,
-  validateJournalDate,
-  validateNotebookContent,
-  validateNotebookTags,
-  validateNotebookTitle,
-} from "@/lib/validation";
+import { validateEntryType, validateJournalDate, validateNotebookTags, validateNotebookTitle } from "@/lib/validation";
 import { getOrCreateJournalEntry, NOTEBOOK_LIST_DEFAULT_LIMIT, NOTEBOOK_LIST_MAX_LIMIT } from "@/lib/notebook";
 import { toNotebookEntryPreview } from "@/lib/notebookFormat";
+import { resolveContentUpdate } from "@/lib/richText";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +59,13 @@ export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untrusted request body, shape checked field-by-field below
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
+  }
 
   const entryTypeError = validateEntryType(body.entryType);
   if (entryTypeError) return NextResponse.json({ error: entryTypeError }, { status: 400 });
@@ -96,14 +97,23 @@ export async function POST(req: NextRequest) {
   const tagsError = validateNotebookTags(body.tags);
   if (tagsError) return NextResponse.json({ error: tagsError }, { status: 400 });
 
-  const contentError = validateNotebookContent(body.content);
-  if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
+  const contentResult = resolveContentUpdate(body);
+  if (!contentResult.ok) return NextResponse.json({ error: contentResult.error }, { status: 400 });
 
   const entry = await prisma.notebookEntry.create({
     data: {
       userId,
       title: rawTitle,
-      content: typeof body.content === "string" ? body.content : "",
+      content: contentResult.fields.content ?? "",
+      contentFormat: contentResult.fields.contentFormat ?? "plain",
+      // Prisma requires the Prisma.DbNull sentinel (not a plain JS null)
+      // to set a nullable Json column to database NULL; when richContent
+      // wasn't part of this create at all, omit the key entirely so the
+      // column is simply left at its natural NULL rather than writing
+      // either sentinel unnecessarily.
+      ...(contentResult.fields.richContent !== undefined
+        ? { richContent: contentResult.fields.richContent ?? Prisma.DbNull }
+        : {}),
       entryType: "note",
       journalDate: null,
       tags: typeof body.tags === "string" ? body.tags : "",
