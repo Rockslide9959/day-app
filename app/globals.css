@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Tailwind v4 defaults `dark:` to `@media (prefers-color-scheme: dark)`.
+   This app lets the user override the OS theme (see components/ThemeProvider.tsx
+   and the Appearance section in app/settings/page.tsx), so every existing
+   `dark:` utility across the app is repointed at a `.dark` class on <html>
+   instead — applied by the theme system, defaulting to following the OS
+   when the user's preference is "system" (unchanged from before this
+   setting existed). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,11 +21,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -37,10 +44,8 @@ body {
   color: #18181b;
 }
 
-@media (prefers-color-scheme: dark) {
-  .notebook-editor-content {
-    color: #fafafa;
-  }
+.dark .notebook-editor-content {
+  color: #fafafa;
 }
 
 .notebook-editor-content p {

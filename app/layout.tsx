@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import RegisterSW from "@/components/RegisterSW";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,12 +42,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // The bootstrap script below mutates <html>'s class/style/data-theme
+      // synchronously before hydration (see lib/theme.ts), so the server-
+      // rendered markup and the live DOM legitimately differ there by the
+      // time React hydrates — suppressed only for this element, not body.
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black">
-        <RegisterSW />
-        <div className="flex-1 pb-20">{children}</div>
-        <BottomNav />
+        {/* Runs before React hydrates / first paint, so a returning user's
+            saved theme never flashes to the default before this app-level
+            provider mounts. Static, hardcoded script body — no interpolated
+            request or user data. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <ThemeProvider>
+          <RegisterSW />
+          <div className="flex-1 pb-20">{children}</div>
+          <BottomNav />
+        </ThemeProvider>
       </body>
     </html>
   );

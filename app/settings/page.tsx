@@ -3,11 +3,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
+import { useTheme } from "@/components/ThemeProvider";
+import type { ThemePreference } from "@/lib/theme";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
+
 export default function SettingsPage() {
   const router = useRouter();
+  const { preference, setPreference } = useTheme();
   const [username, setUsername] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +99,42 @@ export default function SettingsPage() {
           >
             {loggingOut ? "Logging out…" : "Log out"}
           </button>
+        </div>
+      </Section>
+
+      <Section title="Appearance">
+        <p className="mb-3 text-xs text-zinc-500">
+          Choose how Day looks on this device. System automatically matches your
+          device&apos;s light or dark setting.
+        </p>
+        <div
+          role="group"
+          aria-label="Theme"
+          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800"
+        >
+          {THEME_OPTIONS.map((opt) => {
+            const active = preference === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPreference(opt.value)}
+                className={`flex-1 rounded-md py-2 font-medium ${
+                  active
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+                    : "text-zinc-500"
+                }`}
+              >
+                {opt.label}
+                {active && (
+                  <span className="ml-1" aria-hidden="true">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </Section>
 
