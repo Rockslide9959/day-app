@@ -3,26 +3,30 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useIconStyle } from "@/components/IconStyleProvider";
+import { maskIconStyle } from "@/lib/navIcon";
 
+// Reminders and Settings live in TopBar instead (see components/TopBar.tsx)
+// — trimming this list keeps the remaining tabs closer to fitting a
+// 320–375px screen without scrolling.
 const TABS = [
-  { href: "/", label: "Today", icon: "/icons/home.png" },
-  { href: "/calendar", label: "Calendar", icon: "/icons/calendar.png" },
-  { href: "/schedule", label: "Schedule", icon: "/icons/schedule.png" },
-  { href: "/todos", label: "To-Do", icon: "/icons/todo.png" },
-  { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png" },
-  { href: "/reminders", label: "Reminders", icon: "/icons/reminders.png" },
-  { href: "/timers", label: "Timers", icon: "/icons/timers.png" },
-  { href: "/routines", label: "Routines", icon: "/icons/routines.png" },
-  { href: "/settings", label: "Settings", icon: "/icons/settings.png" },
+  { href: "/", label: "Today", icon: "/icons/home.png", emoji: "🏠" },
+  { href: "/calendar", label: "Calendar", icon: "/icons/calendar.png", emoji: "📅" },
+  { href: "/schedule", label: "Schedule", icon: "/icons/schedule.png", emoji: "🗓️" },
+  { href: "/todos", label: "To-Do", icon: "/icons/todo.png", emoji: "✅" },
+  { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png", emoji: "📓" },
+  { href: "/timers", label: "Timers", icon: "/icons/timers.png", emoji: "⏱️" },
+  { href: "/routines", label: "Routines", icon: "/icons/routines.png", emoji: "🔁" },
 ];
 
-// Own scroll container per tab. 8 tabs at a comfortable tap width don't
-// fit a 320–375px screen evenly divided (the previous flex-1 layout), so
-// this scrolls horizontally instead of shrinking tabs down to illegible
+// Own scroll container per tab. Several tabs at a comfortable tap width
+// don't fit a 320–375px screen evenly divided (the previous flex-1 layout),
+// so this scrolls horizontally instead of shrinking tabs down to illegible
 // widths — with a listRef effect keeping whichever tab is active in view.
 export default function BottomNav() {
   const pathname = usePathname();
   const listRef = useRef<HTMLUListElement>(null);
+  const { style } = useIconStyle();
 
   useEffect(() => {
     const active = listRef.current?.querySelector('[aria-current="page"]');
@@ -51,20 +55,15 @@ export default function BottomNav() {
                     : "text-zinc-400 dark:text-zinc-500"
                 }`}
               >
-                <span
-                  aria-hidden="true"
-                  className="block h-5 w-5 bg-current"
-                  style={{
-                    WebkitMaskImage: `url(${tab.icon})`,
-                    maskImage: `url(${tab.icon})`,
-                    WebkitMaskSize: "contain",
-                    maskSize: "contain",
-                    WebkitMaskRepeat: "no-repeat",
-                    maskRepeat: "no-repeat",
-                    WebkitMaskPosition: "center",
-                    maskPosition: "center",
-                  }}
-                />
+                {style === "emoji" ? (
+                  <span className="text-lg leading-none">{tab.emoji}</span>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="block h-5 w-5 bg-current"
+                    style={maskIconStyle(tab.icon)}
+                  />
+                )}
                 {tab.label}
               </Link>
             </li>

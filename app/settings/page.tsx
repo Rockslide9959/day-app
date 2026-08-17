@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 import { useTheme } from "@/components/ThemeProvider";
+import { useIconStyle } from "@/components/IconStyleProvider";
 import type { ThemePreference } from "@/lib/theme";
+import type { IconStyle } from "@/lib/iconStyle";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
@@ -14,9 +16,15 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "system", label: "System" },
 ];
 
+const ICON_STYLE_OPTIONS: { value: IconStyle; label: string }[] = [
+  { value: "png", label: "Icons" },
+  { value: "emoji", label: "Emoji" },
+];
+
 export default function SettingsPage() {
   const router = useRouter();
   const { preference, setPreference } = useTheme();
+  const { style, setStyle } = useIconStyle();
   const [username, setUsername] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +128,41 @@ export default function SettingsPage() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setPreference(opt.value)}
+                className={`flex-1 rounded-md py-2 font-medium ${
+                  active
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+                    : "text-zinc-500"
+                }`}
+              >
+                {opt.label}
+                {active && (
+                  <span className="ml-1" aria-hidden="true">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Navigation icons">
+        <p className="mb-3 text-xs text-zinc-500">
+          Choose how the bottom navigation and the Reminders/Settings icons look on this device.
+        </p>
+        <div
+          role="group"
+          aria-label="Icon style"
+          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800"
+        >
+          {ICON_STYLE_OPTIONS.map((opt) => {
+            const active = style === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setStyle(opt.value)}
                 className={`flex-1 rounded-md py-2 font-medium ${
                   active
                     ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"

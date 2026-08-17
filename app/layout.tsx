@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import TopBar from "@/components/TopBar";
 import RegisterSW from "@/components/RegisterSW";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { IconStyleProvider } from "@/components/IconStyleProvider";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
@@ -56,9 +58,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             request or user data. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         <ThemeProvider>
-          <RegisterSW />
-          <div className="flex-1 pb-20">{children}</div>
-          <BottomNav />
+          <IconStyleProvider>
+            <RegisterSW />
+            <TopBar />
+            <div className="flex-1 pb-20">{children}</div>
+            <BottomNav />
+          </IconStyleProvider>
         </ThemeProvider>
       </body>
     </html>
