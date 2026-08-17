@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 import { useTheme } from "@/components/ThemeProvider";
 import { useIconStyle } from "@/components/IconStyleProvider";
+import PasswordInput from "@/components/PasswordInput";
 import type { ThemePreference } from "@/lib/theme";
 import type { IconStyle } from "@/lib/iconStyle";
 
@@ -32,6 +33,12 @@ export default function SettingsPage() {
   const [color, setColor] = useState("#3b82f6");
   const [error, setError] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -45,6 +52,32 @@ export default function SettingsPage() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess(false);
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("New passwords don't match");
+      return;
+    }
+    setChangingPassword(true);
+    const res = await fetch("/api/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    setChangingPassword(false);
+    if (res.ok) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordSuccess(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setPasswordError(data.error || "Couldn't update password");
+    }
   }
 
   const load = useCallback(async () => {
@@ -108,6 +141,43 @@ export default function SettingsPage() {
             {loggingOut ? "Logging out…" : "Log out"}
           </button>
         </div>
+      </Section>
+
+      <Section title="Change password">
+        <form
+          onSubmit={changePassword}
+          className="space-y-2 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900"
+        >
+          <PasswordInput
+            value={currentPassword}
+            onChange={setCurrentPassword}
+            placeholder="Current password"
+            autoComplete="current-password"
+          />
+          <PasswordInput
+            value={newPassword}
+            onChange={setNewPassword}
+            placeholder="New password (min. 8 characters)"
+            autoComplete="new-password"
+          />
+          <PasswordInput
+            value={confirmNewPassword}
+            onChange={setConfirmNewPassword}
+            placeholder="Confirm new password"
+            autoComplete="new-password"
+          />
+          {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+          {passwordSuccess && (
+            <p className="text-xs text-green-600 dark:text-green-400">Password updated.</p>
+          )}
+          <button
+            type="submit"
+            disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
+            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+          >
+            {changingPassword ? "Updating…" : "Update password"}
+          </button>
+        </form>
       </Section>
 
       <Section title="Appearance">
