@@ -5,15 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { href: "/", label: "Today", icon: "🏠" },
-  { href: "/calendar", label: "Calendar", icon: "📅" },
-  { href: "/schedule", label: "Schedule", icon: "🗓️" },
-  { href: "/todos", label: "To-Do", icon: "✅" },
-  { href: "/notebook", label: "Notebook", icon: "📓" },
-  { href: "/reminders", label: "Reminders", icon: "🔔" },
-  { href: "/timers", label: "Timers", icon: "⏱️" },
-  { href: "/routines", label: "Routines", icon: "🔁" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/", label: "Today", icon: "/icons/home.png" },
+  { href: "/calendar", label: "Calendar", icon: "/icons/calendar.png" },
+  { href: "/schedule", label: "Schedule", icon: "/icons/schedule.png" },
+  { href: "/todos", label: "To-Do", icon: "/icons/todo.png" },
+  { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png" },
+  { href: "/reminders", label: "Reminders", icon: "/icons/reminders.png" },
+  { href: "/timers", label: "Timers", icon: "/icons/timers.png" },
+  { href: "/routines", label: "Routines", icon: "/icons/routines.png" },
+  { href: "/settings", label: "Settings", icon: "/icons/settings.png" },
 ];
 
 // Own scroll container per tab. 8 tabs at a comfortable tap width don't
@@ -51,7 +51,20 @@ export default function BottomNav() {
                     : "text-zinc-400 dark:text-zinc-500"
                 }`}
               >
-                <span className="text-lg leading-none">{tab.icon}</span>
+                <span
+                  aria-hidden="true"
+                  className="block h-5 w-5 bg-current"
+                  style={{
+                    WebkitMaskImage: `url(${tab.icon})`,
+                    maskImage: `url(${tab.icon})`,
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                  }}
+                />
                 {tab.label}
               </Link>
             </li>
