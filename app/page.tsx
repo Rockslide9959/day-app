@@ -3,7 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addDaysToDateStr, formatDateLabel, formatDurationMinutes, formatTime12h, todayStr } from "@/lib/dates";
+import {
+  addDaysToDateStr,
+  formatDateLabel,
+  formatDurationMinutes,
+  formatTime12h,
+  timeToMinutes,
+  todayStr,
+} from "@/lib/dates";
 import {
   busyDayStats,
   dailySummary,
@@ -44,6 +51,8 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [journalEntry, setJournalEntry] = useState<NotebookEntryFull | null | undefined>(undefined);
   const [creatingJournal, setCreatingJournal] = useState(false);
+  const [todoReminderEnabled, setTodoReminderEnabled] = useState(false);
+  const [todoReminderTime, setTodoReminderTime] = useState("20:00");
   const [nowMinutes, setNowMinutes] = useState(() => {
     const d = new Date();
     return d.getHours() * 60 + d.getMinutes();
@@ -52,7 +61,7 @@ export default function TodayPage() {
 
   const load = useCallback(async () => {
     try {
-      const [remindersRes, eventsRes, todosRes, routinesRes] = await Promise.all([
+      const [remindersRes, eventsRes, todosRes, routinesRes, meRes] = await Promise.all([
         fetch("/api/reminders").then((r) => r.json()),
         // Looks back OVERDUE_LOOKBACK_DAYS so incomplete overdue tasks from
         // before today still surface here, not just today-forward.
@@ -61,11 +70,14 @@ export default function TodayPage() {
         ).then((r) => r.json()),
         fetch(`/api/todos?date=${today}`).then((r) => r.json()),
         fetch("/api/routines").then((r) => r.json()),
+        fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)),
       ]);
       setReminders(remindersRes);
       setEvents(eventsRes);
       setTodos(todosRes);
       setRoutines(routinesRes);
+      if (meRes?.todoReminderEnabled !== undefined) setTodoReminderEnabled(meRes.todoReminderEnabled);
+      if (meRes?.todoReminderTime) setTodoReminderTime(meRes.todoReminderTime);
 
       const doneEntries = await Promise.all(
         routinesRes.map(async (r: Routine) => {
@@ -180,6 +192,12 @@ export default function TodayPage() {
   const overdue = reminders.filter((r) => new Date(r.dueAt) <= now);
   const openTodos = todos.filter((t) => !t.completed);
   const completedTodos = todos.filter((t) => t.completed);
+  // In-app counterpart to the push notification lib/todoReminderCron.ts
+  // sends at the same configured time — this just re-checks it live against
+  // the device's own clock, so it also lights up on a page visit even if
+  // the push never arrived (notifications off, or the app wasn't installed).
+  const todoReminderDue =
+    todoReminderEnabled && openTodos.length > 0 && nowMinutes >= timeToMinutes(todoReminderTime);
   const pendingRoutines = routines.filter(
     (r) => r.steps.length > 0 && (routineDone[r.id] || 0) < r.steps.length
   );
@@ -224,6 +242,18 @@ export default function TodayPage() {
               </li>
             ))}
           </ul>
+        </Section>
+      )}
+
+      {todoReminderDue && (
+        <Section title="">
+          <Link
+            href="/todos"
+            className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200"
+          >
+            <span className="font-medium">Wrap up your day</span> — you still have {openTodos.length} to-do
+            {openTodos.length === 1 ? "" : "s"} left today.
+          </Link>
         </Section>
       )}
 

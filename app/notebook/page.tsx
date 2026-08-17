@@ -122,7 +122,10 @@ function NotebookPageInner() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-24 pt-8">
+    // Extra top clearance below sm: TopBar's fixed Reminders/Settings buttons
+    // sit at the same top-right corner as this row's "+ New entry" button on
+    // narrow screens (see components/TopBar.tsx) — pt-8 alone let them overlap.
+    <main className="mx-auto max-w-2xl px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Notebook</h1>
         <button

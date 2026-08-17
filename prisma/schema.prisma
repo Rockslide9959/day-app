@@ -14,6 +14,20 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // --- End-of-day "unfinished to-dos" reminder ---
+  // Device-agnostic (unlike theme/icon style, which are localStorage-only)
+  // since the cron tick that fires it runs server-side with no device to
+  // ask — settings page writes these, and captures the browser's IANA zone
+  // into todoReminderTimeZone whenever the time is changed so the "HH:MM"
+  // resolves to the right UTC instant. See lib/todoReminderCron.ts.
+  todoReminderEnabled      Boolean @default(true)
+  todoReminderTime         String  @default("20:00")
+  todoReminderTimeZone     String?
+  // "YYYY-MM-DD" local date (in todoReminderTimeZone) this user was last
+  // checked for the day — dedupes repeated cron ticks the same evening
+  // without needing a separate delivery-log table like schedule reminders.
+  todoReminderLastSentDate String?
+
   reminders         Reminder[]
   scheduleItems     ScheduleItem[]
   todos             Todo[]

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isValidDateStr,
+  isValidTimeStr,
   validateEntryType,
   validateJournalDate,
   validateNotebookContent,
@@ -35,6 +36,29 @@ describe("validatePassword", () => {
 
   it("rejects passwords under 8 characters", () => {
     expect(validatePassword("short1")).not.toBeNull();
+  });
+});
+
+describe("isValidTimeStr", () => {
+  it("accepts a normal 24-hour HH:MM", () => {
+    expect(isValidTimeStr("20:00")).toBe(true);
+    expect(isValidTimeStr("00:00")).toBe(true);
+    expect(isValidTimeStr("23:59")).toBe(true);
+  });
+
+  it("rejects an out-of-range hour or minute", () => {
+    expect(isValidTimeStr("24:00")).toBe(false);
+    expect(isValidTimeStr("12:60")).toBe(false);
+  });
+
+  it("rejects 12-hour format and malformed strings", () => {
+    expect(isValidTimeStr("8:00 PM")).toBe(false);
+    expect(isValidTimeStr("20:0")).toBe(false);
+    expect(isValidTimeStr("2000")).toBe(false);
+  });
+
+  it("rejects a non-string", () => {
+    expect(isValidTimeStr(undefined)).toBe(false);
   });
 });
 

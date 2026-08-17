@@ -45,6 +45,13 @@ const prismaMock = vi.hoisted(() => ({
     findMany: vi.fn().mockResolvedValue([]),
     update: vi.fn(),
   },
+  user: {
+    findMany: vi.fn().mockResolvedValue([]),
+    update: vi.fn(),
+  },
+  todo: {
+    count: vi.fn().mockResolvedValue(0),
+  },
   scheduleItem: {
     findMany: vi.fn(async () => [...store.scheduleItems.values()]),
   },
@@ -140,6 +147,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.reminder.findMany.mockResolvedValue([]);
   prismaMock.timer.findMany.mockResolvedValue([]);
+  prismaMock.user.findMany.mockResolvedValue([]);
+  prismaMock.todo.count.mockResolvedValue(0);
   webpushMock.isPushConfigured.mockReturnValue(true);
   webpushMock.sendPush.mockResolvedValue(undefined);
 });
@@ -159,6 +168,8 @@ describe("GET /api/cron/tick — response shape", () => {
       schedulePushesSent: 0,
       scheduleRetries: 0,
       scheduleSkippedCompleted: 0,
+      todoRemindersDue: 0,
+      todoRemindersSent: 0,
     });
   });
 
@@ -255,6 +266,126 @@ describe("GET /api/cron/tick — schedule reminders run alongside the existing s
       // ...and the new ScheduleItem reminder was also delivered, exactly once.
       expect(body.scheduleRemindersDue).toBe(1);
       expect(body.schedulePushesSent).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("GET /api/cron/tick — daily to-do reminder", () => {
+  // 2026-08-15T19:00:00Z is 21:00 in Africa/Johannesburg (UTC+2, no DST) —
+  // past a 20:00 reminder time on the same local calendar day.
+  const PAST_REMINDER_TIME = new Date("2026-08-15T19:00:00.000Z");
+
+  it("sends a push and stamps today's date once the reminder time has passed with open to-dos", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(PAST_REMINDER_TIME);
+    try {
+      prismaMock.user.findMany.mockResolvedValue([
+        {
+          id: "user-1",
+          todoReminderTime: "20:00",
+          todoReminderTimeZone: "Africa/Johannesburg",
+          todoReminderLastSentDate: null,
+        },
+      ]);
+      prismaMock.todo.count.mockResolvedValue(2);
+      addSubscription("user-1", "ep-1");
+
+      const res = await GET(tickRequest());
+      const body = await res.json();
+
+      expect(body.todoRemindersDue).toBe(1);
+      expect(body.todoRemindersSent).toBe(1);
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: "user-1" },
+        data: { todoReminderLastSentDate: "2026-08-15" },
+      });
+      expect(webpushMock.sendPush).toHaveBeenCalledWith(
+        { endpoint: "ep-1", keys: { p256dh: "p", auth: "a" } },
+        expect.objectContaining({ title: "Wrap up your day", body: "You still have 2 to-dos left today." })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stamps the date but sends nothing when every to-do is already complete", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(PAST_REMINDER_TIME);
+    try {
+      prismaMock.user.findMany.mockResolvedValue([
+        {
+          id: "user-1",
+          todoReminderTime: "20:00",
+          todoReminderTimeZone: "Africa/Johannesburg",
+          todoReminderLastSentDate: null,
+        },
+      ]);
+      prismaMock.todo.count.mockResolvedValue(0);
+      addSubscription("user-1", "ep-1");
+
+      const res = await GET(tickRequest());
+      const body = await res.json();
+
+      expect(body.todoRemindersDue).toBe(1);
+      expect(body.todoRemindersSent).toBe(0);
+      expect(webpushMock.sendPush).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not re-notify a user already stamped for today", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(PAST_REMINDER_TIME);
+    try {
+      prismaMock.user.findMany.mockResolvedValue([
+        {
+          id: "user-1",
+          todoReminderTime: "20:00",
+          todoReminderTimeZone: "Africa/Johannesburg",
+          todoReminderLastSentDate: "2026-08-15",
+        },
+      ]);
+      prismaMock.todo.count.mockResolvedValue(5);
+      addSubscription("user-1", "ep-1");
+
+      const res = await GET(tickRequest());
+      const body = await res.json();
+
+      expect(body.todoRemindersDue).toBe(0);
+      expect(body.todoRemindersSent).toBe(0);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(webpushMock.sendPush).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not fire before the configured reminder time", async () => {
+    vi.useFakeTimers();
+    // 15:00Z = 17:00 local — still before a 20:00 reminder time.
+    vi.setSystemTime(new Date("2026-08-15T15:00:00.000Z"));
+    try {
+      prismaMock.user.findMany.mockResolvedValue([
+        {
+          id: "user-1",
+          todoReminderTime: "20:00",
+          todoReminderTimeZone: "Africa/Johannesburg",
+          todoReminderLastSentDate: null,
+        },
+      ]);
+      prismaMock.todo.count.mockResolvedValue(3);
+      addSubscription("user-1", "ep-1");
+
+      const res = await GET(tickRequest());
+      const body = await res.json();
+
+      expect(body.todoRemindersDue).toBe(0);
+      expect(body.todoRemindersSent).toBe(0);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(webpushMock.sendPush).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

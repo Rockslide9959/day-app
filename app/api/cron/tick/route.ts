@@ -4,6 +4,7 @@ import { sendPush, isPushConfigured } from "@/lib/webpush";
 import { nextOccurrence } from "@/lib/recurrence";
 import { autoTransitionData } from "@/lib/timers";
 import { processScheduleReminders } from "@/lib/calendar/reminderCron";
+import { processTodoReminders } from "@/lib/todoReminderCron";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,7 @@ async function handleTick(req: NextRequest) {
   }
 
   const schedule = await processScheduleReminders(now);
+  const todoReminders = await processTodoReminders(now);
 
   return NextResponse.json({
     sent,
@@ -107,5 +109,7 @@ async function handleTick(req: NextRequest) {
     schedulePushesSent: schedule.sent,
     scheduleRetries: schedule.retries,
     scheduleSkippedCompleted: schedule.skippedCompleted,
+    todoRemindersDue: todoReminders.due,
+    todoRemindersSent: todoReminders.sent,
   });
 }

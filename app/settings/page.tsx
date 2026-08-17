@@ -39,13 +39,48 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [todoReminderEnabled, setTodoReminderEnabled] = useState(true);
+  const [todoReminderTime, setTodoReminderTime] = useState("20:00");
+  const [todoReminderLoaded, setTodoReminderLoaded] = useState(false);
+  const [todoReminderSaving, setTodoReminderSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setUsername(data?.username ?? null))
+      .then((data) => {
+        setUsername(data?.username ?? null);
+        if (data?.todoReminderEnabled !== undefined) setTodoReminderEnabled(data.todoReminderEnabled);
+        if (data?.todoReminderTime) setTodoReminderTime(data.todoReminderTime);
+        setTodoReminderLoaded(true);
+      })
       .catch(() => {});
   }, []);
+
+  async function saveTodoReminder(next: { enabled?: boolean; time?: string }) {
+    setTodoReminderSaving(true);
+    await fetch("/api/auth/todo-reminder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...next,
+        // Captured on every save (cheap, and keeps it fresh if the user's
+        // device/travel timezone changes) rather than only once at signup.
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
+    setTodoReminderSaving(false);
+  }
+
+  function toggleTodoReminder() {
+    const next = !todoReminderEnabled;
+    setTodoReminderEnabled(next);
+    saveTodoReminder({ enabled: next });
+  }
+
+  function changeTodoReminderTime(time: string) {
+    setTodoReminderTime(time);
+    saveTodoReminder({ time });
+  }
 
   async function logout() {
     setLoggingOut(true);
@@ -305,6 +340,48 @@ export default function SettingsPage() {
           </button>
         </form>
         {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+      </Section>
+
+      <Section title="Daily to-do reminder">
+        <p className="mb-3 text-xs text-zinc-500">
+          If you still have unfinished to-dos by this time, Day shows a reminder on Today and — if
+          you&apos;ve turned on push notifications under Reminders — sends a notification too.
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Remind me</p>
+            <p className="text-xs text-zinc-500">
+              {todoReminderEnabled ? "On" : "Off"}
+              {todoReminderSaving && " · Saving…"}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={todoReminderEnabled}
+            onClick={toggleTodoReminder}
+            disabled={!todoReminderLoaded}
+            className={`h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+              todoReminderEnabled ? "bg-zinc-900 dark:bg-zinc-50" : "bg-zinc-200 dark:bg-zinc-700"
+            }`}
+          >
+            <span
+              className={`block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform dark:bg-zinc-900 ${
+                todoReminderEnabled ? "translate-x-5" : ""
+              }`}
+            />
+          </button>
+        </div>
+        <label className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Reminder time</span>
+          <input
+            type="time"
+            value={todoReminderTime}
+            onChange={(e) => changeTodoReminderTime(e.target.value)}
+            disabled={!todoReminderLoaded || !todoReminderEnabled}
+            className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800"
+          />
+        </label>
       </Section>
 
       <Section title="About reminders & notifications">

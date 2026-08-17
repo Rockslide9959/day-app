@@ -16,6 +16,14 @@ export function validatePassword(password: unknown): string | null {
   return null;
 }
 
+const HH_MM_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+// A 24-hour local wall-clock "HH:MM" — the format both the settings <input
+// type="time"> and lib/timezone.ts#zonedTimeToUtc expect.
+export function isValidTimeStr(value: unknown): value is string {
+  return typeof value === "string" && HH_MM_RE.test(value);
+}
+
 // ScheduleItem.itemType — undefined is allowed (callers default it to
 // "event"); anything else must be one of the two supported values.
 export function validateItemType(itemType: unknown): string | null {
