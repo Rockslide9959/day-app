@@ -9,6 +9,7 @@ import { findConflicts } from "@/lib/calendar/conflicts";
 import { Timer } from "@/components/timers/types";
 import TimerCard from "@/components/timers/TimerCard";
 import NewTimerForm from "@/components/timers/NewTimerForm";
+import AttachmentList from "@/components/attachments/AttachmentList";
 
 const REMINDER_OPTIONS = [
   { value: "", label: "No reminder" },
@@ -924,6 +925,8 @@ function EventDetails({
           </button>
         )}
       </div>
+
+      <AttachmentList linkedType="schedule" linkedId={event.id} />
 
       <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Share</p>

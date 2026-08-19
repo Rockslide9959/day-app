@@ -64,6 +64,8 @@ export async function processTodoReminders(now: Date): Promise<TodoReminderResul
         const statusCode = (err as { statusCode?: number })?.statusCode;
         if (statusCode === 404 || statusCode === 410) {
           await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+        } else {
+          console.error("push send failed", { userId: user.id, statusCode, body: (err as { body?: string })?.body, message: (err as Error)?.message });
         }
       }
     }

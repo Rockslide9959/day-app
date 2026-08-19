@@ -5,6 +5,7 @@ import { nextOccurrence } from "@/lib/recurrence";
 import { autoTransitionData } from "@/lib/timers";
 import { processScheduleReminders } from "@/lib/calendar/reminderCron";
 import { processTodoReminders } from "@/lib/todoReminderCron";
+import { processTodoRollover } from "@/lib/todoRolloverCron";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ async function pushToUser(userId: string, payload: { title: string; body?: strin
       const statusCode = (err as { statusCode?: number })?.statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+      } else {
+        console.error("push send failed", { userId, statusCode, body: (err as { body?: string })?.body, message: (err as Error)?.message });
       }
     }
   }
@@ -98,6 +101,7 @@ async function handleTick(req: NextRequest) {
   }
 
   const schedule = await processScheduleReminders(now);
+  const todoRollover = await processTodoRollover(now);
   const todoReminders = await processTodoReminders(now);
 
   return NextResponse.json({
@@ -109,6 +113,8 @@ async function handleTick(req: NextRequest) {
     schedulePushesSent: schedule.sent,
     scheduleRetries: schedule.retries,
     scheduleSkippedCompleted: schedule.skippedCompleted,
+    todoRolloverUsers: todoRollover.usersProcessed,
+    todoRolloverMoved: todoRollover.todosMoved,
     todoRemindersDue: todoReminders.due,
     todoRemindersSent: todoReminders.sent,
   });

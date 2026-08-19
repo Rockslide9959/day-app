@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { todayStr, formatDateLabel, addDaysToDateStr } from "@/lib/dates";
+import AttachmentList from "@/components/attachments/AttachmentList";
 
 type Todo = { id: string; title: string; completed: boolean };
 
@@ -10,6 +11,7 @@ export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,7 @@ export default function TodosPage() {
 
   async function deleteTodo(id: string) {
     setTodos((prev) => prev.filter((t) => t.id !== id));
+    setExpandedId((current) => (current === id ? null : current));
     await fetch(`/api/todos/${id}`, { method: "DELETE" });
   }
 
@@ -104,34 +107,48 @@ export default function TodosPage() {
           {[...openTodos, ...completedTodos].map((t) => (
             <li
               key={t.id}
-              className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+              className="rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
             >
-              <button
-                onClick={() => toggleTodo(t)}
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
-                  t.completed
-                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                    : "border-zinc-300 dark:border-zinc-600"
-                }`}
-              >
-                {t.completed && "✓"}
-              </button>
-              <span
-                onClick={() => toggleTodo(t)}
-                className={`flex-1 text-sm ${
-                  t.completed
-                    ? "text-zinc-400 line-through"
-                    : "text-zinc-900 dark:text-zinc-50"
-                }`}
-              >
-                {t.title}
-              </span>
-              <button
-                onClick={() => deleteTodo(t.id)}
-                className="text-xs text-zinc-300 hover:text-red-500"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleTodo(t)}
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
+                    t.completed
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
+                      : "border-zinc-300 dark:border-zinc-600"
+                  }`}
+                >
+                  {t.completed && "✓"}
+                </button>
+                <span
+                  onClick={() => toggleTodo(t)}
+                  className={`flex-1 text-sm ${
+                    t.completed
+                      ? "text-zinc-400 line-through"
+                      : "text-zinc-900 dark:text-zinc-50"
+                  }`}
+                >
+                  {t.title}
+                </span>
+                <button
+                  onClick={() => setExpandedId((cur) => (cur === t.id ? null : t.id))}
+                  className={`text-xs ${expandedId === t.id ? "text-zinc-600 dark:text-zinc-300" : "text-zinc-300 hover:text-zinc-500"}`}
+                  title="Attachments"
+                >
+                  📎
+                </button>
+                <button
+                  onClick={() => deleteTodo(t.id)}
+                  className="text-xs text-zinc-300 hover:text-red-500"
+                >
+                  ✕
+                </button>
+              </div>
+              {expandedId === t.id && (
+                <div className="mt-3">
+                  <AttachmentList linkedType="todo" linkedId={t.id} />
+                </div>
+              )}
             </li>
           ))}
         </ul>

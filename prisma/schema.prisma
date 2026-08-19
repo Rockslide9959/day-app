@@ -27,6 +27,11 @@ model User {
   // checked for the day — dedupes repeated cron ticks the same evening
   // without needing a separate delivery-log table like schedule reminders.
   todoReminderLastSentDate String?
+  // "YYYY-MM-DD" local date (in todoReminderTimeZone) unfinished to-dos were
+  // last rolled forward for this user — same dedupe shape as
+  // todoReminderLastSentDate, but for lib/todoRolloverCron.ts. Independent
+  // of todoReminderEnabled: rollover isn't a notification, so it always runs.
+  todoRolloverLastDate String?
 
   reminders         Reminder[]
   scheduleItems     ScheduleItem[]
@@ -37,6 +42,7 @@ model User {
   timers            Timer[]
   eventShares       EventShare[]
   notebookEntries   NotebookEntry[]
+  attachments       Attachment[]
 }
 
 model Reminder {
@@ -319,6 +325,28 @@ model NotebookEntry {
   @@index([userId, updatedAt])
   @@index([userId, entryType])
   @@index([userId, journalDate])
+}
+
+// A file attached to a ScheduleItem (event/task) or Todo. `linkedType`/
+// `linkedId` are a loose reference (not a real FK), same convention as
+// Timer.linkedType/linkedId above, since they can point at either model.
+// File bytes live directly in Postgres (no external storage is configured
+// for this app) — kept small by MAX_ATTACHMENT_BYTES in lib/attachments.ts.
+model Attachment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "todo" | "schedule"
+  linkedType String
+  linkedId   String
+  fileName   String
+  mimeType   String
+  fileSize   Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+
+  @@index([linkedType, linkedId])
+  @@index([userId])
 }
 
 model PushSubscription {

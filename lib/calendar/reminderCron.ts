@@ -166,6 +166,7 @@ export async function processScheduleReminders(now: Date): Promise<ScheduleRemin
           data: { status: "failed", attempts: { increment: 1 }, lastAttemptAt: now },
         });
       } else {
+        console.error("push send failed", { userId: item.userId, statusCode, body: (err as { body?: string })?.body, message: (err as Error)?.message });
         // Transient failure — leave it retryable for the next tick.
         await prisma.scheduleReminderDelivery.update({
           where: { id: delivery.id },
