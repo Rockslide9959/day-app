@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   addDaysToDateStr,
-  formatDateLabel,
+  diffDays,
   formatDurationMinutes,
   formatTime12h,
   timeToMinutes,
@@ -20,7 +20,7 @@ import {
   upcomingEvents,
   upcomingTasks,
 } from "@/lib/calendar/dashboard";
-import { deadlineInfo, countdownLabel } from "@/lib/calendar/deadlines";
+import { deadlineInfo, countdownLabel, urgencyTier, UrgencyTier } from "@/lib/calendar/deadlines";
 import { isDeadlineCategory } from "@/lib/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { CalendarEvent } from "@/components/calendar/types";
@@ -40,6 +40,27 @@ type Routine = { id: string; name: string; icon: string; steps: { id: string }[]
 
 const UPCOMING_WINDOW_DAYS = 14;
 const OVERDUE_LOOKBACK_DAYS = 60;
+
+// Proximity color scale shared by the "Upcoming" pills and the "Tasks due"
+// accent bar — overdue/today reads as urgent (red) fading down to neutral
+// the further out a date sits.
+const URGENCY_PILL_CLASSES: Record<UrgencyTier, string> = {
+  overdue: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight",
+  today: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight",
+  tomorrow: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300 crimson:bg-orange-950/50 crimson:text-orange-300",
+  soon: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300 crimson:bg-yellow-950/50 crimson:text-yellow-300",
+  week: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300 crimson:bg-green-950/50 crimson:text-green-300",
+  later: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary",
+};
+
+const URGENCY_BAR_CLASSES: Record<UrgencyTier, string> = {
+  overdue: "before:bg-red-500 crimson:before:bg-crimson-accent",
+  today: "before:bg-red-500 crimson:before:bg-crimson-accent",
+  tomorrow: "before:bg-orange-500 crimson:before:bg-orange-500",
+  soon: "before:bg-yellow-500 crimson:before:bg-yellow-500",
+  week: "before:bg-green-500 crimson:before:bg-green-500",
+  later: "before:bg-zinc-300 dark:before:bg-zinc-600 crimson:before:bg-crimson-border",
+};
 
 export default function TodayPage() {
   const router = useRouter();
@@ -305,7 +326,7 @@ export default function TodayPage() {
         <Section title="Tasks due" href="/calendar">
           <ul className="space-y-2">
             {overdueTaskItems.map((t) => (
-              <TaskRow key={t.occurrenceId} task={t} today={today} overdue onToggle={toggleTask} />
+              <TaskRow key={t.occurrenceId} task={t} today={today} onToggle={toggleTask} />
             ))}
             {tasksToday.map((t) => (
               <TaskRow key={t.occurrenceId} task={t} today={today} onToggle={toggleTask} />
@@ -361,6 +382,7 @@ export default function TodayPage() {
           <ul className="space-y-2">
             {upcoming.map((e) => {
               const deadline = isDeadlineCategory(e.category) ? deadlineInfo(e.date, today) : null;
+              const tier = urgencyTier(diffDays(today, e.date));
               return (
                 <li key={e.occurrenceId}>
                   <Link
@@ -374,13 +396,7 @@ export default function TodayPage() {
                       </p>
                     </div>
                     <span
-                      className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${
-                        deadline?.urgency === "overdue"
-                          ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
-                          : deadline?.urgency === "soon" || deadline?.urgency === "today"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 crimson:bg-amber-950/50 crimson:text-amber-300"
-                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
-                      }`}
+                      className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${URGENCY_PILL_CLASSES[tier]}`}
                     >
                       {deadline ? deadline.label : countdownLabel(e.date, today)}
                     </span>
@@ -553,26 +569,25 @@ function EmptyRow({ text }: { text: string }) {
 function TaskRow({
   task,
   today,
-  overdue = false,
   onToggle,
 }: {
   task: CalendarEvent;
   today: string;
-  overdue?: boolean;
   onToggle: (task: CalendarEvent) => void;
 }) {
+  const info = deadlineInfo(task.date, today);
+  const overdue = info.urgency === "overdue";
+  const tier = urgencyTier(info.daysUntil);
   const dueLabel =
-    task.date === today
-      ? task.allDay
-        ? "Due today"
-        : `Due ${formatTime12h(task.startTime)}`
+    task.date === today && !task.allDay
+      ? `Due ${formatTime12h(task.startTime)}`
       : task.allDay
-        ? `Due ${formatDateLabel(task.date)}`
-        : `Due ${formatDateLabel(task.date)} · ${formatTime12h(task.startTime)}`;
+        ? info.label
+        : `${info.label} · ${formatTime12h(task.startTime)}`;
 
   return (
     <li
-      className={`relative flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent ${
+      className={`relative flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full ${URGENCY_BAR_CLASSES[tier]} ${
         overdue ? "bg-red-50 dark:bg-red-950/30 crimson:bg-crimson-accent/15" : "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface"
       }`}
     >
@@ -596,7 +611,6 @@ function TaskRow({
           {task.title}
         </span>
         <span className={`block text-xs ${overdue ? "text-red-600 dark:text-red-400 crimson:text-crimson-highlight" : "text-zinc-500 crimson:text-crimson-text-secondary"}`}>
-          {overdue ? "Overdue · " : ""}
           {dueLabel}
         </span>
       </Link>

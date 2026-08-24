@@ -29,3 +29,18 @@ export function countdownLabel(dateStr: string, today: string): string {
   if (daysUntil === 1) return "Tomorrow";
   return `In ${daysUntil} days`;
 }
+
+// Finer-grained than `DeadlineUrgency` above — drives the red-to-neutral
+// proximity color scale on dashboard date pills/accents, independent of
+// whether the item is a deadline-flavored category.
+// today: red, tomorrow: orange, 2-3 days: yellow, 4-7 days: green, 8+: neutral.
+export type UrgencyTier = "overdue" | "today" | "tomorrow" | "soon" | "week" | "later";
+
+export function urgencyTier(daysUntil: number): UrgencyTier {
+  if (daysUntil < 0) return "overdue";
+  if (daysUntil === 0) return "today";
+  if (daysUntil === 1) return "tomorrow";
+  if (daysUntil <= 3) return "soon";
+  if (daysUntil <= 7) return "week";
+  return "later";
+}
