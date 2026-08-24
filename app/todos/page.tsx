@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { todayStr, formatDateLabel, addDaysToDateStr } from "@/lib/dates";
 import AttachmentList from "@/components/attachments/AttachmentList";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Todo = { id: string; title: string; completed: boolean };
 
@@ -97,7 +98,7 @@ export default function TodosPage() {
       </form>
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <LoadingSpinner />
       ) : todos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
           Nothing on the list for this day

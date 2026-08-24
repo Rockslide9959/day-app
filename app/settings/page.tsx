@@ -8,6 +8,7 @@ import { useIconStyle } from "@/components/IconStyleProvider";
 import PasswordInput from "@/components/PasswordInput";
 import type { ThemePreference } from "@/lib/theme";
 import type { IconStyle } from "@/lib/iconStyle";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
@@ -292,7 +293,7 @@ export default function SettingsPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-zinc-400">Loading…</p>
+          <LoadingSpinner />
         ) : (
           <ul className="mb-3 space-y-1.5">
             {categories.map((c) => (

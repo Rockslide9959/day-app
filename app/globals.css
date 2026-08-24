@@ -111,3 +111,42 @@ body {
   pointer-events: none;
   color: #a1a1aa;
 }
+
+/* Directional page transitions for tab navigation, triggered by swiping or
+   tapping between BottomNav tabs (see components/SwipeNav.tsx). */
+@keyframes page-slide-in-left {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes page-slide-in-right {
+  from {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.page-slide-in-left {
+  animation: page-slide-in-left 220ms ease-out;
+}
+
+.page-slide-in-right {
+  animation: page-slide-in-right 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-slide-in-left,
+  .page-slide-in-right {
+    animation: none;
+  }
+}

@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { monthLabel } from "@/lib/dates";
 import { NotebookEntryPreview, NotebookEntryFull } from "@/components/notebook/types";
 import NewEntryModal from "@/components/notebook/NewEntryModal";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type FilterTab = "all" | "journal" | "note" | "pinned";
 type SortOption = "updated" | "newest" | "oldest";
@@ -187,7 +188,7 @@ function NotebookPageInner() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <LoadingSpinner />
       ) : entries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800">
           {debouncedQ || filter !== "all"

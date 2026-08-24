@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Timer } from "@/components/timers/types";
 import TimerCard from "@/components/timers/TimerCard";
 import NewTimerForm from "@/components/timers/NewTimerForm";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   isPushSupported,
   subscribeToPush,
@@ -97,7 +98,7 @@ export default function TimersPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <LoadingSpinner />
       ) : sortedTimers.length === 0 ? (
         <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
           No timers yet — start a stopwatch, countdown, or a focus session

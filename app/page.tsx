@@ -26,6 +26,7 @@ import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { CalendarEvent } from "@/components/calendar/types";
 import { NotebookEntryFull } from "@/components/notebook/types";
 import { buildContentPreview } from "@/lib/notebookFormat";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Reminder = {
   id: string;
@@ -217,7 +218,7 @@ export default function TodayPage() {
   const upcomingTaskItems = upcomingTasks(events, today, UPCOMING_WINDOW_DAYS);
 
   if (loading) {
-    return <div className="p-6 text-zinc-400">Loading…</div>;
+    return <LoadingSpinner className="min-h-[70vh]" />;
   }
 
   return (

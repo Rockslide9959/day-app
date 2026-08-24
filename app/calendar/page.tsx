@@ -15,6 +15,7 @@ import MonthView from "@/components/calendar/MonthView";
 import WeekView from "@/components/calendar/WeekView";
 import DayView from "@/components/calendar/DayView";
 import EventModal, { EventDraft } from "@/components/calendar/EventModal";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import DayAgendaModal from "@/components/calendar/DayAgendaModal";
 import CategoryFilter from "@/components/calendar/CategoryFilter";
 import CalendarLegend from "@/components/calendar/CalendarLegend";
@@ -386,7 +387,7 @@ export default function CalendarPage() {
           )}
 
           {loading ? (
-            <p className="text-sm text-zinc-400">Loading…</p>
+            <LoadingSpinner />
           ) : viewMode === "month" ? (
             <MonthView
               anchorDate={anchorDate}

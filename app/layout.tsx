@@ -4,6 +4,7 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import TopBar from "@/components/TopBar";
 import RegisterSW from "@/components/RegisterSW";
+import SwipeNav from "@/components/SwipeNav";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { IconStyleProvider } from "@/components/IconStyleProvider";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
@@ -61,7 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <IconStyleProvider>
             <RegisterSW />
             <TopBar />
-            <div className="flex-1 pb-20">{children}</div>
+            <SwipeNav>{children}</SwipeNav>
             <BottomNav />
           </IconStyleProvider>
         </ThemeProvider>

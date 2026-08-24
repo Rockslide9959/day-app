@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { NotebookEntryFull } from "@/components/notebook/types";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAutosave } from "@/components/notebook/useAutosave";
 import { useNotebookEditor } from "@/components/notebook/useNotebookEditor";
 import RichTextEditor from "@/components/notebook/RichTextEditor";
@@ -86,7 +87,7 @@ function EntryLoader({ id }: { id: string }) {
   }, [id]);
 
   if (loading) {
-    return <div className="p-6 text-sm text-zinc-400">Loading…</div>;
+    return <LoadingSpinner className="min-h-[70vh]" />;
   }
 
   if (notFound || !entry) {

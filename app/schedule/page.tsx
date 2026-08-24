@@ -8,6 +8,7 @@ import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 import { categoryEventStyle } from "@/components/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { draftToPayload } from "@/lib/calendar/payload";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Filter = "all" | "events" | "tasks";
 
@@ -175,7 +176,7 @@ export default function SchedulePage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <LoadingSpinner />
       ) : visibleItems.length === 0 ? (
         <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
           Nothing scheduled for this day

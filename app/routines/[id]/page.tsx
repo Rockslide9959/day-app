@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { todayStr } from "@/lib/dates";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Step = { id: string; title: string; sortOrder: number };
 type Routine = { id: string; name: string; icon: string; steps: Step[] };
@@ -68,7 +69,7 @@ export default function RoutineDetailPage({
   }
 
   if (loading || !routine) {
-    return <div className="p-6 text-sm text-zinc-400">Loading…</div>;
+    return <LoadingSpinner className="min-h-[70vh]" />;
   }
 
   const doneCount = routine.steps.filter((s) => completedStepIds.includes(s.id)).length;

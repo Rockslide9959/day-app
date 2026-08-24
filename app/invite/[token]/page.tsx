@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { dayLabel, formatTime12h } from "@/lib/dates";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type InvitePreview = {
   itemType: string;
@@ -66,7 +67,7 @@ export default function InvitePage() {
   }
 
   if (loading) {
-    return <div className="p-6 text-zinc-400">Loading…</div>;
+    return <LoadingSpinner className="min-h-[70vh]" />;
   }
 
   if (notFound || !preview) {

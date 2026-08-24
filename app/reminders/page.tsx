@@ -7,6 +7,7 @@ import {
   unsubscribeFromPush,
   getExistingSubscription,
 } from "@/lib/push-client";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Reminder = {
   id: string;
@@ -150,7 +151,7 @@ export default function RemindersPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <LoadingSpinner />
       ) : reminders.length === 0 ? (
         <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
           No reminders set
