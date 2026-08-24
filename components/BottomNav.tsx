@@ -13,7 +13,7 @@ const TABS = [
   { href: "/", label: "Today", icon: "/icons/home.png", emoji: "🏠" },
   { href: "/calendar", label: "Calendar", icon: "/icons/calendar.png", emoji: "📅" },
   { href: "/schedule", label: "Schedule", icon: "/icons/schedule.png", emoji: "🗓️" },
-  { href: "/todos", label: "To-Do", icon: "/icons/todo.png", emoji: "✅" },
+  { href: "/todos", label: "To-Do", icon: "/icons/todo.svg", emoji: "✅" },
   { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png", emoji: "📓" },
   { href: "/timers", label: "Timers", icon: "/icons/timers.png", emoji: "⏱️" },
   { href: "/routines", label: "Routines", icon: "/icons/routines.png", emoji: "🔁" },
