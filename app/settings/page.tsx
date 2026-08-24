@@ -16,6 +16,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
   { value: "system", label: "System" },
+  { value: "crimson", label: "Crimson" },
 ];
 
 const ICON_STYLE_OPTIONS: { value: IconStyle; label: string }[] = [
@@ -156,11 +157,11 @@ export default function SettingsPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Settings</h1>
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Settings</h1>
 
       <Section title="Account">
-        <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
-          <span className="text-sm text-zinc-800 dark:text-zinc-100">
+        <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+          <span className="text-sm text-zinc-800 dark:text-zinc-100 crimson:text-crimson-text">
             {username ? (
               <>
                 Logged in as <span className="font-medium">{username}</span>
@@ -172,7 +173,7 @@ export default function SettingsPage() {
           <button
             onClick={logout}
             disabled={loggingOut}
-            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 disabled:opacity-50 dark:border-zinc-700"
+            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 disabled:opacity-50 dark:border-zinc-700 crimson:border-crimson-accent crimson:text-crimson-accent"
           >
             {loggingOut ? "Logging out…" : "Log out"}
           </button>
@@ -182,7 +183,7 @@ export default function SettingsPage() {
       <Section title="Change password">
         <form
           onSubmit={changePassword}
-          className="space-y-2 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900"
+          className="space-y-2 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
         >
           <PasswordInput
             value={currentPassword}
@@ -202,14 +203,14 @@ export default function SettingsPage() {
             placeholder="Confirm new password"
             autoComplete="new-password"
           />
-          {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+          {passwordError && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{passwordError}</p>}
           {passwordSuccess && (
-            <p className="text-xs text-green-600 dark:text-green-400">Password updated.</p>
+            <p className="text-xs text-green-600 dark:text-green-400 crimson:text-emerald-400">Password updated.</p>
           )}
           <button
             type="submit"
             disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
-            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             {changingPassword ? "Updating…" : "Update password"}
           </button>
@@ -217,14 +218,14 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Appearance">
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Choose how Day looks on this device. System automatically matches your
           device&apos;s light or dark setting.
         </p>
         <div
           role="group"
           aria-label="Theme"
-          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800"
+          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised"
         >
           {THEME_OPTIONS.map((opt) => {
             const active = preference === opt.value;
@@ -236,8 +237,8 @@ export default function SettingsPage() {
                 onClick={() => setPreference(opt.value)}
                 className={`flex-1 rounded-md py-2 font-medium ${
                   active
-                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                    : "text-zinc-500"
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+                    : "text-zinc-500 crimson:text-crimson-text-secondary"
                 }`}
               >
                 {opt.label}
@@ -253,13 +254,13 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Navigation icons">
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Choose how the bottom navigation and the Reminders/Settings icons look on this device.
         </p>
         <div
           role="group"
           aria-label="Icon style"
-          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800"
+          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised"
         >
           {ICON_STYLE_OPTIONS.map((opt) => {
             const active = style === opt.value;
@@ -271,8 +272,8 @@ export default function SettingsPage() {
                 onClick={() => setStyle(opt.value)}
                 className={`flex-1 rounded-md py-2 font-medium ${
                   active
-                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                    : "text-zinc-500"
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+                    : "text-zinc-500 crimson:text-crimson-text-secondary"
                 }`}
               >
                 {opt.label}
@@ -288,7 +289,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Categories">
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Built-in categories are always available. Add your own for anything more specific.
         </p>
 
@@ -299,59 +300,59 @@ export default function SettingsPage() {
             {categories.map((c) => (
               <li
                 key={c.name}
-                className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-zinc-900"
+                className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
               >
-                <span className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                <span className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100 crimson:text-crimson-text">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.colorHex }} />
                   {c.name}
                 </span>
                 {c.custom && c.id ? (
                   <button
                     onClick={() => removeCategory(c.id!)}
-                    className="text-xs text-zinc-300 hover:text-red-500"
+                    className="text-xs text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
                   >
                     Remove
                   </button>
                 ) : (
-                  <span className="text-xs text-zinc-300">Built-in</span>
+                  <span className="text-xs text-zinc-300 crimson:text-crimson-text-muted">Built-in</span>
                 )}
               </li>
             ))}
           </ul>
         )}
 
-        <form onSubmit={addCategory} className="flex gap-2 rounded-xl bg-white p-3 shadow-sm dark:bg-zinc-900">
+        <form onSubmit={addCategory} className="flex gap-2 rounded-xl bg-white p-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="New category name"
-            className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
           <input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-700"
+            className="h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-700 crimson:border-crimson-border"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+            className="shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             Add
           </button>
         </form>
-        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        {error && <p className="mt-2 text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
       </Section>
 
       <Section title="Daily to-do reminder">
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           If you still have unfinished to-dos by this time, Day shows a reminder on Today and — if
           you&apos;ve turned on push notifications under Reminders — sends a notification too.
         </p>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Remind me</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Remind me</p>
+            <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               {todoReminderEnabled ? "On" : "Off"}
               {todoReminderSaving && " · Saving…"}
             </p>
@@ -363,30 +364,32 @@ export default function SettingsPage() {
             onClick={toggleTodoReminder}
             disabled={!todoReminderLoaded}
             className={`h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-              todoReminderEnabled ? "bg-zinc-900 dark:bg-zinc-50" : "bg-zinc-200 dark:bg-zinc-700"
+              todoReminderEnabled
+                ? "bg-zinc-900 dark:bg-zinc-50 crimson:bg-crimson-accent"
+                : "bg-zinc-200 dark:bg-zinc-700 crimson:bg-crimson-raised"
             }`}
           >
             <span
-              className={`block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform dark:bg-zinc-900 ${
+              className={`block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform dark:bg-zinc-900 crimson:bg-crimson-text ${
                 todoReminderEnabled ? "translate-x-5" : ""
               }`}
             />
           </button>
         </div>
-        <label className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
-          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Reminder time</span>
+        <label className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Reminder time</span>
           <input
             type="time"
             value={todoReminderTime}
             onChange={(e) => changeTodoReminderTime(e.target.value)}
             disabled={!todoReminderLoaded || !todoReminderEnabled}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800"
+            className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
         </label>
       </Section>
 
       <Section title="About reminders & notifications">
-        <p className="rounded-xl bg-white px-4 py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900">
+        <p className="rounded-xl bg-white px-4 py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:text-crimson-text-secondary">
           Event reminders show up inside the app on the Today and Calendar screens. If you&apos;ve
           turned on push notifications under Reminders, those also fire for event reminders when
           the app is installed — but like all web push, they can&apos;t reliably wake up your phone
@@ -401,7 +404,7 @@ export default function SettingsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{title}</h2>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">{title}</h2>
       {children}
     </div>
   );

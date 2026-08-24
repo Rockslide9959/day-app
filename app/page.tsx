@@ -223,8 +223,8 @@ export default function TodayPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Today</h1>
-      <p className="mb-6 text-sm text-zinc-500">
+      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Today</h1>
+      <p className="mb-6 text-sm text-zinc-500 crimson:text-crimson-text-secondary">
         {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
       </p>
 
@@ -235,10 +235,10 @@ export default function TodayPage() {
               <li key={r.id}>
                 <Link
                   href="/reminders"
-                  className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200"
+                  className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
                 >
                   <span className="font-medium">{r.title}</span>
-                  {r.notes && <p className="mt-0.5 text-red-700 dark:text-red-300">{r.notes}</p>}
+                  {r.notes && <p className="mt-0.5 text-red-700 dark:text-red-300 crimson:text-crimson-highlight">{r.notes}</p>}
                 </Link>
               </li>
             ))}
@@ -250,7 +250,7 @@ export default function TodayPage() {
         <Section title="">
           <Link
             href="/todos"
-            className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200"
+            className="block rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
           >
             <span className="font-medium">Wrap up your day</span> — you still have {openTodos.length} to-do
             {openTodos.length === 1 ? "" : "s"} left today.
@@ -262,10 +262,10 @@ export default function TodayPage() {
         <Section title="Next">
           <Link
             href="/calendar"
-            className="block rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+            className="block rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
           >
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{next.title}</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{next.title}</p>
+            <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               {formatTime12h(next.startTime)} · Starts in {formatDurationMinutes(minutesUntilNext ?? 0)}
             </p>
           </Link>
@@ -279,10 +279,10 @@ export default function TodayPage() {
               <li key={e.occurrenceId}>
                 <Link
                   href="/calendar"
-                  className="block rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30"
+                  className="block rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30 crimson:bg-emerald-950/30"
                 >
-                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">{e.title}</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200 crimson:text-emerald-200">{e.title}</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 crimson:text-emerald-400">
                     Until {formatTime12h(e.endTime)}
                   </p>
                 </Link>
@@ -294,7 +294,7 @@ export default function TodayPage() {
 
       {dayStats.isBusy && (
         <Section title="">
-          <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+          <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 crimson:bg-amber-950/40 crimson:text-amber-300">
             <span className="font-medium">Busy day</span> — {dayStats.eventCount} events scheduled
             {dayStats.scheduledMinutes > 0 && `, ${Math.round(dayStats.scheduledMinutes / 60)}h+ booked`}
           </div>
@@ -326,12 +326,12 @@ export default function TodayPage() {
               <li key={s.occurrenceId}>
                 <Link
                   href="/calendar"
-                  className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                  className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
                 >
-                  <span className="w-20 shrink-0 text-xs font-medium text-zinc-500">
+                  <span className="w-20 shrink-0 text-xs font-medium text-zinc-500 crimson:text-crimson-text-secondary">
                     {s.allDay ? "All day" : `${formatTime12h(s.startTime)}`}
                   </span>
-                  <span className={`text-sm ${s.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
+                  <span className={`text-sm ${s.completed ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"}`}>
                     {s.title}
                   </span>
                   {(s.priority === "high" || s.priority === "urgent") && (
@@ -346,7 +346,7 @@ export default function TodayPage() {
 
       {summary.eventCount > 0 && (
         <Section title="">
-          <div className="rounded-xl bg-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/60">
+          <div className="rounded-xl bg-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/60 crimson:bg-crimson-raised/60 crimson:text-crimson-text-secondary">
             {summary.eventCount} event{summary.eventCount === 1 ? "" : "s"} · Scheduled time:{" "}
             {Math.round((summary.scheduledMinutes / 60) * 10) / 10}h
             {summary.highPriorityCount > 0 && ` · ${summary.highPriorityCount} high-priority`}
@@ -365,21 +365,21 @@ export default function TodayPage() {
                 <li key={e.occurrenceId}>
                   <Link
                     href="/calendar"
-                    className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
                   >
                     <div>
-                      <p className="text-sm text-zinc-900 dark:text-zinc-50">{e.title}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{e.title}</p>
+                      <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                         {e.date === today ? "Today" : e.date} {!e.allDay && `· ${formatTime12h(e.startTime)}`}
                       </p>
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${
                         deadline?.urgency === "overdue"
-                          ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                          ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
                           : deadline?.urgency === "soon" || deadline?.urgency === "today"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 crimson:bg-amber-950/50 crimson:text-amber-300"
+                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
                       }`}
                     >
                       {deadline ? deadline.label : countdownLabel(e.date, today)}
@@ -398,11 +398,11 @@ export default function TodayPage() {
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             placeholder="Add something to do today…"
-            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
           />
           <button
             type="submit"
-            className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+            className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             Add
           </button>
@@ -414,14 +414,14 @@ export default function TodayPage() {
             {[...openTodos, ...completedTodos].map((t) => (
               <li
                 key={t.id}
-                className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                className="relative flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
               >
                 <span
                   onClick={() => toggleTodo(t)}
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
                     t.completed
-                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "border-zinc-300 dark:border-zinc-600"
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:border-crimson-accent crimson:bg-crimson-accent crimson:text-crimson-text"
+                      : "border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   }`}
                 >
                   {t.completed && "✓"}
@@ -430,8 +430,8 @@ export default function TodayPage() {
                   onClick={() => toggleTodo(t)}
                   className={`flex-1 text-sm ${
                     t.completed
-                      ? "text-zinc-400 line-through"
-                      : "text-zinc-900 dark:text-zinc-50"
+                      ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
+                      : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                   }`}
                 >
                   {t.title}
@@ -440,7 +440,7 @@ export default function TodayPage() {
                   <button
                     onClick={() => quickStartTodoTimer(t)}
                     title="Start a stopwatch for this to-do"
-                    className="shrink-0 text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    className="shrink-0 text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300 crimson:text-crimson-text-secondary crimson:hover:text-crimson-text"
                   >
                     ⏱
                   </button>
@@ -456,28 +456,28 @@ export default function TodayPage() {
           {journalEntry ? (
             <button
               onClick={writeAboutToday}
-              className="w-full rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900"
+              className="w-full rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
             >
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{journalEntry.title}</p>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{journalEntry.title}</p>
               {journalEntry.content && (
-                <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">
+                <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                   {buildContentPreview(journalEntry.content, 160)}
                 </p>
               )}
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="mt-1 text-xs text-zinc-400 crimson:text-crimson-text-muted">
                 Last edited {new Date(journalEntry.updatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
               </p>
-              <span className="mt-2 inline-block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+              <span className="mt-2 inline-block text-xs font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                 Continue writing →
               </span>
             </button>
           ) : (
-            <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center dark:border-zinc-800">
-              <p className="mb-3 text-sm text-zinc-400">You haven&apos;t written anything today.</p>
+            <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center dark:border-zinc-800 crimson:border-crimson-border">
+              <p className="mb-3 text-sm text-zinc-400 crimson:text-crimson-text-muted">You haven&apos;t written anything today.</p>
               <button
                 onClick={writeAboutToday}
                 disabled={creatingJournal}
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
               >
                 {creatingJournal ? "Opening…" : "Write about today"}
               </button>
@@ -495,13 +495,13 @@ export default function TodayPage() {
               <li key={r.id}>
                 <Link
                   href={`/routines/${r.id}`}
-                  className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                  className="relative flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
                 >
-                  <span className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50">
+                  <span className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                     <span>{r.icon}</span>
                     {r.name}
                   </span>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400 crimson:text-crimson-text-muted">
                     {routineDone[r.id] || 0}/{r.steps.length}
                   </span>
                 </Link>
@@ -527,11 +527,11 @@ function Section({
     <div className="mb-8">
       {title && (
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">
             {title}
           </h2>
           {href && (
-            <Link href={href} className="text-xs text-zinc-400 hover:text-zinc-600">
+            <Link href={href} className="text-xs text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary">
               View all
             </Link>
           )}
@@ -544,7 +544,7 @@ function Section({
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center text-sm text-zinc-400 dark:border-zinc-800">
+    <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
       {text}
     </div>
   );
@@ -572,8 +572,8 @@ function TaskRow({
 
   return (
     <li
-      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm ${
-        overdue ? "bg-red-50 dark:bg-red-950/30" : "bg-white dark:bg-zinc-900"
+      className={`relative flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent ${
+        overdue ? "bg-red-50 dark:bg-red-950/30 crimson:bg-crimson-accent/15" : "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface"
       }`}
     >
       <input
@@ -581,21 +581,21 @@ function TaskRow({
         checked={task.completed}
         onChange={() => onToggle(task)}
         aria-label={task.completed ? `Reopen task: ${task.title}` : `Mark task complete: ${task.title}`}
-        className="h-4 w-4 shrink-0 rounded border-zinc-300"
+        className="h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
       />
       <Link href="/calendar" className="min-w-0 flex-1">
         <span
           className={`block truncate text-sm ${
             task.completed
-              ? "text-zinc-400 line-through"
+              ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
               : overdue
-                ? "font-medium text-red-900 dark:text-red-200"
-                : "text-zinc-900 dark:text-zinc-50"
+                ? "font-medium text-red-900 dark:text-red-200 crimson:text-crimson-highlight"
+                : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
           }`}
         >
           {task.title}
         </span>
-        <span className={`block text-xs ${overdue ? "text-red-600 dark:text-red-400" : "text-zinc-500"}`}>
+        <span className={`block text-xs ${overdue ? "text-red-600 dark:text-red-400 crimson:text-crimson-highlight" : "text-zinc-500 crimson:text-crimson-text-secondary"}`}>
           {overdue ? "Overdue · " : ""}
           {dueLabel}
         </span>

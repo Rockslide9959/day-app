@@ -31,8 +31,8 @@ export default function TopBar() {
             aria-label={tab.label}
             className={`flex h-9 w-9 items-center justify-center rounded-full shadow-sm backdrop-blur ${
               active
-                ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                : "bg-white/70 text-zinc-500 dark:bg-zinc-900/70 dark:text-zinc-400"
+                ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-accent"
+                : "bg-white/70 text-zinc-500 dark:bg-zinc-900/70 dark:text-zinc-400 crimson:bg-crimson-obsidian/70 crimson:text-crimson-text-muted"
             }`}
           >
             {style === "emoji" ? (

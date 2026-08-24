@@ -52,7 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black">
+      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black crimson:bg-crimson-obsidian">
         {/* Runs before React hydrates / first paint, so a returning user's
             saved theme never flashes to the default before this app-level
             provider mounts. Static, hardcoded script body — no interpolated

@@ -23,8 +23,8 @@ export default function CategoryFilter({
             onClick={() => onToggle(c.name)}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
               isHidden
-                ? "border-zinc-200 text-zinc-400 dark:border-zinc-800"
-                : "border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-200"
+                ? "border-zinc-200 text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted"
+                : "border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-200 crimson:border-crimson-border crimson:text-crimson-text-secondary"
             }`}
           >
             <span

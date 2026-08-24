@@ -105,20 +105,20 @@ export default function TimeGrid({
   const hasAllDay = dates.some((d) => (allDayByDate.get(d) || []).length > 0);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface">
       <div
-        className="grid border-b border-zinc-200 text-center dark:border-zinc-800"
+        className="grid border-b border-zinc-200 text-center dark:border-zinc-800 crimson:border-crimson-border"
         style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${dates.length}, 1fr)` }}
       >
         <div />
         {dates.map((date) => (
           <div key={date} className="py-2.5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 crimson:text-crimson-text-secondary">
               {new Date(date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short" })}
             </div>
             <div
               className={`mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                date === today ? "bg-red-500 text-white" : "text-zinc-700 dark:text-zinc-200"
+                date === today ? "bg-red-500 text-white crimson:bg-crimson-accent crimson:text-crimson-text" : "text-zinc-700 dark:text-zinc-200 crimson:text-crimson-text-secondary"
               }`}
             >
               {Number(date.slice(8, 10))}
@@ -129,14 +129,14 @@ export default function TimeGrid({
 
       {hasAllDay && (
         <div
-          className="grid border-b border-zinc-200 dark:border-zinc-800"
+          className="grid border-b border-zinc-200 dark:border-zinc-800 crimson:border-crimson-border"
           style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${dates.length}, 1fr)` }}
         >
-          <div className="flex items-start justify-end py-1.5 pr-2 text-right text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-start justify-end py-1.5 pr-2 text-right text-[10px] font-medium text-zinc-500 dark:text-zinc-400 crimson:text-crimson-text-secondary">
             All day
           </div>
           {dates.map((date) => (
-            <div key={date} className="flex flex-col gap-1 border-l border-zinc-100 p-1 dark:border-zinc-800">
+            <div key={date} className="flex flex-col gap-1 border-l border-zinc-100 p-1 dark:border-zinc-800 crimson:border-crimson-border">
               {(allDayByDate.get(date) || []).map((ev) => {
                 const visual = getItemVisualStyle(ev, categories);
                 const dot = priorityDotInfo(ev.priority);
@@ -167,7 +167,7 @@ export default function TimeGrid({
               <div
                 key={h}
                 style={{ height: HOUR_HEIGHT }}
-                className="relative -top-2 pr-2 text-right text-[11px] font-medium text-zinc-500 dark:text-zinc-400"
+                className="relative -top-2 pr-2 text-right text-[11px] font-medium text-zinc-500 dark:text-zinc-400 crimson:text-crimson-text-secondary"
               >
                 {h !== 0 && hourLabel(h)}
               </div>
@@ -179,13 +179,13 @@ export default function TimeGrid({
             const dayTimedTasks = dayItems.filter((ev) => ev.itemType === "task");
             const layout = layoutDayEvents(dayTimedEvents);
             return (
-              <div key={date} className="relative border-l border-zinc-100 dark:border-zinc-800">
+              <div key={date} className="relative border-l border-zinc-100 dark:border-zinc-800 crimson:border-crimson-border">
                 {HOURS.map((h) => (
                   <button
                     key={h}
                     style={{ height: HOUR_HEIGHT }}
                     onClick={() => onSelectSlot(date, `${String(h).padStart(2, "0")}:00`)}
-                    className="block w-full border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800/60 dark:hover:bg-zinc-800/40"
+                    className="block w-full border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800/60 dark:hover:bg-zinc-800/40 crimson:border-crimson-border/60 crimson:hover:bg-crimson-raised/40"
                   />
                 ))}
                 {date === today && now !== null && (
@@ -193,8 +193,8 @@ export default function TimeGrid({
                     className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
                     style={{ top: (now / 60) * HOUR_HEIGHT }}
                   >
-                    <span className="-ml-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
-                    <span className="h-px flex-1 bg-red-500" />
+                    <span className="-ml-1 h-2 w-2 shrink-0 rounded-full bg-red-500 crimson:bg-crimson-accent" />
+                    <span className="h-px flex-1 bg-red-500 crimson:bg-crimson-accent" />
                   </div>
                 )}
                 {dayTimedEvents.map((ev) => {

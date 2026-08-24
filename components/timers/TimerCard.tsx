@@ -117,16 +117,16 @@ export default function TimerCard({
     <div
       className={`rounded-xl px-4 py-3 shadow-sm ${
         accent === "emerald"
-          ? "bg-emerald-50 dark:bg-emerald-950/30"
+          ? "bg-emerald-50 dark:bg-emerald-950/30 crimson:bg-emerald-950/30"
           : accent === "sky"
             ? "bg-sky-50 dark:bg-sky-950/30"
-            : "bg-white dark:bg-zinc-900"
+            : "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">{timer.label}</p>
-          <p className="text-xs text-zinc-500">
+          <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{timer.label}</p>
+          <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             {modeLabel}
             {isDone && " · Done"}
             {isPomodoro && timer.cyclesCompleted > 0 && ` · ${timer.cyclesCompleted} round${timer.cyclesCompleted === 1 ? "" : "s"} done`}
@@ -136,10 +136,10 @@ export default function TimerCard({
         <span
           className={`shrink-0 font-mono text-lg tabular-nums ${
             accent === "emerald"
-              ? "text-emerald-700 dark:text-emerald-300"
+              ? "text-emerald-700 dark:text-emerald-300 crimson:text-emerald-300"
               : accent === "sky"
                 ? "text-sky-700 dark:text-sky-300"
-                : "text-zinc-900 dark:text-zinc-50"
+                : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
           }`}
         >
           {display}
@@ -147,17 +147,17 @@ export default function TimerCard({
       </div>
 
       {progress != null && (
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800 crimson:bg-crimson-raised">
           <div
             className={`h-full rounded-full ${
-              accent === "emerald" ? "bg-emerald-500" : accent === "sky" ? "bg-sky-500" : "bg-zinc-900 dark:bg-zinc-50"
+              accent === "emerald" ? "bg-emerald-500" : accent === "sky" ? "bg-sky-500" : "bg-zinc-900 dark:bg-zinc-50 crimson:bg-crimson-accent"
             }`}
             style={{ width: `${progress * 100}%` }}
           />
         </div>
       )}
 
-      <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+      <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 crimson:text-amber-400">
         💡 We recommend using a mobile device for timers — notifications are more
         reliable there than on desktop.
       </p>
@@ -168,7 +168,7 @@ export default function TimerCard({
             <button
               onClick={() => patch("pause")}
               disabled={busy}
-              className="rounded-lg border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300"
+              className="rounded-lg border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary"
             >
               Pause
             </button>
@@ -176,7 +176,7 @@ export default function TimerCard({
             <button
               onClick={() => patch("start")}
               disabled={busy}
-              className="rounded-lg bg-zinc-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
+              className="rounded-lg bg-zinc-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             >
               Start
             </button>
@@ -185,7 +185,7 @@ export default function TimerCard({
           <button
             onClick={() => patch("advance-phase")}
             disabled={busy}
-            className="rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-700"
+            className="rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
           >
             Skip
           </button>
@@ -193,14 +193,14 @@ export default function TimerCard({
         <button
           onClick={() => patch("reset")}
           disabled={busy}
-          className="rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-700"
+          className="rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           Reset
         </button>
         <button
           onClick={remove}
           disabled={busy}
-          className="ml-auto rounded-lg px-2 py-1 text-xs text-zinc-300 hover:text-red-500 disabled:opacity-40"
+          className="ml-auto rounded-lg px-2 py-1 text-xs text-zinc-300 hover:text-red-500 disabled:opacity-40 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
         >
           ✕
         </button>

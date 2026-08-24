@@ -68,35 +68,35 @@ export default function NewEntryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
       <div
-        className="w-full max-w-sm rounded-t-2xl bg-white p-5 shadow-lg sm:rounded-2xl dark:bg-zinc-900"
+        className="w-full max-w-sm rounded-t-2xl bg-white p-5 shadow-lg sm:rounded-2xl dark:bg-zinc-900 crimson:bg-crimson-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {step === "choose" && (
           <div className="space-y-3">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">New entry</h2>
-              <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600" aria-label="Close">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">New entry</h2>
+              <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary" aria-label="Close">
                 ✕
               </button>
             </div>
             <button
               onClick={() => setStep("journal")}
-              className="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 text-left hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/60"
+              className="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 text-left hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/60 crimson:border-crimson-border crimson:hover:bg-crimson-raised/60"
             >
               <span className="text-xl" aria-hidden>📓</span>
               <span>
-                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">Journal</span>
-                <span className="block text-xs text-zinc-500">Write about a specific day</span>
+                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Journal</span>
+                <span className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">Write about a specific day</span>
               </span>
             </button>
             <button
               onClick={() => setStep("note")}
-              className="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 text-left hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/60"
+              className="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 text-left hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/60 crimson:border-crimson-border crimson:hover:bg-crimson-raised/60"
             >
               <span className="text-xl" aria-hidden>📝</span>
               <span>
-                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">Note</span>
-                <span className="block text-xs text-zinc-500">A general note, not tied to a date</span>
+                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Note</span>
+                <span className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">A general note, not tied to a date</span>
               </span>
             </button>
           </div>
@@ -105,45 +105,45 @@ export default function NewEntryModal({
         {step === "journal" && (
           <form onSubmit={createJournal} className="space-y-3">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">New journal entry</h2>
-              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600" aria-label="Close">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">New journal entry</h2>
+              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary" aria-label="Close">
                 ✕
               </button>
             </div>
-            <label className="block text-xs text-zinc-500">
+            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Journal date
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
               />
             </label>
-            <label className="block text-xs text-zinc-500">
+            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Title (optional)
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Defaults to the date"
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
               />
             </label>
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] text-zinc-400 crimson:text-crimson-text-muted">
               If you already have a journal entry for this date, it will be opened instead of creating a new one.
             </p>
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
               >
                 {saving ? "Creating…" : "Continue"}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("choose")}
-                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
               >
                 Back
               </button>
@@ -154,34 +154,34 @@ export default function NewEntryModal({
         {step === "note" && (
           <form onSubmit={createNote} className="space-y-3">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">New note</h2>
-              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600" aria-label="Close">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">New note</h2>
+              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary" aria-label="Close">
                 ✕
               </button>
             </div>
-            <label className="block text-xs text-zinc-500">
+            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Title
               <input
                 autoFocus
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Note title"
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
               />
             </label>
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
               >
                 {saving ? "Creating…" : "Create note"}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("choose")}
-                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
               >
                 Back
               </button>

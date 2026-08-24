@@ -76,19 +76,19 @@ export default function RoutineDetailPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <Link href="/routines" className="mb-4 inline-block text-sm text-zinc-400">
+      <Link href="/routines" className="mb-4 inline-block text-sm text-zinc-400 crimson:text-crimson-text-muted">
         ← Routines
       </Link>
-      <h1 className="mb-1 flex items-center gap-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-1 flex items-center gap-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         <span>{routine.icon}</span>
         {routine.name}
       </h1>
-      <p className="mb-6 text-sm text-zinc-500">
+      <p className="mb-6 text-sm text-zinc-500 crimson:text-crimson-text-secondary">
         {doneCount}/{routine.steps.length} done today
       </p>
 
       {routine.steps.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           No steps yet — add some below
         </div>
       ) : (
@@ -98,14 +98,14 @@ export default function RoutineDetailPage({
             return (
               <li
                 key={step.id}
-                className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                className="relative flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
               >
                 <button
                   onClick={() => toggleStep(step.id)}
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ${
                     done
-                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "border-zinc-300 dark:border-zinc-600"
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:border-crimson-accent crimson:bg-crimson-accent crimson:text-crimson-text"
+                      : "border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   }`}
                 >
                   {done && "✓"}
@@ -113,7 +113,7 @@ export default function RoutineDetailPage({
                 <span
                   onClick={() => toggleStep(step.id)}
                   className={`flex-1 text-sm ${
-                    done ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"
+                    done ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                   }`}
                 >
                   {step.title}
@@ -121,7 +121,7 @@ export default function RoutineDetailPage({
                 {editing && (
                   <button
                     onClick={() => deleteStep(step.id)}
-                    className="text-xs text-zinc-300 hover:text-red-500"
+                    className="text-xs text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
                   >
                     ✕
                   </button>
@@ -139,11 +139,11 @@ export default function RoutineDetailPage({
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
             placeholder="Add a step…"
-            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
           />
           <button
             type="submit"
-            className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+            className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             Add
           </button>
@@ -152,7 +152,7 @@ export default function RoutineDetailPage({
 
       <button
         onClick={() => setEditing((e) => !e)}
-        className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700"
+        className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
       >
         {editing ? "Done editing" : "Edit steps"}
       </button>

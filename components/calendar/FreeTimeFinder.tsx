@@ -28,24 +28,24 @@ export default function FreeTimeFinder({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
       <div
-        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900"
+        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900 crimson:bg-crimson-surface"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+          <div className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
             {(["free", "study"] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={`rounded-md px-3 py-1.5 font-medium ${
-                  tab === t ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50" : "text-zinc-500"
+                  tab === t ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text" : "text-zinc-500 crimson:text-crimson-text-secondary"
                 }`}
               >
                 {t === "free" ? "Free Time" : "Study Plan"}
               </button>
             ))}
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary">
             ✕
           </button>
         </div>
@@ -67,23 +67,23 @@ function FreeTimeTab({ events }: { events: CalendarEvent[] }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Find Free Time</h2>
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Find Free Time</h2>
       <div className="flex gap-3">
-        <label className="flex-1 text-xs text-zinc-500">
+        <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Date
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
           />
         </label>
-        <label className="flex-1 text-xs text-zinc-500">
+        <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Duration
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
           >
             {DURATIONS.map((d) => (
               <option key={d.minutes} value={d.minutes}>
@@ -95,17 +95,17 @@ function FreeTimeTab({ events }: { events: CalendarEvent[] }) {
       </div>
 
       {slots.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           No {formatDuration(duration)} gaps found that day (between 7 AM–10 PM)
         </p>
       ) : (
         <ul className="space-y-2">
           {slots.map((s, i) => (
-            <li key={i} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
-              <span className="text-sm text-zinc-900 dark:text-zinc-50">
+            <li key={i} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60 crimson:bg-crimson-raised/60">
+              <span className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                 {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
               </span>
-              <span className="text-xs text-zinc-500">{formatDuration(s.minutes)} available</span>
+              <span className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">{formatDuration(s.minutes)} available</span>
             </li>
           ))}
         </ul>
@@ -215,11 +215,11 @@ function StudyPlanTab() {
     setCreating(null);
   }
 
-  if (loading) return <p className="text-sm text-zinc-400">Loading…</p>;
+  if (loading) return <p className="text-sm text-zinc-400 crimson:text-crimson-text-muted">Loading…</p>;
 
   if (assessments.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+      <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
         No upcoming Assignment/Test/Exam events with estimated hours set yet. Add estimated hours
         when creating one to plan study time for it.
       </p>
@@ -228,11 +228,11 @@ function StudyPlanTab() {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Plan Study Time</h2>
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Plan Study Time</h2>
       <select
         value={selectedId}
         onChange={(e) => setSelectedId(e.target.value)}
-        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
       >
         {assessments.map((a) => (
           <option key={a.id} value={a.id}>
@@ -243,7 +243,7 @@ function StudyPlanTab() {
 
       {selected && (
         <>
-          <div className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200">
+          <div className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200 crimson:bg-crimson-raised/60 crimson:text-crimson-text-secondary">
             {selected.estimatedHours}h estimated · {scheduledHours}h already scheduled ·{" "}
             <span className="font-medium">
               {remainingStudyHours(selected.estimatedHours || 0, scheduledHours)}h remaining
@@ -251,7 +251,7 @@ function StudyPlanTab() {
           </div>
 
           {suggestions.length === 0 ? (
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-zinc-400 crimson:text-crimson-text-muted">
               {remainingStudyHours(selected.estimatedHours || 0, scheduledHours) <= 0
                 ? "You've already scheduled enough study time for this."
                 : "No free slots found before the deadline."}
@@ -262,17 +262,17 @@ function StudyPlanTab() {
                 const key = `${s.date}-${s.startTime}`;
                 const isCreated = created.has(key);
                 return (
-                  <li key={key} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
+                  <li key={key} className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60 crimson:bg-crimson-raised/60">
                     <div>
-                      <p className="text-sm text-zinc-900 dark:text-zinc-50">{s.date}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{s.date}</p>
+                      <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                         {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
                       </p>
                     </div>
                     <button
                       onClick={() => approveSlot(s)}
                       disabled={creating === key || isCreated}
-                      className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+                      className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
                     >
                       {isCreated ? "Added ✓" : creating === key ? "Adding…" : "Add to calendar"}
                     </button>

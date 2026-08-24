@@ -121,28 +121,28 @@ export default function RemindersPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         Reminders
       </h1>
 
       {pushSupported && (
-        <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+        <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
               Notifications
             </p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               {pushEnabled ? "On for this device" : "Off — turn on to get reminded"}
             </p>
-            {pushError && <p className="mt-1 text-xs text-red-500">{pushError}</p>}
+            {pushError && <p className="mt-1 text-xs text-red-500 crimson:text-crimson-highlight">{pushError}</p>}
           </div>
           <button
             onClick={togglePush}
             disabled={pushBusy}
             className={`rounded-full px-4 py-1.5 text-xs font-medium ${
               pushEnabled
-                ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                : "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
+                : "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             }`}
           >
             {pushBusy ? "…" : pushEnabled ? "Turn off" : "Turn on"}
@@ -153,7 +153,7 @@ export default function RemindersPage() {
       {loading ? (
         <LoadingSpinner />
       ) : reminders.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           No reminders set
         </div>
       ) : (
@@ -164,23 +164,23 @@ export default function RemindersPage() {
             return (
               <li
                 key={r.id}
-                className={`flex items-start gap-3 rounded-xl px-4 py-3 shadow-sm ${
+                className={`relative flex items-start gap-3 rounded-xl px-4 py-3 shadow-sm ${
                   overdue
-                    ? "bg-red-50 dark:bg-red-950/40"
-                    : "bg-white dark:bg-zinc-900"
-                }`}
+                    ? "bg-red-50 dark:bg-red-950/40 crimson:bg-crimson-accent/15"
+                    : "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface"
+                } crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent`}
               >
                 <button
                   onClick={() => completeReminder(r.id)}
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-xs dark:border-zinc-600"
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-xs dark:border-zinc-600 crimson:border-crimson-border"
                   title="Mark done"
                 >
                   ✓
                 </button>
                 <div className="flex-1">
-                  <p className="text-sm text-zinc-900 dark:text-zinc-50">{r.title}</p>
-                  {r.notes && <p className="text-xs text-zinc-500">{r.notes}</p>}
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{r.title}</p>
+                  {r.notes && <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">{r.notes}</p>}
+                  <p className="mt-0.5 text-xs text-zinc-400 crimson:text-crimson-text-muted">
                     {due.toLocaleString(undefined, {
                       weekday: "short",
                       month: "short",
@@ -193,7 +193,7 @@ export default function RemindersPage() {
                 </div>
                 <button
                   onClick={() => deleteReminder(r.id)}
-                  className="text-xs text-zinc-300 hover:text-red-500"
+                  className="text-xs text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
                 >
                   ✕
                 </button>
@@ -206,25 +206,25 @@ export default function RemindersPage() {
       {showForm ? (
         <form
           onSubmit={addReminder}
-          className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900"
+          className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
         >
           <input
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Remind me to…"
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
           <input
             type="datetime-local"
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
           />
           <select
             value={recurrence}
             onChange={(e) => setRecurrence(e.target.value)}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
           >
             {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -236,19 +236,19 @@ export default function RemindersPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notes (optional)"
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
           <div className="flex gap-2">
             <button
               type="submit"
-              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             >
               Set reminder
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+              className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
             >
               Cancel
             </button>
@@ -257,7 +257,7 @@ export default function RemindersPage() {
       ) : (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700"
+          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           + New reminder
         </button>

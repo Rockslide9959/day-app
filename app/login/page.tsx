@@ -33,22 +33,22 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-zinc-50 px-6 dark:bg-black">
+    <div className="flex min-h-dvh items-center justify-center bg-zinc-50 px-6 dark:bg-black crimson:bg-crimson-obsidian">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-zinc-900"
+        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
       >
-        <h1 className="mb-1 text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="mb-1 text-xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
           Day
         </h1>
-        <p className="mb-6 text-sm text-zinc-500">Log in to continue</p>
+        <p className="mb-6 text-sm text-zinc-500 crimson:text-crimson-text-secondary">Log in to continue</p>
         <input
           autoFocus
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username"
           autoComplete="username"
-          className="mb-3 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+          className="mb-3 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 crimson:border-crimson-border crimson:bg-crimson-raised crimson:text-crimson-text crimson:focus:border-crimson-accent"
         />
         <PasswordInput
           value={password}
@@ -57,19 +57,19 @@ function LoginForm() {
           autoComplete="current-password"
           className="mb-3"
         />
-        {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+        {error && <p className="mb-3 text-sm text-red-500 crimson:text-crimson-highlight">{error}</p>}
         <button
           type="submit"
           disabled={loading || !username || !password}
-          className="w-full rounded-xl bg-zinc-900 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+          className="w-full rounded-xl bg-zinc-900 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           {loading ? "Logging in…" : "Log in"}
         </button>
-        <p className="mt-4 text-center text-sm text-zinc-500">
+        <p className="mt-4 text-center text-sm text-zinc-500 crimson:text-crimson-text-secondary">
           No account?{" "}
           <Link
             href={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next")!)}` : "/signup"}
-            className="font-medium text-zinc-900 dark:text-zinc-50"
+            className="font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
           >
             Sign up
           </Link>

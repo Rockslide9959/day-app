@@ -295,17 +295,17 @@ export default function CalendarPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-24 pt-8">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Calendar</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Calendar</h1>
         <div className="hidden items-center gap-2 sm:flex">
           <button
             onClick={() => setShowFreeTime(true)}
-            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-700"
+            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
           >
             Find Free Time
           </button>
           <button
             onClick={() => setModalState({ mode: "create", date: anchorDate })}
-            className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+            className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             + New
           </button>
@@ -317,7 +317,7 @@ export default function CalendarPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search events and tasks…"
-          className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
         />
       </div>
 
@@ -334,38 +334,38 @@ export default function CalendarPage() {
         />
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-2 py-2 shadow-sm dark:bg-zinc-900">
+          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-2 py-2 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
             <div className="flex min-w-0 items-center gap-0.5">
               <button
                 onClick={goPrev}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
                 aria-label="Previous"
               >
                 ←
               </button>
               <button
                 onClick={goToday}
-                className="truncate rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                className="truncate rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800 crimson:text-crimson-text crimson:hover:bg-crimson-raised"
               >
                 {title}
               </button>
               <button
                 onClick={goNext}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
                 aria-label="Next"
               >
                 →
               </button>
             </div>
-            <div className="flex shrink-0 rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+            <div className="flex shrink-0 rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
               {(["month", "week", "day"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`rounded-md px-2.5 py-1.5 font-medium capitalize ${
                     viewMode === mode
-                      ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                      : "text-zinc-500"
+                      ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+                      : "text-zinc-500 crimson:text-crimson-text-secondary"
                   }`}
                 >
                   {mode}
@@ -378,8 +378,8 @@ export default function CalendarPage() {
             <div
               className={`mb-4 rounded-xl px-4 py-3 text-sm ${
                 usingCache
-                  ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                  ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 crimson:bg-amber-950/40 crimson:text-amber-300"
+                  : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
               }`}
             >
               {error}
@@ -421,7 +421,7 @@ export default function CalendarPage() {
       <button
         onClick={() => setModalState({ mode: "create", date: anchorDate })}
         aria-label="New item"
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl text-white shadow-lg sm:hidden dark:bg-zinc-50 dark:text-zinc-900"
+        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl text-white shadow-lg sm:hidden dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
       >
         +
       </button>
@@ -473,7 +473,7 @@ function SearchResults({
 }) {
   if (results.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+      <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
         No matching events
       </div>
     );
@@ -484,14 +484,14 @@ function SearchResults({
         <li key={ev.id}>
           <button
             onClick={() => onSelect(ev)}
-            className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900"
+            className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
           >
             <div>
-              <p className="text-sm text-zinc-900 dark:text-zinc-50">
+              <p className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                 {ev.itemType === "task" && <span className="mr-1">{ev.completed ? "☑" : "☐"}</span>}
                 {ev.title}
               </p>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-zinc-400 crimson:text-crimson-text-muted">
                 {ev.itemType === "task" ? `Due ${ev.date}` : ev.date}
                 {ev.category ? ` · ${ev.category}` : ""}
               </p>

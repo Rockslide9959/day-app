@@ -44,8 +44,8 @@ export default function MonthView({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="grid grid-cols-7 border-b border-zinc-200 text-center text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface">
+      <div className="grid grid-cols-7 border-b border-zinc-200 text-center text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 crimson:border-crimson-border crimson:text-crimson-text-secondary">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
           <div key={i} className="py-2.5">
             <span className="sm:hidden">{d[0]}</span>
@@ -81,18 +81,18 @@ export default function MonthView({
                 }
               }}
               aria-label={`${date}${dayEvents.length > 0 ? `, ${dayEvents.length} item${dayEvents.length === 1 ? "" : "s"}` : ""}`}
-              className={`flex min-h-[92px] cursor-pointer flex-col items-stretch gap-1 border-b border-r border-zinc-200 p-1 text-left last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500 sm:min-h-[112px] sm:p-1.5 dark:border-zinc-800 ${
-                inMonth ? "bg-white dark:bg-zinc-900" : "bg-zinc-50 dark:bg-zinc-950"
+              className={`flex min-h-[92px] cursor-pointer flex-col items-stretch gap-1 border-b border-r border-zinc-200 p-1 text-left last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500 crimson:focus-visible:outline-crimson-accent sm:min-h-[112px] sm:p-1.5 dark:border-zinc-800 crimson:border-crimson-border ${
+                inMonth ? "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface" : "bg-zinc-50 dark:bg-zinc-950 crimson:bg-crimson-obsidian"
               }`}
             >
               <span className="flex items-center gap-1 self-start">
                 <span
                   className={`px-1.5 py-0.5 text-xs font-semibold sm:text-sm ${
                     isToday
-                      ? "rounded-full bg-red-500 text-white"
+                      ? "rounded-full bg-red-500 text-white crimson:bg-crimson-accent crimson:text-crimson-text"
                       : inMonth
-                        ? "text-zinc-700 dark:text-zinc-200"
-                        : "text-zinc-400 dark:text-zinc-600"
+                        ? "text-zinc-700 dark:text-zinc-200 crimson:text-crimson-text-secondary"
+                        : "text-zinc-400 dark:text-zinc-600 crimson:text-crimson-text-muted"
                   }`}
                 >
                   {Number(date.slice(8, 10))}
@@ -128,7 +128,7 @@ export default function MonthView({
                   );
                 })}
                 {moreLabel && (
-                  <span className="whitespace-nowrap px-1 text-[11px] font-semibold text-zinc-500 sm:text-xs dark:text-zinc-400">
+                  <span className="whitespace-nowrap px-1 text-[11px] font-semibold text-zinc-500 sm:text-xs dark:text-zinc-400 crimson:text-crimson-text-secondary">
                     <span className="sm:hidden">{moreLabel.compact}</span>
                     <span className="hidden sm:inline">{moreLabel.full}</span>
                   </span>

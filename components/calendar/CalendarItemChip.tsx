@@ -48,8 +48,8 @@ export default function CalendarItemChip({
       {dot && (
         <span
           aria-hidden="true"
-          className={`absolute right-1 top-1 h-[5px] w-[5px] shrink-0 rounded-full ring-1 ring-white/70 dark:ring-black/50 ${
-            dot.color === "red" ? "bg-red-500" : "bg-orange-500"
+          className={`absolute right-1 top-1 h-[5px] w-[5px] shrink-0 rounded-full ring-1 ring-white/70 dark:ring-black/50 crimson:ring-crimson-obsidian/70 ${
+            dot.color === "red" ? "bg-red-500 crimson:bg-crimson-accent" : "bg-orange-500 crimson:bg-amber-500"
           }`}
         />
       )}

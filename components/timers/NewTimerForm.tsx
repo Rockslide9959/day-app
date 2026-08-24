@@ -84,7 +84,7 @@ export default function NewTimerForm({
   return (
     <form
       onSubmit={submit}
-      className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900"
+      className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface"
     >
       <div className="flex gap-1.5">
         {(["stopwatch", "countdown", "pomodoro"] as const).map((m) => (
@@ -94,8 +94,8 @@ export default function NewTimerForm({
             onClick={() => setMode(m)}
             className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ${
               mode === m
-                ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+                : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
             }`}
           >
             {m === "stopwatch" ? "Stopwatch" : m === "countdown" ? "Countdown" : "Pomodoro"}
@@ -107,12 +107,12 @@ export default function NewTimerForm({
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder="Timer label (optional)"
-        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
       />
 
       {mode === "countdown" && (
         <div className="flex gap-2">
-          <label className="flex-1 text-xs text-zinc-500">
+          <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             Hours
             <input
               type="number"
@@ -120,10 +120,10 @@ export default function NewTimerForm({
               step="1"
               value={hours}
               onChange={(e) => setHours(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
             />
           </label>
-          <label className="flex-1 text-xs text-zinc-500">
+          <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             Minutes
             <input
               type="number"
@@ -131,10 +131,10 @@ export default function NewTimerForm({
               step="1"
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
             />
           </label>
-          <label className="flex-1 text-xs text-zinc-500">
+          <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             Seconds
             <input
               type="number"
@@ -142,7 +142,7 @@ export default function NewTimerForm({
               step="1"
               value={seconds}
               onChange={(e) => setSeconds(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
             />
           </label>
         </div>
@@ -150,7 +150,7 @@ export default function NewTimerForm({
 
       {mode === "pomodoro" && (
         <div className="flex gap-2">
-          <label className="flex-1 text-xs text-zinc-500">
+          <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             Work (minutes)
             <input
               type="number"
@@ -158,10 +158,10 @@ export default function NewTimerForm({
               step="1"
               value={workMinutes}
               onChange={(e) => setWorkMinutes(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
             />
           </label>
-          <label className="flex-1 text-xs text-zinc-500">
+          <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
             Break (minutes)
             <input
               type="number"
@@ -169,31 +169,31 @@ export default function NewTimerForm({
               step="1"
               value={breakMinutes}
               onChange={(e) => setBreakMinutes(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
             />
           </label>
         </div>
       )}
 
-      <p className="text-xs text-amber-600 dark:text-amber-400">
+      <p className="text-xs text-amber-600 dark:text-amber-400 crimson:text-amber-400">
         💡 We recommend using a mobile device for timers — notifications are more
         reliable there than on desktop.
       </p>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
 
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 rounded-lg bg-zinc-900 py-2 text-xs font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+          className="flex-1 rounded-lg bg-zinc-900 py-2 text-xs font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           {saving ? "Starting…" : "Start"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-500 dark:border-zinc-700"
+          className="rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           Cancel
         </button>

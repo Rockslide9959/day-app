@@ -135,39 +135,39 @@ export default function SchedulePage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8 pb-24">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         Schedule
       </h1>
 
-      <div className="mb-4 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900">
+      <div className="mb-4 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
         <button
           onClick={() => setDate((d) => addDaysToDateStr(d, -1))}
-          className="px-2 py-1 text-zinc-400"
+          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
           aria-label="Previous day"
         >
           ←
         </button>
-        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
           {formatDateLabel(date)}
         </span>
         <button
           onClick={() => setDate((d) => addDaysToDateStr(d, 1))}
-          className="px-2 py-1 text-zinc-400"
+          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
           aria-label="Next day"
         >
           →
         </button>
       </div>
 
-      <div className="mb-4 flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+      <div className="mb-4 flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
         {(["all", "events", "tasks"] as Filter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`flex-1 rounded-md py-1.5 font-medium capitalize ${
               filter === f
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                : "text-zinc-500"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+                : "text-zinc-500 crimson:text-crimson-text-secondary"
             }`}
           >
             {f}
@@ -178,7 +178,7 @@ export default function SchedulePage() {
       {loading ? (
         <LoadingSpinner />
       ) : visibleItems.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           Nothing scheduled for this day
         </div>
       ) : (
@@ -195,7 +195,7 @@ export default function SchedulePage() {
             return (
               <li
                 key={item.occurrenceId}
-                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
               >
                 {isTask ? (
                   <input
@@ -203,7 +203,7 @@ export default function SchedulePage() {
                     checked={item.completed}
                     onChange={() => handleToggleComplete(item)}
                     aria-label={item.completed ? `Reopen task: ${item.title}` : `Mark task complete: ${item.title}`}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   />
                 ) : (
                   <span
@@ -217,16 +217,16 @@ export default function SchedulePage() {
                 >
                   <p
                     className={`text-sm ${
-                      item.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"
+                      item.completed ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                     }`}
                   >
                     {item.title}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                     {timeLabel}
                     {item.category ? ` · ${item.category}` : ""}
                   </p>
-                  {item.notes && <p className="mt-0.5 truncate text-xs text-zinc-500">{item.notes}</p>}
+                  {item.notes && <p className="mt-0.5 truncate text-xs text-zinc-500 crimson:text-crimson-text-secondary">{item.notes}</p>}
                 </button>
               </li>
             );
@@ -236,35 +236,35 @@ export default function SchedulePage() {
 
       <button
         onClick={() => setModalState({ mode: "create" })}
-        className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700"
+        className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
       >
         + New
       </button>
 
       {completedTasks.length > 0 && (
         <div className="mt-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">
             Completed
           </h2>
           <ul className="space-y-2">
             {completedTasks.map((item) => (
               <li
                 key={item.occurrenceId}
-                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 opacity-70 shadow-sm dark:bg-zinc-900"
+                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 opacity-70 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
               >
                 <input
                   type="checkbox"
                   checked
                   onChange={() => handleToggleComplete(item)}
                   aria-label={`Reopen task: ${item.title}`}
-                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                 />
                 <button
                   onClick={() => setModalState({ mode: "view", event: item })}
                   className="min-w-0 flex-1 text-left"
                 >
-                  <p className="text-sm text-zinc-400 line-through">{item.title}</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-sm text-zinc-400 line-through crimson:text-crimson-text-muted">{item.title}</p>
+                  <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                     {item.allDay ? "Due today" : `Due ${formatTime12h(item.startTime)}`}
                     {item.category ? ` · ${item.category}` : ""}
                   </p>

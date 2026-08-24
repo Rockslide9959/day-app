@@ -40,10 +40,10 @@ export function categoryEventStyle(category: string | null | undefined, categori
 }
 
 export const PRIORITY_META: Record<string, { label: string; dot: string; text: string }> = {
-  low: { label: "Low", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
-  normal: { label: "Normal", dot: "bg-zinc-400 dark:bg-zinc-500", text: "text-zinc-500" },
-  high: { label: "High", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
-  urgent: { label: "Urgent", dot: "bg-red-500", text: "text-red-600 dark:text-red-400" },
+  low: { label: "Low", dot: "bg-zinc-300 dark:bg-zinc-600 crimson:bg-crimson-border", text: "text-zinc-400 crimson:text-crimson-text-muted" },
+  normal: { label: "Normal", dot: "bg-zinc-400 dark:bg-zinc-500 crimson:bg-crimson-text-muted", text: "text-zinc-500 crimson:text-crimson-text-secondary" },
+  high: { label: "High", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400 crimson:text-amber-400" },
+  urgent: { label: "Urgent", dot: "bg-red-500 crimson:bg-crimson-accent", text: "text-red-600 dark:text-red-400 crimson:text-crimson-highlight" },
 };
 
 export function priorityMeta(priority: string) {

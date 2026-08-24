@@ -36,7 +36,7 @@ export default function BottomNav() {
   if (pathname === "/login" || pathname === "/signup") return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)] dark:border-zinc-800 dark:bg-black/95">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)] dark:border-zinc-800 dark:bg-black/95 crimson:border-crimson-border crimson:bg-crimson-obsidian/95">
       <ul
         ref={listRef}
         className="mx-auto flex max-w-2xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -51,8 +51,8 @@ export default function BottomNav() {
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center gap-0.5 py-2.5 text-xs ${
                   active
-                    ? "text-zinc-900 dark:text-zinc-50"
-                    : "text-zinc-400 dark:text-zinc-500"
+                    ? "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-accent"
+                    : "text-zinc-400 dark:text-zinc-500 crimson:text-crimson-text-muted"
                 }`}
               >
                 {style === "emoji" ? (

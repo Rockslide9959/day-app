@@ -18,7 +18,7 @@ export default function RichTextEditor({
   return (
     <div
       id={entryId ? `notebook-editor-${entryId}` : undefined}
-      className="notebook-editor min-h-[50vh] w-full flex-1 overflow-x-hidden rounded-xl border border-zinc-200 bg-white px-4 py-3 sm:min-h-[58vh] dark:border-zinc-700 dark:bg-zinc-900"
+      className="notebook-editor min-h-[50vh] w-full flex-1 overflow-x-hidden rounded-xl border border-zinc-200 bg-white px-4 py-3 sm:min-h-[58vh] dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface"
     >
       <EditorContent editor={editor} />
     </div>

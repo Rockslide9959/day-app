@@ -9,6 +9,14 @@
    setting existed). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* "Crimson Night" — a 4th selectable appearance (see lib/theme.ts,
+   components/ThemeProvider.tsx, app/settings/page.tsx) alongside Light/Dark/
+   System, not a replacement. Applied as its own `.crimson` class (stacked
+   alongside `.dark`, since it's visually a dark theme — see
+   applyResolvedTheme in lib/theme.ts) so `dark:` and `crimson:` utilities can
+   coexist on the same element. */
+@custom-variant crimson (&:where(.crimson, .crimson *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -21,9 +29,29 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Crimson Night brand-kit palette (design/day-red-brand-kit.png), registered
+   as named tokens rather than one-off arbitrary values so `crimson:` utility
+   classes stay readable and consistent across the app. */
+@theme {
+  --color-crimson-obsidian: #070708;
+  --color-crimson-surface: #121214;
+  --color-crimson-raised: #1b1b1f;
+  --color-crimson-border: #303036;
+  --color-crimson-accent: #d81f35;
+  --color-crimson-highlight: #ff4057;
+  --color-crimson-text: #f7f7f8;
+  --color-crimson-text-secondary: #a7a7af;
+  --color-crimson-text-muted: #777780;
+}
+
 :root.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+}
+
+:root.crimson {
+  --background: var(--color-crimson-obsidian);
+  --foreground: var(--color-crimson-text);
 }
 
 body {
@@ -46,6 +74,10 @@ body {
 
 .dark .notebook-editor-content {
   color: #fafafa;
+}
+
+.crimson .notebook-editor-content {
+  color: var(--color-crimson-text);
 }
 
 .notebook-editor-content p {
@@ -110,6 +142,10 @@ body {
   height: 0;
   pointer-events: none;
   color: #a1a1aa;
+}
+
+.crimson .notebook-editor-content p.is-editor-empty:first-child::before {
+  color: var(--color-crimson-text-secondary);
 }
 
 /* Directional page transitions for tab navigation, triggered by swiping or

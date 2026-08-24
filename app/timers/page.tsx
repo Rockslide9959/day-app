@@ -68,28 +68,28 @@ export default function TimersPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Timers</h1>
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Timers</h1>
 
       {pushSupported && (
-        <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900">
+        <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
               Notifications
             </p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               {pushEnabled
                 ? "On for this device — timers will notify you here even off this tab"
                 : "Off — turn on to get notified when a timer ends"}
             </p>
-            {pushError && <p className="mt-1 text-xs text-red-500">{pushError}</p>}
+            {pushError && <p className="mt-1 text-xs text-red-500 crimson:text-crimson-highlight">{pushError}</p>}
           </div>
           <button
             onClick={togglePush}
             disabled={pushBusy}
             className={`rounded-full px-4 py-1.5 text-xs font-medium ${
               pushEnabled
-                ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                : "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
+                : "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             }`}
           >
             {pushBusy ? "…" : pushEnabled ? "Turn off" : "Turn on"}
@@ -100,7 +100,7 @@ export default function TimersPage() {
       {loading ? (
         <LoadingSpinner />
       ) : sortedTimers.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           No timers yet — start a stopwatch, countdown, or a focus session
         </div>
       ) : (
@@ -124,7 +124,7 @@ export default function TimersPage() {
       ) : (
         <button
           onClick={() => setShowNewTimer(true)}
-          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700"
+          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           + New timer
         </button>

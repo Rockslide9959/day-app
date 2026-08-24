@@ -47,14 +47,14 @@ export default function RoutinesPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         Routines
       </h1>
 
       {loading ? (
-        <p className="text-sm text-zinc-400">Loading…</p>
+        <p className="text-sm text-zinc-400 crimson:text-crimson-text-muted">Loading…</p>
       ) : routines.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           No routines yet — set up a morning or evening checklist
         </div>
       ) : (
@@ -63,17 +63,17 @@ export default function RoutinesPage() {
             <li key={r.id} className="flex items-center gap-2">
               <Link
                 href={`/routines/${r.id}`}
-                className="flex flex-1 items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+                className="relative flex flex-1 items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
               >
-                <span className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50">
+                <span className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                   <span className="text-lg">{r.icon}</span>
                   {r.name}
                 </span>
-                <span className="text-xs text-zinc-400">{r.steps.length} steps</span>
+                <span className="text-xs text-zinc-400 crimson:text-crimson-text-muted">{r.steps.length} steps</span>
               </Link>
               <button
                 onClick={() => deleteRoutine(r.id)}
-                className="text-xs text-zinc-300 hover:text-red-500"
+                className="text-xs text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
               >
                 ✕
               </button>
@@ -85,14 +85,14 @@ export default function RoutinesPage() {
       {showForm ? (
         <form
           onSubmit={addRoutine}
-          className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900"
+          className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
         >
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Routine name, e.g. Morning routine"
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
           <div className="flex flex-wrap gap-2">
             {ICONS.map((i) => (
@@ -102,8 +102,8 @@ export default function RoutinesPage() {
                 onClick={() => setIcon(i)}
                 className={`flex h-9 w-9 items-center justify-center rounded-full text-lg ${
                   icon === i
-                    ? "bg-zinc-900 dark:bg-zinc-50"
-                    : "bg-zinc-100 dark:bg-zinc-800"
+                    ? "bg-zinc-900 dark:bg-zinc-50 crimson:bg-crimson-accent"
+                    : "bg-zinc-100 dark:bg-zinc-800 crimson:bg-crimson-raised"
                 }`}
               >
                 {i}
@@ -113,14 +113,14 @@ export default function RoutinesPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             >
               Create routine
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+              className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
             >
               Cancel
             </button>
@@ -129,7 +129,7 @@ export default function RoutinesPage() {
       ) : (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700"
+          className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           + New routine
         </button>

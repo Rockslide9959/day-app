@@ -33,13 +33,13 @@ export default function PasswordInput({
         placeholder={placeholder}
         autoComplete={autoComplete}
         autoFocus={autoFocus}
-        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 pr-14 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 pr-14 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 crimson:border-crimson-border crimson:bg-crimson-raised crimson:text-crimson-text crimson:focus:border-crimson-accent"
       />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "Hide password" : "Show password"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 crimson:text-crimson-text-secondary crimson:hover:text-crimson-text"
       >
         {visible ? "Hide" : "Show"}
       </button>

@@ -84,21 +84,21 @@ export default function DayAgendaModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900 crimson:bg-crimson-surface"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{dayLabel(date)}</h2>
-            {isToday && <p className="text-xs font-medium text-red-500">Today</p>}
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{dayLabel(date)}</h2>
+            {isToday && <p className="text-xs font-medium text-red-500 crimson:text-crimson-highlight">Today</p>}
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600" aria-label="Close">
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary" aria-label="Close">
             ✕
           </button>
         </div>
 
         {dayEvents.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+          <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
             No events on this day
           </p>
         ) : (
@@ -120,7 +120,7 @@ export default function DayAgendaModal({
                   <button
                     onClick={() => onSelectEvent(ev)}
                     aria-label={buildItemAriaLabel(ev, timeLabel)}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/60 crimson:hover:bg-crimson-raised/60"
                   >
                     <span
                       aria-hidden="true"
@@ -130,12 +130,12 @@ export default function DayAgendaModal({
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block truncate text-sm font-medium ${
-                          ev.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"
+                          ev.completed ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                         }`}
                       >
                         {ev.title}
                       </span>
-                      <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400 crimson:text-crimson-text-secondary">
                         {isTask ? "Task" : "Event"} · {timeLabel}
                         {ev.category ? ` · ${ev.category}` : ""}
                         {ev.completed ? " · Completed" : ""}
@@ -145,7 +145,7 @@ export default function DayAgendaModal({
                       <span
                         aria-hidden="true"
                         title={dot.label}
-                        className={`h-2 w-2 shrink-0 rounded-full ${dot.color === "red" ? "bg-red-500" : "bg-orange-500"}`}
+                        className={`h-2 w-2 shrink-0 rounded-full ${dot.color === "red" ? "bg-red-500 crimson:bg-crimson-accent" : "bg-orange-500 crimson:bg-amber-500"}`}
                       />
                     )}
                   </button>
@@ -157,17 +157,17 @@ export default function DayAgendaModal({
 
         {journalEntry !== undefined && (
           <div className="mb-4">
-            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">Journal</h3>
+            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">Journal</h3>
             {journalEntry ? (
               <button
                 onClick={writeAboutThisDay}
-                className="w-full rounded-xl bg-zinc-50 px-3 py-2.5 text-left dark:bg-zinc-800/60"
+                className="w-full rounded-xl bg-zinc-50 px-3 py-2.5 text-left dark:bg-zinc-800/60 crimson:bg-crimson-raised/60"
               >
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{journalEntry.title}</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{journalEntry.title}</p>
                 {journalEntry.content && (
-                  <p className="truncate text-xs text-zinc-500">{buildContentPreview(journalEntry.content, 100)}</p>
+                  <p className="truncate text-xs text-zinc-500 crimson:text-crimson-text-secondary">{buildContentPreview(journalEntry.content, 100)}</p>
                 )}
-                <span className="mt-1 inline-block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                <span className="mt-1 inline-block text-xs font-medium text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
                   Open entry →
                 </span>
               </button>
@@ -175,7 +175,7 @@ export default function DayAgendaModal({
               <button
                 onClick={writeAboutThisDay}
                 disabled={creatingJournal}
-                className="w-full rounded-xl border border-dashed border-zinc-200 py-2.5 text-sm font-medium text-zinc-500 disabled:opacity-60 dark:border-zinc-700"
+                className="w-full rounded-xl border border-dashed border-zinc-200 py-2.5 text-sm font-medium text-zinc-500 disabled:opacity-60 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
               >
                 {creatingJournal ? "Opening…" : "📓 Write about this day"}
               </button>
@@ -185,7 +185,7 @@ export default function DayAgendaModal({
 
         <button
           onClick={() => onAddEvent(date)}
-          className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+          className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           + Add item
         </button>

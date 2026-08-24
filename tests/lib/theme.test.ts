@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  THEME_BOOTSTRAP_SCRIPT,
+  THEME_COLOR,
   THEME_STORAGE_KEY,
   isThemePreference,
   readStoredThemePreference,
@@ -27,10 +29,11 @@ function stubLocalStorage() {
 }
 
 describe("isThemePreference", () => {
-  it("accepts the three supported values", () => {
+  it("accepts the four supported values", () => {
     expect(isThemePreference("light")).toBe(true);
     expect(isThemePreference("dark")).toBe(true);
     expect(isThemePreference("system")).toBe(true);
+    expect(isThemePreference("crimson")).toBe(true);
   });
 
   it("rejects anything else, including null/undefined/other types", () => {
@@ -54,6 +57,11 @@ describe("resolveTheme", () => {
   it("system follows whatever the OS currently reports", () => {
     expect(resolveTheme("system", true)).toBe("dark");
     expect(resolveTheme("system", false)).toBe("light");
+  });
+
+  it("crimson stays crimson regardless of OS preference — it's never OS-driven", () => {
+    expect(resolveTheme("crimson", true)).toBe("crimson");
+    expect(resolveTheme("crimson", false)).toBe("crimson");
   });
 });
 
@@ -82,6 +90,9 @@ describe("readStoredThemePreference / writeStoredThemePreference", () => {
 
     writeStoredThemePreference("light");
     expect(readStoredThemePreference()).toBe("light");
+
+    writeStoredThemePreference("crimson");
+    expect(readStoredThemePreference()).toBe("crimson");
   });
 
   it("falls back to system when localStorage throws (e.g. blocked/quota)", () => {
@@ -96,5 +107,20 @@ describe("readStoredThemePreference / writeStoredThemePreference", () => {
     };
     expect(readStoredThemePreference()).toBe("system");
     expect(() => writeStoredThemePreference("dark")).not.toThrow();
+  });
+});
+
+// THEME_BOOTSTRAP_SCRIPT is a hand-written string kept manually in sync with
+// THEME_COLOR/resolveTheme (see the comment above its definition in
+// lib/theme.ts) — a compiler can't catch a copy-paste mistake there. This
+// doesn't prove the script's *logic* matches, but it does catch the most
+// likely slip: updating one copy of a theme color/name and forgetting the
+// other.
+describe("THEME_BOOTSTRAP_SCRIPT stays in sync with THEME_COLOR", () => {
+  it("embeds every resolved theme's color and the crimson preference name", () => {
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain(THEME_COLOR.light);
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain(THEME_COLOR.dark);
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain(THEME_COLOR.crimson);
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain("crimson");
   });
 });

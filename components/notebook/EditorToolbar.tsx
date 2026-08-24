@@ -39,7 +39,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
   });
 
   if (!editor || !state) {
-    return <div className="mb-2 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800" aria-hidden />;
+    return <div className="mb-2 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 crimson:bg-crimson-raised" aria-hidden />;
   }
 
   const buttons: ToolbarButton[] = [
@@ -112,7 +112,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
     <div
       role="toolbar"
       aria-label="Formatting"
-      className="mb-2 flex gap-1 overflow-x-auto rounded-xl bg-zinc-100 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:bg-zinc-800"
+      className="mb-2 flex gap-1 overflow-x-auto rounded-xl bg-zinc-100 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:bg-zinc-800 crimson:bg-crimson-raised"
     >
       {buttons.map((btn) => (
         <button
@@ -128,8 +128,8 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
           onClick={btn.onRun}
           className={`flex h-9 min-w-[2.5rem] shrink-0 items-center justify-center rounded-lg px-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${
             btn.isActive
-              ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-              : "text-zinc-500 hover:bg-white/60 dark:text-zinc-400 dark:hover:bg-zinc-700/60"
+              ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+              : "text-zinc-500 hover:bg-white/60 dark:text-zinc-400 dark:hover:bg-zinc-700/60 crimson:text-crimson-text-secondary crimson:hover:bg-crimson-surface/60"
           }`}
         >
           {btn.label}

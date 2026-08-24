@@ -4,10 +4,10 @@
 
 export const THEME_STORAGE_KEY = "day:theme";
 
-export type ThemePreference = "light" | "dark" | "system";
-export type ResolvedTheme = "light" | "dark";
+export type ThemePreference = "light" | "dark" | "system" | "crimson";
+export type ResolvedTheme = "light" | "dark" | "crimson";
 
-const THEME_PREFERENCES: readonly ThemePreference[] = ["light", "dark", "system"];
+const THEME_PREFERENCES: readonly ThemePreference[] = ["light", "dark", "system", "crimson"];
 
 export function isThemePreference(value: unknown): value is ThemePreference {
   return typeof value === "string" && (THEME_PREFERENCES as readonly string[]).includes(value);
@@ -15,6 +15,8 @@ export function isThemePreference(value: unknown): value is ThemePreference {
 
 // "system" resolves against whatever the OS/browser reports right now —
 // callers re-resolve on every matchMedia change rather than caching this.
+// "crimson" is a direct pass-through like "light"/"dark" — there's no OS
+// signal for it, so it's only ever reachable via an explicit user choice.
 export function resolveTheme(preference: ThemePreference, systemPrefersDark: boolean): ResolvedTheme {
   if (preference === "system") return systemPrefersDark ? "dark" : "light";
   return preference;
@@ -57,13 +59,15 @@ export function writeStoredThemePreference(preference: ThemePreference): void {
   }
 }
 
-// <meta name="theme-color"> pair for the two resolved themes, matching the
+// <meta name="theme-color"> pair for the resolved themes, matching the
 // app's existing palette: light mirrors body's bg-zinc-50, dark reuses the
 // value already hardcoded in app/layout.tsx's (static, SSR-time) viewport
-// export and public/manifest.json's theme_color.
+// export and public/manifest.json's theme_color. crimson reuses the brand
+// kit's Obsidian page background (see app/globals.css's crimson tokens).
 export const THEME_COLOR: Record<ResolvedTheme, string> = {
   light: "#fafafa",
   dark: "#18181b",
+  crimson: "#070708",
 };
 
 // Applies a resolved theme to the live document: toggles the `.dark` class
@@ -71,11 +75,17 @@ export const THEME_COLOR: Record<ResolvedTheme, string> = {
 // `color-scheme` so native form controls/scrollbars render correctly, and
 // keeps the <meta name="theme-color"> tag (browser chrome / PWA status bar)
 // in step with a manual override rather than only the OS setting.
+//
+// "crimson" also toggles `.dark` alongside its own `.crimson` class —
+// Crimson Night is visually a dark theme, so any element that only has a
+// `dark:` override and no bespoke `crimson:` one yet still renders sensibly
+// instead of falling back to light-mode white/zinc-50 surfaces.
 export function applyResolvedTheme(resolved: ResolvedTheme): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.toggle("dark", resolved === "dark");
-  root.style.colorScheme = resolved;
+  root.classList.toggle("dark", resolved !== "light");
+  root.classList.toggle("crimson", resolved === "crimson");
+  root.style.colorScheme = resolved === "light" ? "light" : "dark";
   root.dataset.theme = resolved;
 
   let meta = document.querySelector('meta[name="theme-color"]');
@@ -97,4 +107,4 @@ export function applyResolvedTheme(resolved: ResolvedTheme): void {
 // must run standalone before any bundle executes. Keep the two in sync if
 // the resolution rules ever change. Never interpolate request/user data into
 // this string — it must stay a fixed, static script body.
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var k="${THEME_STORAGE_KEY}";var s=localStorage.getItem(k);var p=(s==="light"||s==="dark"||s==="system")?s:"system";var d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;var r=p==="system"?(d?"dark":"light"):p;var e=document.documentElement;if(r==="dark"){e.classList.add("dark");}else{e.classList.remove("dark");}e.style.colorScheme=r;e.setAttribute("data-theme",r);var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",r==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}");}}catch(e){}})();`;
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var k="${THEME_STORAGE_KEY}";var s=localStorage.getItem(k);var p=(s==="light"||s==="dark"||s==="system"||s==="crimson")?s:"system";var d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;var r=p==="system"?(d?"dark":"light"):p;var e=document.documentElement;e.classList.toggle("dark",r!=="light");e.classList.toggle("crimson",r==="crimson");e.style.colorScheme=r==="light"?"light":"dark";e.setAttribute("data-theme",r);var m=document.querySelector('meta[name="theme-color"]');if(m){var c=r==="crimson"?"${THEME_COLOR.crimson}":(r==="dark"?"${THEME_COLOR.dark}":"${THEME_COLOR.light}");m.setAttribute("content",c);}}catch(e){}})();`;

@@ -78,27 +78,27 @@ export default function AttachmentList({
   }
 
   return (
-    <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Attachments</p>
+    <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800 crimson:border-crimson-border">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 crimson:text-crimson-text-muted">Attachments</p>
 
       {!loading && attachments.length > 0 && (
         <ul className="space-y-2">
           {attachments.map((a) => (
             <li
               key={a.id}
-              className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs shadow-sm dark:bg-zinc-900"
+              className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
             >
               <a
                 href={`/api/attachments/${a.id}`}
-                className="min-w-0 flex-1 truncate text-zinc-600 hover:underline dark:text-zinc-300"
+                className="min-w-0 flex-1 truncate text-zinc-600 hover:underline dark:text-zinc-300 crimson:text-crimson-text-secondary"
               >
                 📎 {a.fileName}
-                <span className="ml-1 text-zinc-400">({formatFileSize(a.fileSize)})</span>
+                <span className="ml-1 text-zinc-400 crimson:text-crimson-text-muted">({formatFileSize(a.fileSize)})</span>
               </a>
               <button
                 type="button"
                 onClick={() => handleDelete(a.id)}
-                className="shrink-0 px-1 text-zinc-300 hover:text-red-500"
+                className="shrink-0 px-1 text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
               >
                 ✕
               </button>
@@ -107,14 +107,14 @@ export default function AttachmentList({
         </ul>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
 
       <input ref={fileInputRef} type="file" onChange={handleFileChange} className="hidden" />
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-800"
+        className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-secondary"
       >
         {uploading ? "Uploading…" : "+ Attach a file"}
       </button>

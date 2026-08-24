@@ -311,7 +311,7 @@ export default function EventModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900"
+        className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-lg sm:max-w-md sm:rounded-2xl dark:bg-zinc-900 crimson:bg-crimson-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {conflicts ? (
@@ -341,16 +341,16 @@ export default function EventModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                 {isExisting ? (isTask ? "Edit task" : "Edit event") : isTask ? "New task" : "New event"}
               </h2>
-              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+              <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary">
                 ✕
               </button>
             </div>
 
             <div>
-              <div className="flex w-full rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+              <div className="flex w-full rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
                 {ITEM_TYPES.map((t) => {
                   const blocked = t === "task" && isMultiDayEvent;
                   return (
@@ -361,8 +361,8 @@ export default function EventModal({
                       onClick={() => selectItemType(t)}
                       className={`flex-1 rounded-md py-1.5 font-medium capitalize disabled:cursor-not-allowed disabled:opacity-60 ${
                         draft.itemType === t
-                          ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                          : "text-zinc-500"
+                          ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
+                          : "text-zinc-500 crimson:text-crimson-text-secondary"
                       }`}
                     >
                       {t}
@@ -371,14 +371,14 @@ export default function EventModal({
                 })}
               </div>
               {isMultiDayEvent && (
-                <p className="mt-1 text-[11px] text-zinc-400">
+                <p className="mt-1 text-[11px] text-zinc-400 crimson:text-crimson-text-muted">
                   Shorten this to a single day (matching start/end date) to convert it to a task.
                 </p>
               )}
             </div>
 
             {isExisting && event?.isRecurringInstance && (
-              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">
                 This is a recurring {isTask ? "task" : "event"} — changes apply to the whole series.
               </p>
             )}
@@ -388,96 +388,96 @@ export default function EventModal({
               value={draft.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder={isTask ? "Task title" : "Event title"}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
             />
 
             {isTask ? (
               <>
                 <div className="flex gap-3">
-                  <label className="flex-1 text-xs text-zinc-500">
+                  <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                     Due date
                     <input
                       type="date"
                       value={draft.date}
                       onChange={(e) => set("date", e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                     />
                   </label>
                   {draft.hasDueTime && (
-                    <label className="flex-1 text-xs text-zinc-500">
+                    <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                       Due time
                       <input
                         type="time"
                         value={draft.startTime}
                         onChange={(e) => set("startTime", e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                       />
                     </label>
                   )}
                 </div>
-                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
                   <input
                     type="checkbox"
                     checked={draft.hasDueTime}
                     onChange={(e) => set("hasDueTime", e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300"
+                    className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   />
                   Set a due time
                 </label>
               </>
             ) : (
               <>
-                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
                   <input
                     type="checkbox"
                     checked={draft.allDay}
                     onChange={(e) => set("allDay", e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300"
+                    className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   />
                   All-day
                 </label>
 
                 <div className="flex gap-3">
-                  <label className="flex-1 text-xs text-zinc-500">
+                  <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                     Start date
                     <input
                       type="date"
                       value={draft.date}
                       onChange={(e) => set("date", e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                     />
                   </label>
                   {!draft.allDay && (
-                    <label className="flex-1 text-xs text-zinc-500">
+                    <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                       Start time
                       <input
                         type="time"
                         value={draft.startTime}
                         onChange={(e) => set("startTime", e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                       />
                     </label>
                   )}
                 </div>
 
                 <div className="flex gap-3">
-                  <label className="flex-1 text-xs text-zinc-500">
+                  <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                     End date
                     <input
                       type="date"
                       value={draft.endDate}
                       onChange={(e) => set("endDate", e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                     />
                   </label>
                   {!draft.allDay && (
-                    <label className="flex-1 text-xs text-zinc-500">
+                    <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                       End time
                       <input
                         type="time"
                         value={draft.endTime}
                         onChange={(e) => set("endTime", e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                       />
                     </label>
                   )}
@@ -487,7 +487,7 @@ export default function EventModal({
                   value={draft.location}
                   onChange={(e) => set("location", e.target.value)}
                   placeholder="Location (optional)"
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
                 />
               </>
             )}
@@ -497,11 +497,11 @@ export default function EventModal({
               onChange={(e) => set("notes", e.target.value)}
               placeholder="Description / notes (optional)"
               rows={3}
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
             />
 
             <div className="flex gap-3">
-              <label className="flex-1 text-xs text-zinc-500">
+              <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                 Category
                 {addingCategory ? (
                   <div className="mt-1 flex gap-1.5">
@@ -510,18 +510,18 @@ export default function EventModal({
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       placeholder="Name"
-                      className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                      className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                     />
                     <input
                       type="color"
                       value={newCategoryColor}
                       onChange={(e) => setNewCategoryColor(e.target.value)}
-                      className="h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                      className="h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-700 crimson:border-crimson-border"
                     />
                     <button
                       type="button"
                       onClick={submitNewCategory}
-                      className="shrink-0 rounded-xl bg-zinc-900 px-2 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+                      className="shrink-0 rounded-xl bg-zinc-900 px-2 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
                     >
                       Add
                     </button>
@@ -533,7 +533,7 @@ export default function EventModal({
                       if (e.target.value === "__add__") setAddingCategory(true);
                       else set("category", e.target.value);
                     }}
-                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                   >
                     <option value="">None</option>
                     {categories.map((c) => (
@@ -545,12 +545,12 @@ export default function EventModal({
                   </select>
                 )}
               </label>
-              <label className="flex-1 text-xs text-zinc-500">
+              <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                 Priority
                 <select
                   value={draft.priority}
                   onChange={(e) => set("priority", e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                 >
                   {PRIORITY_OPTIONS.map((p) => (
                     <option key={p} value={p}>
@@ -562,17 +562,17 @@ export default function EventModal({
             </div>
 
             {showStudyFields && (
-              <div className="flex gap-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60">
-                <label className="flex-1 text-xs text-zinc-500">
+              <div className="flex gap-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60 crimson:bg-crimson-raised/60">
+                <label className="flex-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                   Subject / module
                   <input
                     value={draft.subject}
                     onChange={(e) => set("subject", e.target.value)}
                     placeholder="e.g. PROG7311"
-                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface"
                   />
                 </label>
-                <label className="w-28 text-xs text-zinc-500">
+                <label className="w-28 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                   Est. hours
                   <input
                     type="number"
@@ -580,18 +580,18 @@ export default function EventModal({
                     step="0.5"
                     value={draft.estimatedHours}
                     onChange={(e) => set("estimatedHours", e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface"
                   />
                 </label>
               </div>
             )}
 
-            <label className="block text-xs text-zinc-500">
+            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Reminder
               <select
                 value={draft.reminderMinutesBefore}
                 onChange={(e) => set("reminderMinutesBefore", e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
               >
                 {REMINDER_OPTIONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -599,17 +599,17 @@ export default function EventModal({
                   </option>
                 ))}
               </select>
-              <span className="mt-1 block text-[11px] text-zinc-400">
+              <span className="mt-1 block text-[11px] text-zinc-400 crimson:text-crimson-text-muted">
                 Notifications are sent to every device where you have enabled notifications.
               </span>
             </label>
 
-            <label className="block text-xs text-zinc-500">
+            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Repeats
               <select
                 value={draft.recurrence}
                 onChange={(e) => set("recurrence", e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
               >
                 {RECURRENCE_OPTIONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -621,7 +621,7 @@ export default function EventModal({
 
             {draft.recurrence === "custom" && (
               <div>
-                <p className="mb-1 text-xs text-zinc-500">On these days</p>
+                <p className="mb-1 text-xs text-zinc-500 crimson:text-crimson-text-secondary">On these days</p>
                 <div className="flex gap-1.5">
                   {WEEKDAY_LABELS.map((label, day) => (
                     <button
@@ -630,8 +630,8 @@ export default function EventModal({
                       onClick={() => toggleRecurrenceDay(day)}
                       className={`h-8 w-8 rounded-full text-xs font-medium ${
                         draft.recurrenceDays.includes(day)
-                          ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"
+                          ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
                       }`}
                     >
                       {label}
@@ -642,30 +642,30 @@ export default function EventModal({
             )}
 
             {draft.recurrence !== "none" && (
-              <label className="block text-xs text-zinc-500">
+              <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
                 Ends on (optional)
                 <input
                   type="date"
                   value={draft.recurrenceEndDate}
                   onChange={(e) => set("recurrenceEndDate", e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
                 />
               </label>
             )}
 
             {offline && (
-              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <p className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">
                 You&apos;re offline — reconnect to {isExisting ? "save changes to" : "create"} this{" "}
                 {isTask ? "task" : "event"}.
               </p>
             )}
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
 
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={saving || offline}
-                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
               >
                 {saving
                   ? "Saving…"
@@ -678,7 +678,7 @@ export default function EventModal({
               <button
                 type="button"
                 onClick={() => (isExisting ? setEditing(false) : onClose())}
-                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700"
+                className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
               >
                 Cancel
               </button>
@@ -705,10 +705,10 @@ function ConflictPanel({
 }) {
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Schedule conflict</h2>
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Schedule conflict</h2>
       <div className="space-y-2">
         {conflicts.map((c) => (
-          <p key={c.occurrenceId} className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+          <p key={c.occurrenceId} className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 crimson:bg-amber-950/40 crimson:text-amber-300">
             <span className="font-medium">{c.title}</span> overlaps this event from{" "}
             {c.allDay ? "all day" : `${formatTime12h(c.startTime)} – ${formatTime12h(c.endTime)}`}.
           </p>
@@ -718,17 +718,17 @@ function ConflictPanel({
         <button
           onClick={onSaveAnyway}
           disabled={saving}
-          className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+          className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           {saving ? "Saving…" : "Save anyway"}
         </button>
         <button
           onClick={onChangeTime}
-          className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+          className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           Change time
         </button>
-        <button onClick={onCancel} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-500 dark:border-zinc-700">
+        <button onClick={onCancel} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary">
           Cancel
         </button>
       </div>
@@ -834,7 +834,7 @@ function EventDetails({
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {isTask && (
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">
               ☐ Task
             </span>
           )}
@@ -844,25 +844,25 @@ function EventDetails({
             </span>
           )}
           {event.priority !== "normal" && (
-            <span className={`flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium dark:bg-zinc-800 ${pMeta.text}`}>
+            <span className={`flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium dark:bg-zinc-800 crimson:bg-crimson-raised ${pMeta.text}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${pMeta.dot}`} />
               {pMeta.label}
             </span>
           )}
           {event.recurrence !== "none" && (
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">🔁 Recurring</span>
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">🔁 Recurring</span>
           )}
         </div>
-        <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+        <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary">
           ✕
         </button>
       </div>
 
-      <h2 className={`text-lg font-semibold ${event.completed ? "text-zinc-400 line-through" : "text-zinc-900 dark:text-zinc-50"}`}>
+      <h2 className={`text-lg font-semibold ${event.completed ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"}`}>
         {event.title}
       </h2>
 
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+      <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
         {isTask
           ? `Due ${formatDateLabel(event.date)}${!event.allDay ? ` · ${formatTime12h(event.startTime)}` : ""}`
           : event.allDay
@@ -874,27 +874,27 @@ function EventDetails({
               : `${event.date} · ${formatTime12h(event.startTime)} – ${formatTime12h(event.endTime)}`}
       </p>
 
-      {event.location && <p className="text-sm text-zinc-600 dark:text-zinc-300">📍 {event.location}</p>}
+      {event.location && <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">📍 {event.location}</p>}
 
       {event.subject && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
           {event.subject}
           {event.estimatedHours != null && ` · ~${event.estimatedHours}h estimated`}
         </p>
       )}
 
       {event.notes && (
-        <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">{event.notes}</p>
+        <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">{event.notes}</p>
       )}
 
       {event.reminderMinutesBefore != null && (
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-zinc-400 crimson:text-crimson-text-muted">
           Reminder: {reminderOffsetLabel(event.reminderMinutesBefore, isTask)}
         </p>
       )}
 
-      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Timer</p>
+      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800 crimson:border-crimson-border">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 crimson:text-crimson-text-muted">Timer</p>
         {timers.length > 0 && (
           <ul className="space-y-2">
             {timers.map((t) => (
@@ -919,7 +919,7 @@ function EventDetails({
           <button
             type="button"
             onClick={() => setShowNewTimer(true)}
-            className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 dark:border-zinc-800"
+            className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-secondary"
           >
             + Start timer for this event
           </button>
@@ -928,30 +928,30 @@ function EventDetails({
 
       <AttachmentList linkedType="schedule" linkedId={event.id} />
 
-      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Share</p>
+      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800 crimson:border-crimson-border">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 crimson:text-crimson-text-muted">Share</p>
         {shares.length > 0 && (
           <ul className="space-y-2">
             {shares.map((s) => (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs shadow-sm dark:bg-zinc-900"
+                className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
               >
-                <span className="truncate text-zinc-500">
+                <span className="truncate text-zinc-500 crimson:text-crimson-text-secondary">
                   {typeof window !== "undefined" ? window.location.host : ""}/invite/{s.token}
                 </span>
                 <span className="flex shrink-0 gap-1">
                   <button
                     type="button"
                     onClick={() => copyShareLink(s)}
-                    className="rounded-lg border border-zinc-200 px-2 py-1 font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                    className="rounded-lg border border-zinc-200 px-2 py-1 font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary"
                   >
                     {copiedShareId === s.id ? "Copied!" : "Copy"}
                   </button>
                   <button
                     type="button"
                     onClick={() => revokeShare(s.id)}
-                    className="rounded-lg px-2 py-1 text-zinc-300 hover:text-red-500"
+                    className="rounded-lg px-2 py-1 text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
                   >
                     ✕
                   </button>
@@ -964,13 +964,13 @@ function EventDetails({
           type="button"
           onClick={createShareLink}
           disabled={sharing}
-          className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-800"
+          className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 disabled:opacity-40 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           {sharing ? "Generating…" : "+ Get share link"}
         </button>
       </div>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
 
       <div className="flex flex-wrap gap-2 pt-1">
         <button
@@ -978,22 +978,22 @@ function EventDetails({
           disabled={offline}
           className={`rounded-xl px-3 py-2 text-sm font-medium disabled:opacity-40 ${
             event.completed
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-              : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 crimson:bg-emerald-950/50 crimson:text-emerald-300"
+              : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary"
           }`}
         >
           {event.completed ? (isTask ? "Reopen task" : "✓ Completed") : "Mark complete"}
         </button>
         <button
           onClick={onEdit}
-          className="flex-1 rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+          className="flex-1 rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           Edit
         </button>
         <button
           onClick={onDuplicate}
           disabled={offline || saving}
-          className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300"
+          className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary"
         >
           Duplicate
         </button>
@@ -1001,7 +1001,7 @@ function EventDetails({
           <button
             onClick={onDelete}
             disabled={saving || offline}
-            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 crimson:bg-crimson-accent"
           >
             {saving ? "…" : "Confirm delete"}
           </button>
@@ -1009,13 +1009,13 @@ function EventDetails({
           <button
             onClick={() => setConfirmingDelete(true)}
             disabled={offline}
-            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-red-500 disabled:opacity-40 dark:border-zinc-700"
+            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-red-500 disabled:opacity-40 dark:border-zinc-700 crimson:border-crimson-accent crimson:text-crimson-accent"
           >
             Delete
           </button>
         )}
       </div>
-      {offline && <p className="text-xs text-zinc-400">You&apos;re offline — reconnect to make changes.</p>}
+      {offline && <p className="text-xs text-zinc-400 crimson:text-crimson-text-muted">You&apos;re offline — reconnect to make changes.</p>}
     </div>
   );
 }

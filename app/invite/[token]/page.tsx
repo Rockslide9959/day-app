@@ -73,10 +73,10 @@ export default function InvitePage() {
   if (notFound || !preview) {
     return (
       <main className="mx-auto max-w-2xl px-4 pt-8">
-        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           This share link is no longer valid — it may have been revoked, or the event deleted.
         </div>
-        <Link href="/" className="mt-4 block text-center text-sm font-medium text-zinc-900 dark:text-zinc-50">
+        <Link href="/" className="mt-4 block text-center text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
           Back to Today
         </Link>
       </main>
@@ -88,26 +88,26 @@ export default function InvitePage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">You&apos;ve been invited</h1>
-      <p className="mb-6 text-sm text-zinc-500">Shared by {preview.sharedByUsername}</p>
+      <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">You&apos;ve been invited</h1>
+      <p className="mb-6 text-sm text-zinc-500 crimson:text-crimson-text-secondary">Shared by {preview.sharedByUsername}</p>
 
-      <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900">
+      <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
         <div className="flex flex-wrap items-center gap-1.5">
           {isTask && (
-            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">
               ☐ Task
             </span>
           )}
           {preview.category && (
-            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary">
               {preview.category}
             </span>
           )}
         </div>
 
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{preview.title}</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{preview.title}</h2>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
           {isTask
             ? `Due ${dayLabel(preview.date)}${!preview.allDay ? ` · ${formatTime12h(preview.startTime)}` : ""}`
             : preview.allDay
@@ -119,23 +119,23 @@ export default function InvitePage() {
                 : `${dayLabel(preview.date)} · ${formatTime12h(preview.startTime)} – ${formatTime12h(preview.endTime)}`}
         </p>
 
-        {preview.location && <p className="text-sm text-zinc-600 dark:text-zinc-300">📍 {preview.location}</p>}
+        {preview.location && <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">📍 {preview.location}</p>}
 
         {preview.subject && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">
             {preview.subject}
             {preview.estimatedHours != null && ` · ~${preview.estimatedHours}h estimated`}
           </p>
         )}
 
         {preview.notes && (
-          <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">{preview.notes}</p>
+          <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">{preview.notes}</p>
         )}
 
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
 
         {accepted ? (
-          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 crimson:bg-emerald-950/40 crimson:text-emerald-300">
             Added to your calendar.{" "}
             <Link href="/calendar" className="font-medium underline">
               View it
@@ -145,7 +145,7 @@ export default function InvitePage() {
           <button
             onClick={accept}
             disabled={accepting}
-            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
           >
             {accepting ? "Adding…" : "Add to my calendar"}
           </button>

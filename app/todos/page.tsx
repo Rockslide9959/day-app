@@ -60,23 +60,23 @@ export default function TodosPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         To-Do
       </h1>
 
-      <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900">
+      <div className="mb-6 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
         <button
           onClick={() => setDate((d) => addDaysToDateStr(d, -1))}
-          className="px-2 py-1 text-zinc-400"
+          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
         >
           ←
         </button>
-        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
           {formatDateLabel(date)}
         </span>
         <button
           onClick={() => setDate((d) => addDaysToDateStr(d, 1))}
-          className="px-2 py-1 text-zinc-400"
+          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
         >
           →
         </button>
@@ -87,11 +87,11 @@ export default function TodosPage() {
           value={newTodo}
           onChange={(e) => setNewTodo(e.target.value)}
           placeholder="Add a to-do…"
-          className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+          className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
         />
         <button
           type="submit"
-          className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+          className="rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
         >
           Add
         </button>
@@ -100,7 +100,7 @@ export default function TodosPage() {
       {loading ? (
         <LoadingSpinner />
       ) : todos.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800">
+        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           Nothing on the list for this day
         </div>
       ) : (
@@ -108,15 +108,15 @@ export default function TodosPage() {
           {[...openTodos, ...completedTodos].map((t) => (
             <li
               key={t.id}
-              className="rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900"
+              className="relative rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
             >
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => toggleTodo(t)}
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
                     t.completed
-                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "border-zinc-300 dark:border-zinc-600"
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:border-crimson-accent crimson:bg-crimson-accent crimson:text-crimson-text"
+                      : "border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   }`}
                 >
                   {t.completed && "✓"}
@@ -125,22 +125,22 @@ export default function TodosPage() {
                   onClick={() => toggleTodo(t)}
                   className={`flex-1 text-sm ${
                     t.completed
-                      ? "text-zinc-400 line-through"
-                      : "text-zinc-900 dark:text-zinc-50"
+                      ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
+                      : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                   }`}
                 >
                   {t.title}
                 </span>
                 <button
                   onClick={() => setExpandedId((cur) => (cur === t.id ? null : t.id))}
-                  className={`text-xs ${expandedId === t.id ? "text-zinc-600 dark:text-zinc-300" : "text-zinc-300 hover:text-zinc-500"}`}
+                  className={`text-xs ${expandedId === t.id ? "text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary" : "text-zinc-300 hover:text-zinc-500 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary"}`}
                   title="Attachments"
                 >
                   📎
                 </button>
                 <button
                   onClick={() => deleteTodo(t.id)}
-                  className="text-xs text-zinc-300 hover:text-red-500"
+                  className="text-xs text-zinc-300 hover:text-red-500 crimson:text-crimson-text-secondary crimson:hover:text-crimson-accent"
                 >
                   ✕
                 </button>
