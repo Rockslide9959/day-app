@@ -15,7 +15,7 @@ export const DEFAULT_ALLDAY_TIME = "09:00";
 // up, so a deploy never triggers a flood of long-overdue reminders).
 //
 // Must stay comfortably larger than the cron tick interval (see SETUP.md —
-// currently every 15 min), otherwise a reminder that falls due just after
+// currently every 20 min), otherwise a reminder that falls due just after
 // one tick could already be "too old" by the next tick and get dropped.
 export const CATCHUP_WINDOW_MINUTES = 30;
 

@@ -44,22 +44,24 @@ Vercel's free plan only runs cron jobs once a day, which isn't enough for timely
 1. Go to cron-job.org and create a free account.
 2. Create a new cron job:
    - **URL**: `https://<your-app>.vercel.app/api/cron/tick?secret=<your CRON_SECRET value>`
-   - **Schedule**: every 15 minutes
-3. Save it. From then on, this job checks for due reminders and sends push notifications every 15 minutes.
+   - **Schedule**: every 20 minutes
+3. Save it. From then on, this job checks for due reminders and sends push notifications every 20 minutes.
 
-### Why every 15 minutes and not every minute
+### Why every 20 minutes and not every minute
 
 Every tick opens a connection to the Neon database. The Neon free plan gives a
-fixed monthly compute-hour allowance and only lets the database "scale to zero"
-(stop billing compute) after **5 minutes** with no queries. A ping every minute
-means it never gets that idle window — the compute runs 24/7 and burns through
-the free allowance, after which the database stops accepting connections and the
-whole app goes down (every page needs the DB).
+fixed monthly compute allowance (currently **100 compute-hours**) and only lets
+the database "scale to zero" (stop billing compute) after **5 minutes** with no
+queries. A ping every minute means it never gets that idle window — the compute
+runs 24/7 at ~0.25 CU (~180 compute-hours/month), blows past the 100-hour cap
+partway through the month, and Neon then suspends the compute. Every page needs
+the DB, so the whole app goes down with a "compute time quota exceeded" error.
 
-At a 15-minute interval the database sleeps between ticks, which keeps monthly
-compute use well inside the free tier. The trade-offs:
+At a 20-minute interval the database is asleep most of the time (~5 min awake per
+tick, then idle), which keeps cron compute use around ~40–55 compute-hours/month
+— enough headroom for normal app use on top. The trade-offs:
 
-- **Reminders / plain timers** can fire up to ~15 minutes late. The reminder
+- **Reminders / plain timers** can fire up to ~20 minutes late. The reminder
   catch-up window (`CATCHUP_WINDOW_MINUTES` in `lib/calendar/reminders.ts`) is set
   to 30 min to cover this — nothing is missed, just delivered on the next tick.
 - **"Remind me 5 / 10 minutes before" event reminders** lose precision — pick a
@@ -68,8 +70,8 @@ compute use well inside the free tier. The trade-offs:
   advances work↔break and notifies client-side every second. The cron only backs
   this up for when the app is fully closed.
 
-If you later move the database to a plan without a compute-hour cap (or a
-different host), you can drop the interval back to every minute and restore
+If you later move the database to a plan without a compute cap (or a different
+host), you can drop the interval back to every minute and restore
 `CATCHUP_WINDOW_MINUTES` to 15.
 
 ## 4. Install it on your Android phone
