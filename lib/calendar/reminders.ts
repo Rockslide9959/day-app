@@ -13,7 +13,11 @@ export const DEFAULT_ALLDAY_TIME = "09:00";
 // treated as missed rather than late — this is both the late-delivery grace
 // period and the bounded catch-up window (nothing older ever gets picked
 // up, so a deploy never triggers a flood of long-overdue reminders).
-export const CATCHUP_WINDOW_MINUTES = 15;
+//
+// Must stay comfortably larger than the cron tick interval (see SETUP.md —
+// currently every 15 min), otherwise a reminder that falls due just after
+// one tick could already be "too old" by the next tick and get dropped.
+export const CATCHUP_WINDOW_MINUTES = 30;
 
 // Cap on retrying a transient push failure for one (occurrence, device)
 // delivery before giving up on it permanently.
