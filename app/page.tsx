@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  addDaysToDateStr,
   diffDays,
   formatDurationMinutes,
   formatTime12h,
@@ -39,7 +38,6 @@ type Todo = { id: string; title: string; completed: boolean };
 type Routine = { id: string; name: string; icon: string; steps: { id: string }[] };
 
 const UPCOMING_WINDOW_DAYS = 14;
-const OVERDUE_LOOKBACK_DAYS = 60;
 
 // Proximity color scale shared by the "Upcoming" pills and the "Tasks due"
 // accent bar — overdue/today reads as urgent (red) fading down to neutral
@@ -83,59 +81,33 @@ export default function TodayPage() {
 
   const load = useCallback(async () => {
     try {
-      const [remindersRes, eventsRes, todosRes, routinesRes, meRes] = await Promise.all([
-        fetch("/api/reminders").then((r) => r.json()),
-        // Looks back OVERDUE_LOOKBACK_DAYS so incomplete overdue tasks from
-        // before today still surface here, not just today-forward.
-        fetch(
-          `/api/schedule?from=${addDaysToDateStr(today, -OVERDUE_LOOKBACK_DAYS)}&to=${addDaysToDateStr(today, UPCOMING_WINDOW_DAYS)}`
-        ).then((r) => r.json()),
-        fetch(`/api/todos?date=${today}`).then((r) => r.json()),
-        fetch("/api/routines").then((r) => r.json()),
-        fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)),
-      ]);
-      setReminders(remindersRes);
-      setEvents(eventsRes);
-      setTodos(todosRes);
-      setRoutines(routinesRes);
-      if (meRes?.todoReminderEnabled !== undefined) setTodoReminderEnabled(meRes.todoReminderEnabled);
-      if (meRes?.todoReminderTime) setTodoReminderTime(meRes.todoReminderTime);
-
-      const doneEntries = await Promise.all(
-        routinesRes.map(async (r: Routine) => {
-          const res = await fetch(`/api/routines/${r.id}/run?date=${today}`).then((r) => r.json());
-          return [r.id, res.completedStepIds.length] as const;
-        })
-      );
-      setRoutineDone(Object.fromEntries(doneEntries));
+      // One aggregate call (see lib/dashboard.ts) in place of the old
+      // per-section fan-out — the server gathers reminders, schedule,
+      // to-dos, routines + their progress, settings and today's journal
+      // in a single round trip. It looks ~60 days back on the schedule so
+      // incomplete overdue tasks still surface here, not just today-forward.
+      const res = await fetch(`/api/dashboard?date=${today}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setReminders(data.reminders);
+      setEvents(data.events);
+      setTodos(data.todos);
+      setRoutines(data.routines);
+      setRoutineDone(data.routineDone ?? {});
+      if (data.me?.todoReminderEnabled !== undefined) setTodoReminderEnabled(data.me.todoReminderEnabled);
+      if (data.me?.todoReminderTime) setTodoReminderTime(data.me.todoReminderTime);
+      setJournalEntry(data.journal ?? null);
     } catch {
       // Leave whatever loaded successfully in place; sections below all
       // handle empty data gracefully rather than hanging on "Loading…".
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [today]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  // Fetched independently of the Promise.all above — a notebook API
-  // failure must never block the rest of the dashboard from loading, and
-  // this way it doesn't share a rejection with reminders/events/etc.
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/notebook/daily?date=${today}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelled) setJournalEntry(data);
-      })
-      .catch(() => {
-        // Leave journalEntry as undefined — the section just stays hidden.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [today]);
 
   useEffect(() => {
     const interval = setInterval(() => {

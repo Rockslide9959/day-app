@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { todayStr } from "@/lib/dates";
-import { expandEventOccurrences } from "@/lib/calendar/recurrence";
+import { loadScheduleOccurrences } from "@/lib/calendar/scheduleRange";
 import { getCurrentUserId } from "@/lib/auth";
 import { validateItemType } from "@/lib/validation";
 import { resolveTimeZone } from "@/lib/timezone";
@@ -16,33 +16,7 @@ export async function GET(req: NextRequest) {
   const to = req.nextUrl.searchParams.get("to");
 
   if (from && to) {
-    // Every row that COULD produce an occurrence somewhere in [from, to]:
-    // either a plain event overlapping the range, or a recurring series
-    // that starts before `to` and (if bounded) doesn't end before `from`.
-    const items = await prisma.scheduleItem.findMany({
-      where: {
-        userId,
-        OR: [
-          {
-            recurrence: "none",
-            date: { lte: to },
-            OR: [{ endDate: { gte: from } }, { endDate: null, date: { gte: from } }],
-          },
-          {
-            NOT: { recurrence: "none" },
-            date: { lte: to },
-            OR: [{ recurrenceEndDate: null }, { recurrenceEndDate: { gte: from } }],
-          },
-        ],
-      },
-      orderBy: [{ date: "asc" }, { startTime: "asc" }],
-    });
-
-    const range = { from, to };
-    const occurrences = items.flatMap((item) => expandEventOccurrences(item, range));
-    occurrences.sort((a, b) =>
-      a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date)
-    );
+    const occurrences = await loadScheduleOccurrences(userId, from, to);
     return NextResponse.json(occurrences);
   }
 

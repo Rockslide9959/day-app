@@ -1,9 +1,51 @@
+// Bump this string to force every client to drop the old asset cache on
+// the next activate. Only immutable, content-hashed build output and the
+// PWA icons are ever stored here — never HTML and never /api responses —
+// so a stale cache can't serve out-of-date data or a wrong app version.
+const ASSET_CACHE = "day-assets-v1";
+const CACHED_PREFIXES = ["/_next/static/", "/icons/"];
+
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((key) => key !== ASSET_CACHE).map((key) => caches.delete(key))
+      );
+      await self.clients.claim();
+    })()
+  );
+});
+
+// Cache-first for hashed build assets and icons: these URLs change
+// whenever their contents do, so a cache hit is always correct and saves
+// re-downloading megabytes of JS/CSS on every cold open — the main win on
+// a slow connection. Everything else (HTML navigations, /api/*, anything
+// cross-origin) is left completely untouched and always hits the network.
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (!CACHED_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) return;
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(ASSET_CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
+        return response;
+      });
+    })
+  );
 });
 
 self.addEventListener("push", (event) => {
