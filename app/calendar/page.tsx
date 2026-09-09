@@ -11,6 +11,7 @@ import {
   todayStr,
   weekRangeLabel,
 } from "@/lib/dates";
+import { useSyncedDate } from "@/lib/useTodayStr";
 import MonthView from "@/components/calendar/MonthView";
 import WeekView from "@/components/calendar/WeekView";
 import DayView from "@/components/calendar/DayView";
@@ -51,7 +52,7 @@ function writeEventCache(from: string, to: string, events: CalendarEvent[]) {
 
 export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("month");
-  const [anchorDate, setAnchorDate] = useState(todayStr());
+  const [anchorDate, setAnchorDate] = useSyncedDate();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [categories, setCategories] = useState<CategoryDef[]>([]);
   const [loading, setLoading] = useState(true);

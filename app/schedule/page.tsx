@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { todayStr, formatDateLabel, addDaysToDateStr, formatTime12h, timeToMinutes } from "@/lib/dates";
+import { formatDateLabel, addDaysToDateStr, formatTime12h, timeToMinutes } from "@/lib/dates";
+import { useSyncedDate } from "@/lib/useTodayStr";
 import EventModal, { EventDraft } from "@/components/calendar/EventModal";
 import { CalendarEvent } from "@/components/calendar/types";
 import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
@@ -13,7 +14,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 type Filter = "all" | "events" | "tasks";
 
 export default function SchedulePage() {
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useSyncedDate();
   const [items, setItems] = useState<CalendarEvent[]>([]);
   const [categories, setCategories] = useState<CategoryDef[]>(DEFAULT_CATEGORIES);
   const [loading, setLoading] = useState(true);

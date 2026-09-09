@@ -9,8 +9,8 @@ import {
   formatDurationMinutes,
   formatTime12h,
   timeToMinutes,
-  todayStr,
 } from "@/lib/dates";
+import { useTodayStr } from "@/lib/useTodayStr";
 import {
   busyDayStats,
   dailySummary,
@@ -79,7 +79,7 @@ export default function TodayPage() {
     const d = new Date();
     return d.getHours() * 60 + d.getMinutes();
   });
-  const today = todayStr();
+  const today = useTodayStr();
 
   const load = useCallback(async () => {
     try {

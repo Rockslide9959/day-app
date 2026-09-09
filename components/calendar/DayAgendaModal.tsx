@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { dayLabel, eventCoversDate, formatTime12h, timeToMinutes, todayStr } from "@/lib/dates";
+import { dayLabel, eventCoversDate, formatTime12h, timeToMinutes } from "@/lib/dates";
+import { useTodayStr } from "@/lib/useTodayStr";
 import { CalendarEvent } from "./types";
 import { CategoryDef } from "@/lib/calendar/categories";
 import { NotebookEntryFull } from "@/components/notebook/types";
@@ -76,7 +77,8 @@ export default function DayAgendaModal({
       return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
     });
 
-  const isToday = date === todayStr();
+  const today = useTodayStr();
+  const isToday = date === today;
 
   return (
     <div

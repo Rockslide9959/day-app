@@ -1,6 +1,7 @@
 "use client";
 
-import { getMonthGrid, isSameMonth, todayStr } from "@/lib/dates";
+import { getMonthGrid, isSameMonth } from "@/lib/dates";
+import { useTodayStr } from "@/lib/useTodayStr";
 import { CalendarEvent } from "./types";
 import { CategoryDef } from "@/lib/calendar/categories";
 import { buildItemAriaLabel, getItemVisualStyle, moreIndicatorLabel, priorityDotInfo } from "@/lib/calendar/itemDisplay";
@@ -25,7 +26,7 @@ export default function MonthView({
   onSelectEvent: (event: CalendarEvent) => void;
 }) {
   const weeks = getMonthGrid(anchorDate);
-  const today = todayStr();
+  const today = useTodayStr();
 
   const eventsByDate = new Map<string, CalendarEvent[]>();
   for (const ev of events) {

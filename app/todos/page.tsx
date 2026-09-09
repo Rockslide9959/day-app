@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { todayStr, formatDateLabel, addDaysToDateStr } from "@/lib/dates";
+import { formatDateLabel, addDaysToDateStr } from "@/lib/dates";
+import { useSyncedDate } from "@/lib/useTodayStr";
 import AttachmentList from "@/components/attachments/AttachmentList";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Todo = { id: string; title: string; completed: boolean };
 
 export default function TodosPage() {
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useSyncedDate();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);

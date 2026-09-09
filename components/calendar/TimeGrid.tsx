@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { dayLabel, formatTime12h, timeToMinutes, todayStr } from "@/lib/dates";
+import { dayLabel, formatTime12h, timeToMinutes } from "@/lib/dates";
+import { useTodayStr } from "@/lib/useTodayStr";
 import { CalendarEvent } from "./types";
 import { CategoryDef } from "@/lib/calendar/categories";
 import { buildItemAriaLabel, getItemVisualStyle, priorityDotInfo } from "@/lib/calendar/itemDisplay";
@@ -71,7 +72,7 @@ export default function TimeGrid({
   onSelectEvent: (event: CalendarEvent) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const today = todayStr();
+  const today = useTodayStr();
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
