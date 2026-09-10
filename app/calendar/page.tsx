@@ -294,7 +294,7 @@ export default function CalendarPage() {
         : dayLabel(anchorDate);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-24 pt-8">
+    <main className="phase-in mx-auto max-w-3xl px-4 pb-24 pt-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Calendar</h1>
         <div className="hidden items-center gap-2 sm:flex">

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import Link from "next/link";
 import { todayStr } from "@/lib/dates";
+import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Step = { id: string; title: string; sortOrder: number };
@@ -75,10 +75,10 @@ export default function RoutineDetailPage({
   const doneCount = routine.steps.filter((s) => completedStepIds.includes(s.id)).length;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-8">
-      <Link href="/routines" className="mb-4 inline-block text-sm text-zinc-400 crimson:text-crimson-text-muted">
-        ← Routines
-      </Link>
+    <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
+      <BackButton href="/routines" className="mb-4">
+        Routines
+      </BackButton>
       <h1 className="mb-1 flex items-center gap-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         <span>{routine.icon}</span>
         {routine.name}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { dayLabel, formatTime12h } from "@/lib/dates";
+import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 type InvitePreview = {
@@ -72,13 +73,13 @@ export default function InvitePage() {
 
   if (notFound || !preview) {
     return (
-      <main className="mx-auto max-w-2xl px-4 pt-8">
+      <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
         <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           This share link is no longer valid — it may have been revoked, or the event deleted.
         </div>
-        <Link href="/" className="mt-4 block text-center text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
-          Back to Today
-        </Link>
+        <div className="mt-4 flex justify-center">
+          <BackButton href="/">Back to Today</BackButton>
+        </div>
       </main>
     );
   }
@@ -87,7 +88,7 @@ export default function InvitePage() {
   const multiDay = !isTask && preview.endDate && preview.endDate !== preview.date;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-8">
+    <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
       <h1 className="mb-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">You&apos;ve been invited</h1>
       <p className="mb-6 text-sm text-zinc-500 crimson:text-crimson-text-secondary">Shared by {preview.sharedByUsername}</p>
 

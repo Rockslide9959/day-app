@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { NotebookEntryFull } from "@/components/notebook/types";
+import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAutosave } from "@/components/notebook/useAutosave";
 import { useNotebookEditor } from "@/components/notebook/useNotebookEditor";
@@ -92,13 +92,13 @@ function EntryLoader({ id }: { id: string }) {
 
   if (notFound || !entry) {
     return (
-      <main className="mx-auto max-w-2xl px-4 pt-8">
+      <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
         <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
           {notFound ? "This entry doesn't exist, or isn't yours." : loadError}
         </div>
-        <Link href="/notebook" className="mt-4 block text-center text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
-          Back to Notebook
-        </Link>
+        <div className="mt-4 flex justify-center">
+          <BackButton href="/notebook">Back to Notebook</BackButton>
+        </div>
       </main>
     );
   }
@@ -229,14 +229,9 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
     // Extra top clearance below sm: TopBar's fixed Reminders/Settings buttons
     // sit at the same top-right corner as the Pin button below on narrow
     // screens (see components/TopBar.tsx) — pt-6 alone let them overlap.
-    <main className="mx-auto flex max-w-2xl flex-col px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-6">
+    <main className="phase-in mx-auto flex max-w-2xl flex-col px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-6">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <button
-          onClick={backToNotebook}
-          className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 crimson:text-crimson-text-secondary crimson:hover:text-crimson-text"
-        >
-          ← Back to Notebook
-        </button>
+        <BackButton onClick={backToNotebook}>Back to Notebook</BackButton>
         <button
           onClick={() => setPinned((p) => !p)}
           aria-pressed={pinned}

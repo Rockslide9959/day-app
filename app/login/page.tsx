@@ -36,7 +36,7 @@ function LoginForm() {
     <div className="flex min-h-dvh items-center justify-center bg-zinc-50 px-6 dark:bg-black crimson:bg-crimson-obsidian">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+        className="phase-in w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
       >
         <h1 className="mb-1 text-xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
           Day

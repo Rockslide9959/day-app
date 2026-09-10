@@ -120,7 +120,7 @@ export default function RemindersPage() {
   const now = new Date();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-8">
+    <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
       <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
         Reminders
       </h1>
