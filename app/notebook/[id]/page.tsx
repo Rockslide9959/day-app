@@ -9,6 +9,7 @@ import { useAutosave } from "@/components/notebook/useAutosave";
 import { useNotebookEditor } from "@/components/notebook/useNotebookEditor";
 import RichTextEditor from "@/components/notebook/RichTextEditor";
 import EditorToolbar from "@/components/notebook/EditorToolbar";
+import AttachmentList from "@/components/attachments/AttachmentList";
 import { journalDateTitle } from "@/lib/notebookFormat";
 import { deriveDocPlainText, plainTextToTiptapDoc, TiptapDocument } from "@/lib/richText";
 import {
@@ -307,6 +308,10 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
             Retry
           </button>
         )}
+      </div>
+
+      <div className="mt-4">
+        <AttachmentList linkedType="notebook" linkedId={id} />
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2">

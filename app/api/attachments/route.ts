@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const linkedType = req.nextUrl.searchParams.get("linkedType");
   const linkedId = req.nextUrl.searchParams.get("linkedId");
   if (!isAttachmentLinkedType(linkedType) || !linkedId) {
-    return NextResponse.json({ error: "linkedType must be 'todo' or 'schedule', and linkedId is required" }, { status: 400 });
+    return NextResponse.json({ error: "linkedType must be 'todo', 'schedule' or 'notebook', and linkedId is required" }, { status: 400 });
   }
 
   const attachments = await prisma.attachment.findMany({
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
   if (!isAttachmentLinkedType(linkedType) || typeof linkedId !== "string" || !linkedId) {
-    return NextResponse.json({ error: "linkedType must be 'todo' or 'schedule', and linkedId is required" }, { status: 400 });
+    return NextResponse.json({ error: "linkedType must be 'todo', 'schedule' or 'notebook', and linkedId is required" }, { status: 400 });
   }
   if (file.size === 0) {
     return NextResponse.json({ error: "File is empty" }, { status: 400 });

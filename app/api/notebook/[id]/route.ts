@@ -5,6 +5,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { validateEntryType, validateJournalDate, validateNotebookTags, validateNotebookTitle } from "@/lib/validation";
 import { notebookOrderKey } from "@/lib/notebookFormat";
 import { resolveContentUpdate } from "@/lib/richText";
+import { deleteAttachmentsFor } from "@/lib/attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -141,5 +142,6 @@ export async function DELETE(
   const { id } = await params;
   const result = await prisma.notebookEntry.deleteMany({ where: { id, userId } });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await deleteAttachmentsFor(userId, "notebook", id);
   return NextResponse.json({ ok: true });
 }

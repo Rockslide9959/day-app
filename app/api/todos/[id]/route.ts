@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { deleteAttachmentsFor } from "@/lib/attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -35,5 +36,6 @@ export async function DELETE(
   const { id } = await params;
   const result = await prisma.todo.deleteMany({ where: { id, userId } });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await deleteAttachmentsFor(userId, "todo", id);
   return NextResponse.json({ ok: true });
 }

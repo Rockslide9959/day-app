@@ -14,6 +14,7 @@ const prismaMock = vi.hoisted(() => ({
   scheduleReminderDelivery: {
     deleteMany: vi.fn(),
   },
+  attachment: { deleteMany: vi.fn() },
 }));
 
 const authMock = vi.hoisted(() => ({ getCurrentUserId: vi.fn().mockResolvedValue("user-1") }));

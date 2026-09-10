@@ -11,6 +11,7 @@ const prismaMock = vi.hoisted(() => ({
     findMany: vi.fn(),
     count: vi.fn(),
   },
+  attachment: { deleteMany: vi.fn() },
 }));
 
 const authMock = vi.hoisted(() => ({ getCurrentUserId: vi.fn() }));

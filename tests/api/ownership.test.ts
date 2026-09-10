@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 const prismaMock = vi.hoisted(() => ({
   scheduleItem: { updateMany: vi.fn(), deleteMany: vi.fn(), findUnique: vi.fn() },
   todo: { updateMany: vi.fn(), deleteMany: vi.fn(), findUnique: vi.fn() },
+  attachment: { deleteMany: vi.fn() },
 }));
 
 const authMock = vi.hoisted(() => ({ getCurrentUserId: vi.fn() }));

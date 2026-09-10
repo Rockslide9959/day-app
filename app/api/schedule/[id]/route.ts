@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { validateItemType } from "@/lib/validation";
 import { resolveTimeZone } from "@/lib/timezone";
+import { deleteAttachmentsFor } from "@/lib/attachments";
 
 // Fields that, if changed, invalidate any not-yet-sent reminder — the next
 // cron tick recomputes fresh occurrence/reminder times from the now-current
@@ -151,5 +152,6 @@ export async function DELETE(
   const { id } = await params;
   const result = await prisma.scheduleItem.deleteMany({ where: { id, userId } });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await deleteAttachmentsFor(userId, "schedule", id);
   return NextResponse.json({ ok: true });
 }
