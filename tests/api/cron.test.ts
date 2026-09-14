@@ -51,6 +51,8 @@ const prismaMock = vi.hoisted(() => ({
   },
   todo: {
     count: vi.fn().mockResolvedValue(0),
+    findMany: vi.fn().mockResolvedValue([]),
+    update: vi.fn(),
   },
   scheduleItem: {
     findMany: vi.fn(async () => [...store.scheduleItems.values()]),
@@ -149,6 +151,7 @@ beforeEach(() => {
   prismaMock.timer.findMany.mockResolvedValue([]);
   prismaMock.user.findMany.mockResolvedValue([]);
   prismaMock.todo.count.mockResolvedValue(0);
+  prismaMock.todo.findMany.mockResolvedValue([]);
   webpushMock.isPushConfigured.mockReturnValue(true);
   webpushMock.sendPush.mockResolvedValue(undefined);
 });
@@ -287,6 +290,7 @@ describe("GET /api/cron/tick — daily to-do reminder", () => {
           todoReminderTime: "20:00",
           todoReminderTimeZone: "Africa/Johannesburg",
           todoReminderLastSentDate: null,
+          todoRolloverLastDate: "2026-08-15",
         },
       ]);
       prismaMock.todo.count.mockResolvedValue(2);
@@ -320,6 +324,7 @@ describe("GET /api/cron/tick — daily to-do reminder", () => {
           todoReminderTime: "20:00",
           todoReminderTimeZone: "Africa/Johannesburg",
           todoReminderLastSentDate: null,
+          todoRolloverLastDate: "2026-08-15",
         },
       ]);
       prismaMock.todo.count.mockResolvedValue(0);
@@ -346,6 +351,7 @@ describe("GET /api/cron/tick — daily to-do reminder", () => {
           todoReminderTime: "20:00",
           todoReminderTimeZone: "Africa/Johannesburg",
           todoReminderLastSentDate: "2026-08-15",
+          todoRolloverLastDate: "2026-08-15",
         },
       ]);
       prismaMock.todo.count.mockResolvedValue(5);
@@ -374,6 +380,7 @@ describe("GET /api/cron/tick — daily to-do reminder", () => {
           todoReminderTime: "20:00",
           todoReminderTimeZone: "Africa/Johannesburg",
           todoReminderLastSentDate: null,
+          todoRolloverLastDate: "2026-08-15",
         },
       ]);
       prismaMock.todo.count.mockResolvedValue(3);

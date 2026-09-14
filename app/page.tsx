@@ -34,7 +34,7 @@ type Reminder = {
   dueAt: string;
   recurrence: string;
 };
-type Todo = { id: string; title: string; completed: boolean };
+type Todo = { id: string; title: string; completed: boolean; rolledOver: boolean };
 type Routine = { id: string; name: string; icon: string; steps: { id: string }[] };
 
 const UPCOMING_WINDOW_DAYS = 14;
@@ -402,7 +402,11 @@ export default function TodayPage() {
             {[...openTodos, ...completedTodos].map((t) => (
               <li
                 key={t.id}
-                className="relative flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
+                className={`relative flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full ${
+                  t.rolledOver
+                    ? "bg-amber-50 dark:bg-amber-950/40 crimson:bg-crimson-surface crimson:before:bg-amber-500"
+                    : "bg-white dark:bg-zinc-900 crimson:bg-crimson-surface crimson:before:bg-crimson-accent"
+                }`}
               >
                 <span
                   onClick={() => toggleTodo(t)}
@@ -419,7 +423,9 @@ export default function TodayPage() {
                   className={`flex-1 text-sm ${
                     t.completed
                       ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
-                      : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
+                      : t.rolledOver
+                        ? "text-amber-800 dark:text-amber-300 crimson:text-crimson-text"
+                        : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                   }`}
                 >
                   {t.title}

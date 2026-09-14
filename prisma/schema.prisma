@@ -206,6 +206,15 @@ model Todo {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Set by lib/todoRolloverCron.ts the first time this to-do gets carried
+  // forward from a past, unfinished day — drives the "carried over" styling
+  // client-side. rolledOverFromDate holds the *original* date (set once,
+  // never overwritten by later rolls) so the "(from ...)" suffix appended to
+  // title at that same moment stays accurate no matter how many additional
+  // days it keeps rolling.
+  rolledOver         Boolean @default(false)
+  rolledOverFromDate String?
+
   @@index([date])
   @@index([userId])
 }
