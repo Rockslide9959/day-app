@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditorState, type Editor } from "@tiptap/react";
+import { isAllowedLinkHref, normalizeLinkHref } from "@/lib/richText";
 
 type ToolbarButton = {
   key: string;
@@ -30,13 +31,52 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
         isH2: e.isActive("heading", { level: 2 }),
         isBold: e.isActive("bold"),
         isUnderline: e.isActive("underline"),
+        isItalic: e.isActive("italic"),
+        isStrike: e.isActive("strike"),
+        isLink: e.isActive("link"),
+        isBlockquote: e.isActive("blockquote"),
         isBulletList: e.isActive("bulletList"),
         isOrderedList: e.isActive("orderedList"),
+        isAlignLeft: e.isActive({ textAlign: "left" }),
+        isAlignCenter: e.isActive({ textAlign: "center" }),
+        isAlignRight: e.isActive({ textAlign: "right" }),
+        linkHref: e.getAttributes("link").href as string | undefined,
         canUndo: e.can().undo(),
         canRedo: e.can().redo(),
       };
     },
   });
+
+  // Prompts for a URL and applies/updates/removes the link mark on the
+  // current selection. window.prompt is a deliberately low-tech choice
+  // here — a full inline link-editing popover would be a lot more UI for
+  // a feature that's meant to stay simple.
+  function runLinkCommand(editor: Editor, currentHref: string | undefined) {
+    const input = window.prompt(
+      currentHref ? "Edit link URL (leave blank to remove)" : "Enter URL",
+      currentHref ?? ""
+    );
+    if (input === null) return; // cancelled
+    const trimmed = input.trim();
+    // extendMarkRange only makes sense when editing an existing link — it
+    // grows the selection to cover the whole link so the edit applies to
+    // all of it, not just the word the cursor happened to be in. Calling
+    // it with no link at the selection collapses whatever the user had
+    // highlighted (nothing to "extend" to), so a brand-new link must be
+    // applied to the selection exactly as the user left it.
+    const chain = editor.chain().focus();
+    if (currentHref) chain.extendMarkRange("link");
+    if (trimmed === "") {
+      chain.unsetLink().run();
+      return;
+    }
+    const href = normalizeLinkHref(trimmed);
+    if (!isAllowedLinkHref(href)) {
+      window.alert("Enter a valid http(s) or mailto link.");
+      return;
+    }
+    chain.setLink({ href }).run();
+  }
 
   if (!editor || !state) {
     return <div className="mb-2 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 crimson:bg-crimson-raised" aria-hidden />;
@@ -79,6 +119,34 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
       onRun: () => editor.chain().focus().toggleUnderline().run(),
     },
     {
+      key: "italic",
+      label: "I",
+      ariaLabel: "Italic",
+      isActive: state.isItalic,
+      onRun: () => editor.chain().focus().toggleItalic().run(),
+    },
+    {
+      key: "strike",
+      label: "S",
+      ariaLabel: "Strikethrough",
+      isActive: state.isStrike,
+      onRun: () => editor.chain().focus().toggleStrike().run(),
+    },
+    {
+      key: "link",
+      label: "Link",
+      ariaLabel: "Link",
+      isActive: state.isLink,
+      onRun: () => runLinkCommand(editor, state.linkHref),
+    },
+    {
+      key: "blockquote",
+      label: "❝",
+      ariaLabel: "Quote",
+      isActive: state.isBlockquote,
+      onRun: () => editor.chain().focus().toggleBlockquote().run(),
+    },
+    {
       key: "bulletList",
       label: "• List",
       ariaLabel: "Bulleted list",
@@ -91,6 +159,27 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
       ariaLabel: "Numbered list",
       isActive: state.isOrderedList,
       onRun: () => editor.chain().focus().toggleOrderedList().run(),
+    },
+    {
+      key: "alignLeft",
+      label: "Left",
+      ariaLabel: "Align left",
+      isActive: state.isAlignLeft,
+      onRun: () => editor.chain().focus().setTextAlign("left").run(),
+    },
+    {
+      key: "alignCenter",
+      label: "Center",
+      ariaLabel: "Align center",
+      isActive: state.isAlignCenter,
+      onRun: () => editor.chain().focus().setTextAlign("center").run(),
+    },
+    {
+      key: "alignRight",
+      label: "Right",
+      ariaLabel: "Align right",
+      isActive: state.isAlignRight,
+      onRun: () => editor.chain().focus().setTextAlign("right").run(),
     },
     {
       key: "undo",

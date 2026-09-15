@@ -133,6 +133,41 @@ body {
   margin-top: 0.25em;
 }
 
+.notebook-editor-content blockquote {
+  margin: 0 0 0.85em;
+  padding-left: 1em;
+  border-left: 3px solid #d4d4d8;
+  color: #52525b;
+}
+
+.notebook-editor-content blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+.dark .notebook-editor-content blockquote {
+  border-left-color: #52525b;
+  color: #d4d4d8;
+}
+
+.crimson .notebook-editor-content blockquote {
+  border-left-color: var(--color-crimson-border);
+  color: var(--color-crimson-text-secondary);
+}
+
+.notebook-editor-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dark .notebook-editor-content a {
+  color: #60a5fa;
+}
+
+.crimson .notebook-editor-content a {
+  color: var(--color-crimson-highlight);
+}
+
 /* Tiptap's Placeholder extension (see useNotebookEditor.ts) decorates the
    empty first paragraph with these classes and a data-placeholder attr
    holding the configured text ("Start writing…"). */

@@ -19,15 +19,23 @@ import { validateNotebookContent } from "@/lib/validation";
 //   - A node's `content` key is present iff it has at least one child.
 //   - A text node's `marks` key is present iff it has at least one mark.
 
-export type TiptapMarkType = "bold" | "underline";
-export type TiptapMark = { type: TiptapMarkType };
+export type TiptapMarkType = "bold" | "underline" | "italic" | "strike";
+export type TiptapSimpleMark = { type: TiptapMarkType };
+export type TiptapLinkMark = { type: "link"; attrs: { href: string } };
+export type TiptapMark = TiptapSimpleMark | TiptapLinkMark;
+
+export type TiptapTextAlign = "left" | "center" | "right";
 
 export type TiptapTextNode = { type: "text"; text: string; marks?: TiptapMark[] };
 export type TiptapHardBreakNode = { type: "hardBreak" };
 export type TiptapInlineNode = TiptapTextNode | TiptapHardBreakNode;
 
-export type TiptapParagraphNode = { type: "paragraph"; content?: TiptapInlineNode[] };
-export type TiptapHeadingNode = { type: "heading"; attrs: { level: 1 | 2 }; content?: TiptapInlineNode[] };
+export type TiptapParagraphNode = { type: "paragraph"; attrs?: { textAlign?: TiptapTextAlign }; content?: TiptapInlineNode[] };
+export type TiptapHeadingNode = {
+  type: "heading";
+  attrs: { level: 1 | 2; textAlign?: TiptapTextAlign };
+  content?: TiptapInlineNode[];
+};
 
 export type TiptapListItemChild = TiptapParagraphNode | TiptapHeadingNode | TiptapBulletListNode | TiptapOrderedListNode;
 export type TiptapListItemNode = { type: "listItem"; content: TiptapListItemChild[] };
@@ -37,8 +45,14 @@ export type TiptapOrderedListNode = {
   attrs?: { start?: number; type?: "1" | "a" | "A" | "i" | "I" | null };
   content: TiptapListItemNode[];
 };
+// Blockquote content is deliberately restricted to the same non-blockquote
+// block types allowed at the top level of the document — the toolbar has no
+// way to nest a blockquote inside another, so the validator doesn't accept
+// one either (see validateBlockquoteChild).
+export type TiptapBlockquoteChild = TiptapParagraphNode | TiptapHeadingNode | TiptapBulletListNode | TiptapOrderedListNode;
+export type TiptapBlockquoteNode = { type: "blockquote"; content: TiptapBlockquoteChild[] };
 
-export type TiptapBlockNode = TiptapParagraphNode | TiptapHeadingNode | TiptapBulletListNode | TiptapOrderedListNode;
+export type TiptapBlockNode = TiptapParagraphNode | TiptapHeadingNode | TiptapBulletListNode | TiptapOrderedListNode | TiptapBlockquoteNode;
 export type TiptapDocument = { type: "doc"; content: TiptapBlockNode[] };
 
 export const EMPTY_TIPTAP_DOC: TiptapDocument = { type: "doc", content: [{ type: "paragraph" }] };
@@ -94,6 +108,8 @@ function blockToText(node: TiptapBlockNode): string {
     case "bulletList":
     case "orderedList":
       return node.content.map(listItemToText).join("\n");
+    case "blockquote":
+      return node.content.map(blockToText).join("\n");
   }
 }
 
@@ -132,14 +148,56 @@ function hasOnlyKeys(obj: Record<string, unknown>, allowed: readonly string[]): 
   return Object.keys(obj).every((k) => (allowed as string[]).includes(k));
 }
 
-const ALLOWED_MARK_TYPES: readonly TiptapMarkType[] = ["bold", "underline"];
+const ALLOWED_MARK_TYPES: readonly TiptapMarkType[] = ["bold", "underline", "italic", "strike"];
 const ORDERED_LIST_TYPE_VALUES = new Set(["1", "a", "A", "i", "I"]);
+const ALLOWED_TEXT_ALIGN = new Set<TiptapTextAlign>(["left", "center", "right"]);
+// XSS defense-in-depth: even though richContent is never rendered via
+// dangerouslySetInnerHTML, a link mark is the one place user-controlled
+// text becomes a URL, so hrefs are restricted to an explicit scheme
+// allow-list here — matching the `protocols` restriction already
+// configured on the client's Link extension (see useNotebookEditor.ts) —
+// rather than trusted to whatever the client happened to send.
+const ALLOWED_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+// Client-side convenience only (e.g. EditorToolbar's link prompt): a bare
+// "example.com" is a common thing to type and shouldn't be rejected just
+// for missing a scheme, so one is added before validation runs. Anything
+// that already looks like it has a scheme is passed through unchanged —
+// isAllowedLinkHref (below) remains the sole authority on whether the
+// result is actually acceptable.
+export function normalizeLinkHref(input: string): string {
+  const trimmed = input.trim();
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+export function isAllowedLinkHref(href: string): boolean {
+  if (href.length === 0 || href.length > 2048) return false;
+  try {
+    // Parsing with `new URL` (no base) rejects relative and
+    // protocol-relative hrefs too — every stored link must carry an
+    // explicit, allow-listed scheme.
+    return ALLOWED_LINK_PROTOCOLS.has(new URL(href).protocol);
+  } catch {
+    return false;
+  }
+}
 
 function validateMarks(marks: unknown, path: string): string | null {
   if (marks === undefined) return null;
   if (!Array.isArray(marks)) return `${path}.marks must be an array`;
   for (const mark of marks) {
     if (!isPlainObject(mark)) return `${path} has a malformed mark`;
+    if (mark.type === "link") {
+      if (!hasOnlyKeys(mark, ["type", "attrs"])) return `${path} link mark has unexpected attributes`;
+      if (!isPlainObject(mark.attrs) || !hasOnlyKeys(mark.attrs, ["href"])) {
+        return `${path} link mark is missing href`;
+      }
+      if (typeof mark.attrs.href !== "string" || !isAllowedLinkHref(mark.attrs.href)) {
+        return `${path} link href is missing or has an unsupported scheme`;
+      }
+      continue;
+    }
     if (!ALLOWED_MARK_TYPES.includes(mark.type as TiptapMarkType)) {
       return `${path} has an unsupported mark`;
     }
@@ -189,24 +247,51 @@ function validateOrderedListAttrs(attrs: unknown, path: string): string | null {
   return null;
 }
 
+function validateTextAlignAttr(value: unknown, path: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (!ALLOWED_TEXT_ALIGN.has(value as TiptapTextAlign)) return `${path} textAlign attr is invalid`;
+  return null;
+}
+
 function validateBlockNode(node: unknown, path: string, depth: number): string | null {
   if (depth > TIPTAP_MAX_DEPTH) return "document is nested too deeply";
   if (!isPlainObject(node)) return `${path} is malformed`;
 
   if (node.type === "paragraph") {
-    if (!hasOnlyKeys(node, ["type", "content"])) return `${path} paragraph has unexpected attributes`;
+    if (!hasOnlyKeys(node, ["type", "attrs", "content"])) return `${path} paragraph has unexpected attributes`;
+    if (node.attrs !== undefined) {
+      if (!isPlainObject(node.attrs) || !hasOnlyKeys(node.attrs, ["textAlign"])) {
+        return `${path} paragraph has unexpected attrs`;
+      }
+      const err = validateTextAlignAttr(node.attrs.textAlign, path);
+      if (err) return err;
+    }
     return validateInlineContent(node.content, path);
   }
 
   if (node.type === "heading") {
     if (!hasOnlyKeys(node, ["type", "attrs", "content"])) return `${path} heading has unexpected attributes`;
-    if (!isPlainObject(node.attrs) || !hasOnlyKeys(node.attrs, ["level"])) {
+    if (!isPlainObject(node.attrs) || !hasOnlyKeys(node.attrs, ["level", "textAlign"])) {
       return `${path} heading is missing a valid level`;
     }
     if (node.attrs.level !== 1 && node.attrs.level !== 2) {
       return `${path} heading level must be 1 or 2`;
     }
+    const alignErr = validateTextAlignAttr(node.attrs.textAlign, path);
+    if (alignErr) return alignErr;
     return validateInlineContent(node.content, path);
+  }
+
+  if (node.type === "blockquote") {
+    if (!hasOnlyKeys(node, ["type", "content"])) return `${path} blockquote has unexpected attributes`;
+    if (!Array.isArray(node.content) || node.content.length === 0) {
+      return `${path} blockquote must not be empty`;
+    }
+    for (let i = 0; i < node.content.length; i++) {
+      const err = validateBlockquoteChild(node.content[i], `${path}.content[${i}]`, depth + 1);
+      if (err) return err;
+    }
+    return null;
   }
 
   if (node.type === "bulletList" || node.type === "orderedList") {
@@ -227,6 +312,14 @@ function validateBlockNode(node: unknown, path: string, depth: number): string |
   }
 
   return `${path} has an unsupported node type`;
+}
+
+// Blockquotes can't be nested — the toolbar has no command that would
+// produce one, so a nested blockquote in the payload is treated the same
+// as any other shape the editor can't produce: rejected.
+function validateBlockquoteChild(node: unknown, path: string, depth: number): string | null {
+  if (isPlainObject(node) && node.type === "blockquote") return `${path} nested blockquote is not supported`;
+  return validateBlockNode(node, path, depth);
 }
 
 function validateListItem(node: unknown, path: string, depth: number): string | null {

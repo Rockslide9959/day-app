@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   deriveDocPlainText,
+  isAllowedLinkHref,
   isEmptyTiptapDoc,
+  normalizeLinkHref,
   plainTextToTiptapDoc,
   TIPTAP_MAX_DEPTH,
   validateTiptapDocument,
@@ -92,6 +94,14 @@ describe("deriveDocPlainText", () => {
     const text = deriveDocPlainText(doc);
     expect(text).toContain("bullet one");
     expect(text).toContain("numbered one");
+  });
+
+  it("contains blockquote text", () => {
+    const doc: TiptapDocument = {
+      type: "doc",
+      content: [{ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: "quoted words" }] }] }],
+    };
+    expect(deriveDocPlainText(doc)).toContain("quoted words");
   });
 
   it("never contains JSON syntax", () => {
@@ -198,6 +208,97 @@ describe("validateTiptapDocument — accepted content", () => {
     });
     expect(result.ok).toBe(true);
   });
+
+  it("accepts italic and strikethrough content", () => {
+    for (const markType of ["italic", "strike"]) {
+      const result = validateTiptapDocument({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "hi", marks: [{ type: markType }] }] }],
+      });
+      expect(result.ok).toBe(true);
+    }
+  });
+
+  it("accepts multiple stacked marks on the same text node", () => {
+    const result = validateTiptapDocument({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "hi", marks: [{ type: "bold" }, { type: "italic" }, { type: "strike" }] }],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a link mark with an allowed scheme (http, https, mailto)", () => {
+    for (const href of ["https://example.com", "http://example.com", "mailto:a@example.com"]) {
+      const result = validateTiptapDocument({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "hi", marks: [{ type: "link", attrs: { href } }] }] }],
+      });
+      expect(result.ok).toBe(true);
+    }
+  });
+
+  it("accepts a blockquote wrapping a paragraph", () => {
+    const result = validateTiptapDocument({
+      type: "doc",
+      content: [{ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: "quoted" }] }] }],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a blockquote wrapping a list", () => {
+    const result = validateTiptapDocument({
+      type: "doc",
+      content: [
+        {
+          type: "blockquote",
+          content: [
+            {
+              type: "bulletList",
+              content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "a" }] }] }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a textAlign attr on paragraphs and headings", () => {
+    for (const textAlign of ["left", "center", "right"]) {
+      expect(
+        validateTiptapDocument({
+          type: "doc",
+          content: [{ type: "paragraph", attrs: { textAlign }, content: [{ type: "text", text: "x" }] }],
+        }).ok
+      ).toBe(true);
+      expect(
+        validateTiptapDocument({
+          type: "doc",
+          content: [{ type: "heading", attrs: { level: 1, textAlign }, content: [{ type: "text", text: "x" }] }],
+        }).ok
+      ).toBe(true);
+    }
+  });
+
+  it("accepts a paragraph/heading with no textAlign attr at all (legacy shape)", () => {
+    expect(
+      validateTiptapDocument({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "x" }] }],
+      }).ok
+    ).toBe(true);
+    expect(
+      validateTiptapDocument({
+        type: "doc",
+        content: [{ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "x" }] }],
+      }).ok
+    ).toBe(true);
+  });
 });
 
 describe("validateTiptapDocument — rejections", () => {
@@ -209,10 +310,9 @@ describe("validateTiptapDocument — rejections", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("rejects unsupported node types (codeBlock, blockquote, image)", () => {
+  it("rejects unsupported node types (codeBlock, image)", () => {
     for (const node of [
       { type: "codeBlock", content: [{ type: "text", text: "code" }] },
-      { type: "blockquote", content: [{ type: "paragraph" }] },
       { type: "image", attrs: { src: "https://evil.example/x.png" } },
     ]) {
       const result = validateTiptapDocument({ type: "doc", content: [node] });
@@ -220,14 +320,54 @@ describe("validateTiptapDocument — rejections", () => {
     }
   });
 
-  it("rejects unsupported marks (italic, strike, link)", () => {
-    for (const mark of [{ type: "italic" }, { type: "strike" }, { type: "link", attrs: { href: "javascript:alert(1)" } }]) {
+  it("rejects a nested blockquote", () => {
+    const result = validateTiptapDocument({
+      type: "doc",
+      content: [{ type: "blockquote", content: [{ type: "blockquote", content: [{ type: "paragraph" }] }] }],
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects an empty blockquote", () => {
+    expect(validateTiptapDocument({ type: "doc", content: [{ type: "blockquote", content: [] }] }).ok).toBe(false);
+  });
+
+  it("rejects a link mark with a disallowed scheme (XSS/open-redirect defense)", () => {
+    for (const href of ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "ftp://example.com", "//evil.example", "/relative"]) {
       const result = validateTiptapDocument({
         type: "doc",
-        content: [{ type: "paragraph", content: [{ type: "text", text: "x", marks: [mark] }] }],
+        content: [{ type: "paragraph", content: [{ type: "text", text: "x", marks: [{ type: "link", attrs: { href } }] }] }],
       });
       expect(result.ok).toBe(false);
     }
+  });
+
+  it("rejects a link mark missing href, or carrying extra attrs (target/rel/class)", () => {
+    expect(
+      validateTiptapDocument({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "x", marks: [{ type: "link", attrs: {} }] }] }],
+      }).ok
+    ).toBe(false);
+    expect(
+      validateTiptapDocument({
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "x", marks: [{ type: "link", attrs: { href: "https://example.com", target: "_blank" } }] }],
+          },
+        ],
+      }).ok
+    ).toBe(false);
+  });
+
+  it("rejects an invalid textAlign value", () => {
+    const result = validateTiptapDocument({
+      type: "doc",
+      content: [{ type: "paragraph", attrs: { textAlign: "justify" }, content: [{ type: "text", text: "x" }] }],
+    });
+    expect(result.ok).toBe(false);
   });
 
   it("rejects malformed documents", () => {
@@ -315,5 +455,42 @@ describe("validateTiptapDocument — rejections", () => {
     };
     const result = validateTiptapDocument(doc);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("isAllowedLinkHref", () => {
+  it("allows http, https and mailto", () => {
+    expect(isAllowedLinkHref("https://example.com/path?x=1")).toBe(true);
+    expect(isAllowedLinkHref("http://example.com")).toBe(true);
+    expect(isAllowedLinkHref("mailto:a@example.com")).toBe(true);
+  });
+
+  it("rejects other schemes, relative and protocol-relative hrefs, and empty strings", () => {
+    expect(isAllowedLinkHref("javascript:alert(1)")).toBe(false);
+    expect(isAllowedLinkHref("data:text/html,x")).toBe(false);
+    expect(isAllowedLinkHref("ftp://example.com")).toBe(false);
+    expect(isAllowedLinkHref("//evil.example")).toBe(false);
+    expect(isAllowedLinkHref("/relative/path")).toBe(false);
+    expect(isAllowedLinkHref("")).toBe(false);
+  });
+
+  it("rejects a href longer than 2048 characters", () => {
+    expect(isAllowedLinkHref(`https://example.com/${"x".repeat(2048)}`)).toBe(false);
+  });
+});
+
+describe("normalizeLinkHref", () => {
+  it("leaves an href with an explicit scheme unchanged", () => {
+    expect(normalizeLinkHref("https://example.com")).toBe("https://example.com");
+    expect(normalizeLinkHref("mailto:a@example.com")).toBe("mailto:a@example.com");
+    expect(normalizeLinkHref("javascript:alert(1)")).toBe("javascript:alert(1)");
+  });
+
+  it("prepends https:// to a bare domain", () => {
+    expect(normalizeLinkHref("example.com")).toBe("https://example.com");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(normalizeLinkHref("  example.com  ")).toBe("https://example.com");
   });
 });

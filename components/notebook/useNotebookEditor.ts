@@ -4,28 +4,55 @@ import { useEffect } from "react";
 import { useEditor, type Editor, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import TiptapLink from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
 import type { TiptapDocument } from "@/lib/richText";
+
+// A trimmed-down Link mark: the stock extension also declares target/rel/
+// class attrs, which would always appear (even as null) in getJSON() output
+// per Tiptap/ProseMirror's "attrs present iff the type declares any" rule —
+// widening what lib/richText.ts's server-side validator has to allow for no
+// benefit, since the app never sets them. Overriding addAttributes drops
+// them, so a link mark's JSON is just `{ type: "link", attrs: { href } }`,
+// matching the validator exactly. `protocols` restricts which schemes
+// autolink/paste will turn into a link client-side — the validator's own
+// isAllowedLinkHref is the authoritative check server-side.
+const Link = TiptapLink.extend({
+  addAttributes() {
+    return {
+      href: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("href"),
+        renderHTML: (attributes) => (attributes.href ? { href: attributes.href } : {}),
+      },
+    };
+  },
+}).configure({
+  openOnClick: false,
+  autolink: true,
+  linkOnPaste: true,
+  protocols: ["http", "https", "mailto"],
+});
 
 // Single source of truth for which formatting this editor supports —
 // StarterKit v3 already bundles Underline (unlike v2, where it needed a
 // separate top-level extension), so it's configured here rather than
 // added a second time, which would otherwise log a "duplicate extension"
 // warning. Everything StarterKit provides beyond what lib/richText.ts's
-// server-side validator allow-lists (blockquote, code, codeBlock,
-// horizontalRule, italic, strike, link) is turned off so the editor can't
-// produce content the server would reject.
+// server-side validator allow-lists (code, codeBlock, horizontalRule) is
+// turned off, and its bundled link is replaced by the trimmed-down `Link`
+// above, so the editor can't produce content the server would reject.
 function buildExtensions() {
   return [
     StarterKit.configure({
-      blockquote: false,
       code: false,
       codeBlock: false,
       horizontalRule: false,
-      italic: false,
-      strike: false,
       link: false,
       heading: { levels: [1, 2] },
     }),
+    Link,
+    TextAlign.configure({ types: ["paragraph", "heading"], alignments: ["left", "center", "right"] }),
     Placeholder.configure({ placeholder: "Start writing…" }),
   ];
 }
