@@ -41,6 +41,8 @@ export default function RemindersPage() {
   const [notes, setNotes] = useState("");
   const [dueAt, setDueAt] = useState(defaultDueAt());
   const [recurrence, setRecurrence] = useState("none");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -80,27 +82,45 @@ export default function RemindersPage() {
   async function addReminder(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    const res = await fetch("/api/reminders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        notes,
-        dueAt: new Date(dueAt).toISOString(),
-        recurrence,
-      }),
-    });
-    const reminder = await res.json();
-    setReminders((prev) =>
-      [...prev, reminder].sort(
-        (a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime()
-      )
-    );
-    setTitle("");
-    setNotes("");
-    setDueAt(defaultDueAt());
-    setRecurrence("none");
-    setShowForm(false);
+
+    const dueDate = new Date(dueAt);
+    if (Number.isNaN(dueDate.getTime())) {
+      setFormError("Pick a valid date and time.");
+      return;
+    }
+
+    setSaving(true);
+    setFormError("");
+    try {
+      const res = await fetch("/api/reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          notes,
+          dueAt: dueDate.toISOString(),
+          recurrence,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to create reminder");
+      }
+      const reminder = await res.json();
+      setReminders((prev) =>
+        [...prev, reminder].sort(
+          (a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime()
+        )
+      );
+      setTitle("");
+      setNotes("");
+      setDueAt(defaultDueAt());
+      setRecurrence("none");
+      setShowForm(false);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Something went wrong");
+    }
+    setSaving(false);
   }
 
   async function completeReminder(id: string) {
@@ -238,16 +258,23 @@ export default function RemindersPage() {
             placeholder="Notes (optional)"
             className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised crimson:focus:border-crimson-accent"
           />
+          {formError && (
+            <p className="text-xs text-red-500 crimson:text-crimson-highlight">{formError}</p>
+          )}
           <div className="flex gap-2">
             <button
               type="submit"
-              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+              disabled={saving}
+              className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
             >
-              Set reminder
+              {saving ? "Saving…" : "Set reminder"}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setFormError("");
+              }}
               className="rounded-xl border border-zinc-200 px-4 text-sm text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
             >
               Cancel
