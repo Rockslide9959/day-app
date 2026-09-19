@@ -74,6 +74,20 @@ If you later move the database to a plan without a compute cap (or a different
 host), you can drop the interval back to every minute and restore
 `CATCHUP_WINDOW_MINUTES` to 15.
 
+### If cron-job.org shows "Failed (HTTP error)"
+
+Waking a scaled-to-zero Neon database from cold occasionally takes long enough
+that the first query of a tick times out. `app/api/cron/tick/route.ts` runs
+each phase (todo rollover, reminders, timers, schedule reminders, daily to-do
+nudge) in its own try/catch specifically so one phase's cold-start hiccup
+can't take the whole tick down with it — the route only returns a 500 (and
+shows up as failed) if every phase failed, which means the database was
+genuinely unreachable, not just slow to wake. `DATABASE_URL` also carries
+`connect_timeout=20&pool_timeout=20` (up from Prisma's ~5s/10s defaults) to
+give a cold Neon compute more room before Prisma gives up — make sure the
+`DATABASE_URL` value in Vercel's Environment Variables matches your local
+`.env.local` (including these two query params) after pulling this change.
+
 ## 4. Install it on your Android phone
 
 1. Open `https://day-app-six.vercel.app` in Chrome on your phone.

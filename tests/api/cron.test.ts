@@ -152,6 +152,10 @@ beforeEach(() => {
   prismaMock.user.findMany.mockResolvedValue([]);
   prismaMock.todo.count.mockResolvedValue(0);
   prismaMock.todo.findMany.mockResolvedValue([]);
+  // Restores the default store-backed behavior — a prior test's
+  // mockRejectedValue/mockImplementation on this one otherwise survives
+  // vi.clearAllMocks(), which only clears call history, not implementations.
+  prismaMock.scheduleItem.findMany.mockImplementation(async () => [...store.scheduleItems.values()]);
   webpushMock.isPushConfigured.mockReturnValue(true);
   webpushMock.sendPush.mockResolvedValue(undefined);
 });
@@ -181,6 +185,51 @@ describe("GET /api/cron/tick — response shape", () => {
     expect(res.status).toBe(401);
     expect(prismaMock.reminder.findMany).not.toHaveBeenCalled();
     expect(prismaMock.scheduleItem.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/cron/tick — phase isolation", () => {
+  it("still runs todo rollover and reports 200 when the reminder phase throws (e.g. a DB reconnect stall)", async () => {
+    prismaMock.reminder.findMany.mockRejectedValue(new Error("connection timeout"));
+    // The rollover query has no `where` clause; the todoReminders query does
+    // (`todoReminderEnabled: true`) — branch on that so this only feeds a
+    // user into the rollover phase and leaves the unrelated todoReminders
+    // phase with nothing to do.
+    prismaMock.user.findMany.mockImplementation(async (args?: { where?: unknown }) => {
+      if (args?.where) return [];
+      return [{ id: "user-1", todoReminderTimeZone: "Africa/Johannesburg", todoRolloverLastDate: "2026-08-14" }];
+    });
+    prismaMock.todo.findMany.mockResolvedValue([
+      { id: "todo-1", title: "Old task", date: "2026-08-14", rolledOverFromDate: null },
+    ]);
+
+    const res = await GET(tickRequest());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.errors).toEqual(["reminders"]);
+    // Rollover ran normally even though the reminder phase blew up.
+    expect(body.todoRolloverUsers).toBe(1);
+    expect(body.todoRolloverMoved).toBe(1);
+    expect(prismaMock.todo.update).toHaveBeenCalled();
+    // The failed phase falls back to zeroed counts instead of taking the whole response down.
+    expect(body.sent).toBe(0);
+    expect(body.reminders).toBe(0);
+  });
+
+  it("returns 500 only when every phase fails", async () => {
+    prismaMock.reminder.findMany.mockRejectedValue(new Error("db down"));
+    prismaMock.timer.findMany.mockRejectedValue(new Error("db down"));
+    prismaMock.user.findMany.mockRejectedValue(new Error("db down"));
+    prismaMock.scheduleItem.findMany.mockRejectedValue(new Error("db down"));
+
+    const res = await GET(tickRequest());
+    const body = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(body.errors).toEqual(
+      expect.arrayContaining(["reminders", "timers", "todoRollover", "schedule", "todoReminders"])
+    );
   });
 });
 
