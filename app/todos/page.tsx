@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { formatDateLabel, addDaysToDateStr } from "@/lib/dates";
-import { useSyncedDate } from "@/lib/useTodayStr";
+import { useSyncedDate, useTodayStr } from "@/lib/useTodayStr";
 import AttachmentList from "@/components/attachments/AttachmentList";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -10,6 +10,7 @@ type Todo = { id: string; title: string; completed: boolean; rolledOver: boolean
 
 export default function TodosPage() {
   const [date, setDate] = useSyncedDate();
+  const today = useTodayStr();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
@@ -17,10 +18,10 @@ export default function TodosPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/todos?date=${date}`).then((r) => r.json());
+    const res = await fetch(`/api/todos?date=${date}&today=${today}`).then((r) => r.json());
     setTodos(res);
     setLoading(false);
-  }, [date]);
+  }, [date, today]);
 
   useEffect(() => {
     load();

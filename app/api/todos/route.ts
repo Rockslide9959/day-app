@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { todayStr } from "@/lib/dates";
 import { getCurrentUserId } from "@/lib/auth";
+import { rolloverTodosOnRead } from "@/lib/todoRolloverCron";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,10 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const date = req.nextUrl.searchParams.get("date") || todayStr();
+  // `today` is the client's local date (the page may be browsing another
+  // day via `date`). Carry unfinished to-dos forward before reading, so
+  // rollover never depends on the external cron having fired.
+  await rolloverTodosOnRead(userId, req.nextUrl.searchParams.get("today"));
   const todos = await prisma.todo.findMany({
     where: { userId, date },
     orderBy: [{ completed: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],

@@ -3,6 +3,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { todayStr } from "@/lib/dates";
 import { isValidDateStr } from "@/lib/validation";
 import { loadDashboardData } from "@/lib/dashboard";
+import { rolloverTodosOnRead } from "@/lib/todoRolloverCron";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
   }
 
+  // Carry yesterday's unfinished to-dos onto today before reading them, so
+  // rollover never depends on the external cron having fired.
+  await rolloverTodosOnRead(userId, date);
   const data = await loadDashboardData(userId, date);
   return NextResponse.json(data);
 }
