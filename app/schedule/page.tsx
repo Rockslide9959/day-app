@@ -10,6 +10,7 @@ import { categoryEventStyle } from "@/components/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { draftToPayload } from "@/lib/calendar/payload";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDataChanged } from "@/lib/useDataChanged";
 
 type Filter = "all" | "events" | "tasks";
 
@@ -52,6 +53,8 @@ export default function SchedulePage() {
       loadCategories();
     }
   }, [load, loadCategories]);
+  // Refetch when Quick Add changes something while this page is open.
+  useDataChanged(load);
 
   const visibleItems = useMemo(() => {
     return items

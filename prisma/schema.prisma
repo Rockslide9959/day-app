@@ -25,13 +25,13 @@ model User {
   todoReminderTimeZone     String?
   // "YYYY-MM-DD" local date (in todoReminderTimeZone) this user was last
   // checked for the day — dedupes repeated cron ticks the same evening
-  // without needing a separate delivery-log table like schedule reminders.
+  // without needing a separate delivery-log table.
   todoReminderLastSentDate String?
   // "YYYY-MM-DD" local date (in todoReminderTimeZone) unfinished to-dos were
   // last rolled forward for this user — same dedupe shape as
   // todoReminderLastSentDate, but for lib/todoRolloverCron.ts. Independent
   // of todoReminderEnabled: rollover isn't a notification, so it always runs.
-  todoRolloverLastDate String?
+  todoRolloverLastDate     String?
 
   scheduleItems     ScheduleItem[]
   todos             Todo[]
@@ -44,29 +44,28 @@ model User {
 }
 
 model ScheduleItem {
-  id                    String  @id @default(cuid())
-  userId                String
-  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title                 String
-  notes                 String?
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  notes     String?
   // "event" | "task" — a task's `date` is its due date, and `startTime`/
   // `endTime` are its due time (or "00:00"/"23:59" with allDay:true when
   // no due time is set). Tasks never span a range: endDate == date.
-  itemType              String  @default("event")
+  itemType  String  @default("event")
   // ISO date, e.g. "2026-08-12"
-  date                  String
-  startTime             String
-  endTime               String
+  date      String
+  startTime String
+  endTime   String
   // Multi-day support; defaults to `date` when absent (same-day event)
-  endDate               String?
-  allDay                Boolean @default(false)
-  location              String?
+  endDate   String?
+  allDay    Boolean @default(false)
+  location  String?
   // Free-form category name — one of the app's defaults or a custom
   // EventCategory.name the user created in Settings.
-  category              String?
-  reminderMinutesBefore Int?
+  category  String?
   // "low" | "normal" | "high" | "urgent"
-  priority              String  @default("normal")
+  priority  String  @default("normal")
 
   // --- Recurrence ---
   // "none" | "daily" | "weekly" | "monthly" | "weekdays" | "custom"
@@ -102,44 +101,10 @@ model ScheduleItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  shares             EventShare[]
-  reminderDeliveries ScheduleReminderDelivery[]
+  shares EventShare[]
 
   @@index([date])
   @@index([userId])
-}
-
-// One row per (occurrence, device) a reminder push either was or should be
-// attempted for — see lib/calendar/reminderCron.ts. The unique constraint
-// below is the duplicate-prevention mechanism: upserting against it is
-// naturally idempotent across repeated/concurrent cron ticks, and keying by
-// device (pushEndpoint) rather than a subscription FK means one device's
-// success never blocks another's retry, and a later-pruned subscription
-// doesn't orphan the row.
-model ScheduleReminderDelivery {
-  id             String       @id @default(cuid())
-  scheduleItemId String
-  scheduleItem   ScheduleItem @relation(fields: [scheduleItemId], references: [id], onDelete: Cascade)
-  // "YYYY-MM-DD" — which occurrence (of a recurring item) this covers.
-  occurrenceDate String
-  // Calculated UTC instant the reminder was due.
-  reminderAt     DateTime
-  // PushSubscription.endpoint — not an FK, since a subscription can be
-  // deleted/recreated independently of this delivery history.
-  pushEndpoint   String
-  // "pending" | "sending" | "sent" | "failed". "sending" is a short-lived
-  // optimistic-lock state claimed just before a send attempt, guarding
-  // against two overlapping cron ticks both delivering the same row.
-  status         String       @default("pending")
-  attempts       Int          @default(0)
-  lastAttemptAt  DateTime?
-  sentAt         DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@unique([scheduleItemId, occurrenceDate, pushEndpoint])
-  @@index([scheduleItemId, occurrenceDate])
-  @@index([status, reminderAt])
 }
 
 // A shareable link for a ScheduleItem: whoever holds the token can

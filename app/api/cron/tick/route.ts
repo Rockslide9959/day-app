@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processScheduleReminders } from "@/lib/calendar/reminderCron";
 import { processTodoReminders } from "@/lib/todoReminderCron";
 import { processTodoRollover } from "@/lib/todoRolloverCron";
 
@@ -48,12 +47,6 @@ async function handleTick(req: NextRequest) {
     errors,
     () => processTodoRollover(now)
   );
-  const schedule = await runPhase(
-    "schedule",
-    { due: 0, sent: 0, retries: 0, skippedCompleted: 0 },
-    errors,
-    () => processScheduleReminders(now)
-  );
   const todoReminders = await runPhase(
     "todoReminders",
     { due: 0, sent: 0 },
@@ -61,15 +54,11 @@ async function handleTick(req: NextRequest) {
     () => processTodoReminders(now)
   );
 
-  const totalPhases = 3;
+  const totalPhases = 2;
   const status = errors.length >= totalPhases ? 500 : 200;
 
   return NextResponse.json(
     {
-      scheduleRemindersDue: schedule.due,
-      schedulePushesSent: schedule.sent,
-      scheduleRetries: schedule.retries,
-      scheduleSkippedCompleted: schedule.skippedCompleted,
       todoRolloverUsers: todoRollover.usersProcessed,
       todoRolloverMoved: todoRollover.todosMoved,
       todoRemindersDue: todoReminders.due,

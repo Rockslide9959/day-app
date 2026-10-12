@@ -8,8 +8,8 @@ import {
   unsubscribeFromPush,
 } from "@/lib/push-client";
 
-// Per-device push notification switch (event reminders and the daily to-do
-// reminder both deliver through it). Renders nothing where the browser
+// Per-device push notification switch (the daily to-do reminder delivers
+// through it). Renders nothing where the browser
 // can't do web push at all.
 export default function PushToggle() {
   const [supported, setSupported] = useState(false);

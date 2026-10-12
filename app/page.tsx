@@ -31,6 +31,7 @@ import FlameBadge from "@/components/habits/FlameBadge";
 import CelebrationToast from "@/components/habits/CelebrationToast";
 import { useHabitLogger } from "@/components/habits/useHabitLogger";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDataChanged } from "@/lib/useDataChanged";
 
 type Todo = { id: string; title: string; completed: boolean; rolledOver: boolean };
 
@@ -116,6 +117,8 @@ export default function TodayPage() {
   useEffect(() => {
     load();
   }, [load]);
+  // Refetch when Quick Add changes something while this page is open.
+  useDataChanged(load);
 
   useEffect(() => {
     const interval = setInterval(() => {

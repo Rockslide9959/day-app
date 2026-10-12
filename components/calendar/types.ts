@@ -19,7 +19,6 @@ export type CalendarEvent = {
   location: string | null;
   category: string | null;
   priority: string;
-  reminderMinutesBefore: number | null;
   recurrence: string;
   recurrenceDays: string | null;
   recurrenceEndDate: string | null;

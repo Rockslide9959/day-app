@@ -26,6 +26,7 @@ import { CalendarEvent, ViewMode } from "@/components/calendar/types";
 import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { draftToPayload } from "@/lib/calendar/payload";
+import { useDataChanged } from "@/lib/useDataChanged";
 
 const HIDDEN_CATEGORIES_KEY = "day:calendar:hiddenCategories";
 const VIEW_MODE_KEY = "day:calendar:viewMode";
@@ -83,9 +84,9 @@ export default function CalendarPage() {
       // ignore malformed local storage
     }
 
-    // A reminder notification's click target — /calendar?date=YYYY-MM-DD —
-    // lands here rather than deep-linking a specific item's modal (which
-    // would need a larger refactor of how modalState gets seeded).
+    // Deep link: /calendar?date=YYYY-MM-DD opens the day view for that date
+    // (rather than a specific item's modal, which would need a larger
+    // refactor of how modalState gets seeded).
     const dateParam = new URLSearchParams(window.location.search).get("date");
     if (dateParam) {
       setAnchorDate(dateParam);
@@ -162,6 +163,8 @@ export default function CalendarPage() {
   useEffect(() => {
     load();
   }, [load]);
+  // Refetch when Quick Add changes something while this page is open.
+  useDataChanged(load);
 
   useEffect(() => {
     loadCategories();

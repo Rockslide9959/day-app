@@ -37,15 +37,15 @@ git push -u origin main
 
 The database is already migrated (we ran it against this same Neon DB during local testing), so no extra migration step is needed for this first deploy. If you change `prisma/schema.prisma` later, run `npx prisma migrate deploy` locally (with `.env` pointing at the same `DATABASE_URL`) to apply the change to production.
 
-## 3. Set up the reminder-check cron (cron-job.org)
+## 3. Set up the background cron (cron-job.org)
 
-Vercel's free plan only runs cron jobs once a day, which isn't enough for timely reminders, so we use a free external pinger instead.
+Vercel's free plan only runs cron jobs once a day, which isn't enough for a timely daily to-do reminder, so we use a free external pinger instead.
 
 1. Go to cron-job.org and create a free account.
 2. Create a new cron job:
    - **URL**: `https://<your-app>.vercel.app/api/cron/tick?secret=<your CRON_SECRET value>`
    - **Schedule**: every 20 minutes
-3. Save it. From then on, this job rolls over unfinished to-dos and sends event and daily to-do reminder push notifications every 20 minutes.
+3. Save it. From then on, this job runs every 20 minutes to roll over unfinished to-dos and send the daily to-do reminder push notification.
 
 ### Why every 20 minutes and not every minute
 
@@ -59,23 +59,20 @@ the DB, so the whole app goes down with a "compute time quota exceeded" error.
 
 At a 20-minute interval the database is asleep most of the time (~5 min awake per
 tick, then idle), which keeps cron compute use around ~40–55 compute-hours/month
-— enough headroom for normal app use on top. The trade-offs:
-
-- **Event reminders** can fire up to ~20 minutes late. The reminder
-  catch-up window (`CATCHUP_WINDOW_MINUTES` in `lib/calendar/reminders.ts`) is set
-  to 30 min to cover this — nothing is missed, just delivered on the next tick.
-- **"Remind me 5 / 10 minutes before" event reminders** lose precision — pick a
-  lead time of 30 min or more for anything you can't afford to get late.
+— enough headroom for normal app use on top. The trade-off: the **daily to-do
+reminder** can arrive up to ~20 minutes after the time set in Settings (it's
+sent on the first tick at or after that time — nothing is missed), and to-do
+rollover also happens on the next tick (it additionally runs whenever you open
+the app, so that's rarely noticeable).
 
 If you later move the database to a plan without a compute cap (or a different
-host), you can drop the interval back to every minute and restore
-`CATCHUP_WINDOW_MINUTES` to 15.
+host), you can drop the interval back to every minute.
 
 ### If cron-job.org shows "Failed (HTTP error)"
 
 Waking a scaled-to-zero Neon database from cold occasionally takes long enough
 that the first query of a tick times out. `app/api/cron/tick/route.ts` runs
-each phase (todo rollover, schedule reminders, daily to-do nudge) in its own try/catch specifically so one phase's cold-start hiccup
+each phase (todo rollover, daily to-do reminder) in its own try/catch specifically so one phase's cold-start hiccup
 can't take the whole tick down with it — the route only returns a 500 (and
 shows up as failed) if every phase failed, which means the database was
 genuinely unreachable, not just slow to wake. `DATABASE_URL` also carries
@@ -90,7 +87,7 @@ give a cold Neon compute more room before Prisma gives up — make sure the
 2. Log in with your account (or sign up if it's your first time on this device).
 3. Tap the Chrome menu (⋮) → **Add to Home Screen** → **Install**. This makes it a real installed app, which Android needs for reliable background push notifications.
 4. Open the installed app from your home screen, go to **Settings**, and tap **Turn on** under Notifications. Allow the permission prompt.
-5. To verify end-to-end: create a calendar event with a reminder that falls due shortly, then lock your phone. The notification should arrive on the next cron tick.
+5. To verify end-to-end: make sure you have at least one unfinished to-do, then in **Settings → Daily to-do reminder** turn the reminder on and set the time a couple of minutes ahead. Lock your phone. The notification should arrive on the first cron tick after that time (up to ~20 minutes later).
 
 ## Local development
 

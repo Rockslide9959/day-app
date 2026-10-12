@@ -6,12 +6,11 @@ export type TodoReminderResult = { due: number; sent: number };
 
 const EMPTY_RESULT: TodoReminderResult = { due: 0, sent: 0 };
 
-// Once-a-day "you still have unfinished to-dos" nudge. Unlike the
-// Reminder/ScheduleItem sweeps in reminderCron.ts, this isn't tied to any
-// one row's own dueAt — it's keyed off each user's todoReminderTime
+// Once-a-day "you still have unfinished to-dos" nudge. It isn't tied to any
+// one row's own due time — it's keyed off each user's todoReminderTime
 // setting, so every tick scans reminder-enabled users and self-dedupes via
-// todoReminderLastSentDate rather than a per-occurrence delivery table
-// (there's only ever one of these a day, so that table would be overkill).
+// todoReminderLastSentDate (there's only ever one of these a day, so no
+// per-delivery tracking table is needed).
 export async function processTodoReminders(now: Date): Promise<TodoReminderResult> {
   if (!isPushConfigured()) return EMPTY_RESULT;
 

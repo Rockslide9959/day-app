@@ -11,8 +11,6 @@ export function draftToPayload(draft: EventDraft) {
     notes: draft.notes.trim() || null,
     category: draft.category || null,
     priority: draft.priority,
-    reminderMinutesBefore:
-      draft.reminderMinutesBefore === "" ? null : Number(draft.reminderMinutesBefore),
     recurrence: draft.recurrence,
     recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays.join(",") : null,
     recurrenceEndDate: draft.recurrenceEndDate || null,

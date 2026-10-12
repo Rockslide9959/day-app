@@ -8,16 +8,6 @@ import { CategoryDef, isDeadlineCategory } from "@/lib/calendar/categories";
 import { findConflicts } from "@/lib/calendar/conflicts";
 import AttachmentList from "@/components/attachments/AttachmentList";
 
-const REMINDER_OPTIONS = [
-  { value: "", label: "No reminder" },
-  { value: "0", label: "At time of event" },
-  { value: "5", label: "5 minutes before" },
-  { value: "15", label: "15 minutes before" },
-  { value: "30", label: "30 minutes before" },
-  { value: "60", label: "1 hour before" },
-  { value: "1440", label: "1 day before" },
-];
-
 const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"];
 
 const RECURRENCE_OPTIONS = [
@@ -28,16 +18,6 @@ const RECURRENCE_OPTIONS = [
   { value: "weekdays", label: "Weekdays (Mon–Fri)" },
   { value: "custom", label: "Custom days" },
 ];
-
-// Mirrors REMINDER_OPTIONS' offsets with task/event-specific phrasing, e.g.
-// "at due time" / "1 hour before start" / "30 minutes before due".
-function reminderOffsetLabel(minutes: number, isTask: boolean): string {
-  const noun = isTask ? "due" : "start";
-  if (minutes === 0) return `at ${isTask ? "due time" : "start time"}`;
-  if (minutes === 60) return `1 hour before ${noun}`;
-  if (minutes === 1440) return `1 day before ${noun}`;
-  return `${minutes} minutes before ${noun}`;
-}
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const ITEM_TYPES = ["event", "task"] as const;
@@ -60,7 +40,6 @@ export type EventDraft = {
   location: string;
   category: string;
   priority: string;
-  reminderMinutesBefore: string;
   recurrence: string;
   recurrenceDays: number[];
   recurrenceEndDate: string;
@@ -83,8 +62,6 @@ function draftFromEvent(event: CalendarEvent): EventDraft {
     location: event.location || "",
     category: event.category || "",
     priority: event.priority || "normal",
-    reminderMinutesBefore:
-      event.reminderMinutesBefore == null ? "" : String(event.reminderMinutesBefore),
     recurrence: event.recurrence || "none",
     recurrenceDays: (event.recurrenceDays || "").split(",").filter(Boolean).map(Number),
     recurrenceEndDate: event.recurrenceEndDate || "",
@@ -118,7 +95,6 @@ function draftFromDefaults(defaults: { date: string; startTime?: string }): Even
     location: "",
     category: "",
     priority: "normal",
-    reminderMinutesBefore: "",
     recurrence: "none",
     recurrenceDays: [],
     recurrenceEndDate: "",
@@ -584,24 +560,6 @@ export default function EventModal({
             )}
 
             <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
-              Reminder
-              <select
-                value={draft.reminderMinutesBefore}
-                onChange={(e) => set("reminderMinutesBefore", e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 crimson:border-crimson-border crimson:bg-crimson-raised"
-              >
-                {REMINDER_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-[11px] text-zinc-400 crimson:text-crimson-text-muted">
-                Notifications are sent to every device where you have enabled notifications.
-              </span>
-            </label>
-
-            <label className="block text-xs text-zinc-500 crimson:text-crimson-text-secondary">
               Repeats
               <select
                 value={draft.recurrence}
@@ -858,12 +816,6 @@ function EventDetails({
 
       {event.notes && (
         <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">{event.notes}</p>
-      )}
-
-      {event.reminderMinutesBefore != null && (
-        <p className="text-xs text-zinc-400 crimson:text-crimson-text-muted">
-          Reminder: {reminderOffsetLabel(event.reminderMinutesBefore, isTask)}
-        </p>
       )}
 
       <AttachmentList linkedType="schedule" linkedId={event.id} />

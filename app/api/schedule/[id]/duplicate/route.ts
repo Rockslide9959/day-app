@@ -28,7 +28,6 @@ export async function POST(
       allDay: original.allDay,
       location: original.location,
       category: original.category,
-      reminderMinutesBefore: original.reminderMinutesBefore,
       priority: original.priority,
       // Recurrence and completion state intentionally aren't copied — a
       // duplicate is a fresh one-off event the user can adjust and

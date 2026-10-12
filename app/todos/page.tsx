@@ -5,6 +5,7 @@ import { formatDateLabel, addDaysToDateStr } from "@/lib/dates";
 import { useSyncedDate, useTodayStr } from "@/lib/useTodayStr";
 import AttachmentList from "@/components/attachments/AttachmentList";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDataChanged } from "@/lib/useDataChanged";
 
 type Todo = { id: string; title: string; completed: boolean; rolledOver: boolean };
 
@@ -26,6 +27,8 @@ export default function TodosPage() {
   useEffect(() => {
     load();
   }, [load]);
+  // Refetch when Quick Add changes something while this page is open.
+  useDataChanged(load);
 
   async function addTodo(e: React.FormEvent) {
     e.preventDefault();

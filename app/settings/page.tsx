@@ -393,13 +393,12 @@ export default function SettingsPage() {
         </label>
       </Section>
 
-      <Section title="About reminders & notifications">
+      <Section title="About notifications">
         <p className="rounded-xl bg-white px-4 py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:text-crimson-text-secondary">
-          Event reminders show up inside the app on the Today and Calendar screens. If you&apos;ve
-          turned on push notifications above, those also fire for event reminders when
-          the app is installed — but like all web push, they can&apos;t reliably wake up your phone
-          if the browser has been fully closed for a long time or the OS has aggressively stopped
-          it in the background.
+          Push notifications are used for the daily to-do reminder and work best when the app is
+          installed — but like all web push, they can&apos;t reliably wake up your phone if the
+          browser has been fully closed for a long time or the OS has aggressively stopped it in
+          the background. The reminder can also arrive up to ~20 minutes after the time you set.
         </p>
       </Section>
     </main>

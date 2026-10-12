@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
     notes,
     date,
     category,
-    reminderMinutesBefore,
     priority,
     recurrence,
     recurrenceDays,
@@ -108,8 +107,6 @@ export async function POST(req: NextRequest) {
       allDay,
       location,
       category: category || null,
-      reminderMinutesBefore:
-        typeof reminderMinutesBefore === "number" ? reminderMinutesBefore : null,
       priority: priority || "normal",
       recurrence: recurrence || "none",
       recurrenceDays: recurrenceDays || null,

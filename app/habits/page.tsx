@@ -20,6 +20,7 @@ import HabitForm from "@/components/habits/HabitForm";
 import CelebrationToast from "@/components/habits/CelebrationToast";
 import { useHabitLogger } from "@/components/habits/useHabitLogger";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDataChanged } from "@/lib/useDataChanged";
 
 export default function HabitsPage() {
   const today = useTodayStr();
@@ -41,6 +42,8 @@ export default function HabitsPage() {
   useEffect(() => {
     load();
   }, [load]);
+  // Refetch when Quick Add changes something while this page is open.
+  useDataChanged(load);
 
   if (loading) return <LoadingSpinner className="min-h-[70vh]" />;
 

@@ -1,7 +1,7 @@
 // Reliable IANA timezone handling built on Node's built-in Intl/ICU support
-// — no extra date library needed. Used by schedule reminders (see
-// lib/calendar/reminders.ts) to convert a ScheduleItem's local date/time
-// strings into the correct UTC instant regardless of server timezone.
+// — no extra date library needed. Used to convert local date/time strings
+// (e.g. the daily to-do reminder time in lib/todoReminderCron.ts) into the
+// correct UTC instant regardless of server timezone.
 
 // Existing ScheduleItem rows (and any invalid/missing value) fall back to
 // this — chosen because it's the app's own primary user's timezone and has
