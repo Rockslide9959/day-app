@@ -16,7 +16,7 @@ const TABS = [
   { href: "/todos", label: "To-Do", icon: "/icons/todo.svg", emoji: "✅" },
   { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png", emoji: "📓" },
   { href: "/timers", label: "Timers", icon: "/icons/timers.png", emoji: "⏱️" },
-  { href: "/routines", label: "Routines", icon: "/icons/routines.png", emoji: "🔁" },
+  { href: "/habits", label: "Habits", icon: "/icons/habits.svg", emoji: "🔥" },
 ];
 
 // Own scroll container per tab. Several tabs at a comfortable tap width

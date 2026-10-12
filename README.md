@@ -1,6 +1,6 @@
 # Day
 
-A life-management PWA with real accounts: reminders with real push notifications, a full calendar (recurring events, categories, priorities, deadlines), a daily to-do list, and configurable routines. Each account only ever sees its own data.
+A life-management PWA with real accounts: reminders with real push notifications, a full calendar (recurring events, categories, priorities, deadlines), a daily to-do list, and a habit tracker with streaks. Each account only ever sees its own data.
 
 Built with Next.js (App Router), Prisma + Postgres (Neon), and Web Push.
 

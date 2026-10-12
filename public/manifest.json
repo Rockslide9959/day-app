@@ -1,7 +1,7 @@
 {
   "name": "Day",
   "short_name": "Day",
-  "description": "Reminders, schedule, to-dos and routines for everyday life",
+  "description": "Reminders, schedule, to-dos and habits for everyday life",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Day",
-  description: "Reminders, schedule, to-dos and routines for everyday life",
+  description: "Reminders, schedule, to-dos and habits for everyday life",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

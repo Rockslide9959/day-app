@@ -36,7 +36,7 @@ model User {
   reminders         Reminder[]
   scheduleItems     ScheduleItem[]
   todos             Todo[]
-  routines          Routine[]
+  habits            Habit[]
   eventCategories   EventCategory[]
   pushSubscriptions PushSubscription[]
   timers            Timer[]
@@ -106,7 +106,7 @@ model ScheduleItem {
   // on `completed` + the due date/time, not this field.
   completedAt    DateTime?
   // Recurring events: per-occurrence completion, comma-joined "YYYY-MM-DD"
-  // (same convention as RoutineRun.completedStepIds elsewhere in this app).
+  // (same convention as Habit.days uses for weekdays).
   completedDates String    @default("")
 
   // --- Study features (Assignment/Test/Exam categories) ---
@@ -219,43 +219,47 @@ model Todo {
   @@index([userId])
 }
 
-model Routine {
-  id        String        @id @default(cuid())
+// A habit the user is building. `target` is how many units in a day count
+// as "done" — 1 for a plain yes/no habit, more for a counter like "8 glasses
+// of water" (with `unit` as its label). `days` is comma-joined weekday
+// numbers (0=Sun..6=Sat, same as ScheduleItem.recurrenceDays); empty means
+// every day. Days a habit isn't due on never break its streak — see
+// lib/habits.ts.
+model Habit {
+  id        String     @id @default(cuid())
   userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
-  icon      String        @default("✅")
-  sortOrder Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  steps     RoutineStep[]
-  runs      RoutineRun[]
+  emoji     String     @default("✨")
+  // Key into HABIT_COLORS (lib/habits.ts) rather than a raw hex, so every
+  // theme renders it from the same palette.
+  color     String     @default("emerald")
+  target    Int        @default(1)
+  unit      String?
+  days      String     @default("")
+  archived  Boolean    @default(false)
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  logs      HabitLog[]
 
   @@index([userId])
 }
 
-model RoutineStep {
+// One row per habit per local "YYYY-MM-DD" day it was logged. `count` is
+// the absolute amount for that day — written with set semantics, not
+// increments, so a retried request stays idempotent. A row at 0 is
+// equivalent to no row.
+model HabitLog {
   id        String   @id @default(cuid())
-  routineId String
-  routine   Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
-  title     String
-  sortOrder Int      @default(0)
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      String
+  count     Int      @default(0)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([routineId])
-}
-
-model RoutineRun {
-  id               String   @id @default(cuid())
-  routineId        String
-  routine          Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
-  date             String
-  // comma-joined RoutineStep ids
-  completedStepIds String   @default("")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@unique([routineId, date])
+  @@unique([habitId, date])
 }
 
 // A stopwatch, countdown, or pomodoro/focus timer, optionally attached
