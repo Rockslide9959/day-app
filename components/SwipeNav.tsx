@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 
 // Same order as the BottomNav tabs (see components/BottomNav.tsx) — swiping
 // left/right steps forward/back through this list. Routes outside this list
-// (settings, reminders, notebook/[id], login, etc.) opt out entirely so the
+// (settings, notebook/[id], login, etc.) opt out entirely so the
 // gesture never fights with in-page interactions like text selection.
-const TAB_ORDER = ["/", "/calendar", "/schedule", "/todos", "/notebook", "/timers", "/habits"];
+const TAB_ORDER = ["/", "/calendar", "/schedule", "/todos", "/notebook", "/habits"];
 
 const SWIPE_THRESHOLD = 60;
 const MAX_OFF_AXIS = 45;

@@ -32,13 +32,6 @@ import CelebrationToast from "@/components/habits/CelebrationToast";
 import { useHabitLogger } from "@/components/habits/useHabitLogger";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-type Reminder = {
-  id: string;
-  title: string;
-  notes: string | null;
-  dueAt: string;
-  recurrence: string;
-};
 type Todo = { id: string; title: string; completed: boolean; rolledOver: boolean };
 
 const UPCOMING_WINDOW_DAYS = 14;
@@ -78,7 +71,6 @@ function greetingFor(minutes: number): string {
 
 export default function TodayPage() {
   const router = useRouter();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [habits, setHabits] = useState<HabitWithLogs[]>([]);
@@ -99,14 +91,13 @@ export default function TodayPage() {
   const load = useCallback(async () => {
     try {
       // One aggregate call (see lib/dashboard.ts) in place of a per-section
-      // fan-out — the server gathers reminders, schedule, to-dos, habits,
-      // settings and today's journal in a single round trip. It looks ~60
+      // fan-out — the server gathers schedule, to-dos, habits, settings
+      // and today's journal in a single round trip. It looks ~60
       // days back on the schedule so incomplete overdue tasks still surface
       // here, not just today-forward.
       const res = await fetch(`/api/dashboard?date=${today}`);
       if (!res.ok) return;
       const data = await res.json();
-      setReminders(data.reminders);
       setEvents(data.events);
       setTodos(data.todos);
       setHabits(data.habits ?? []);
@@ -158,14 +149,6 @@ export default function TodayPage() {
     await load();
   }
 
-  async function quickStartTodoTimer(todo: Todo) {
-    await fetch("/api/timers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label: todo.title, mode: "stopwatch", linkedType: "todo", linkedId: todo.id }),
-    });
-  }
-
   async function writeAboutToday() {
     if (journalEntry) {
       router.push(`/notebook/${journalEntry.id}`);
@@ -199,8 +182,6 @@ export default function TodayPage() {
     setNewTodo("");
   }
 
-  const now = new Date();
-  const overdue = reminders.filter((r) => new Date(r.dueAt) <= now);
   const openTodos = todos.filter((t) => !t.completed);
   const completedTodos = todos.filter((t) => t.completed);
   // In-app counterpart to the push notification lib/todoReminderCron.ts
@@ -236,7 +217,7 @@ export default function TodayPage() {
     return <LoadingSpinner className="min-h-[70vh]" />;
   }
 
-  const hasAlerts = overdue.length > 0 || todoReminderDue || dayStats.isBusy;
+  const hasAlerts = todoReminderDue || dayStats.isBusy;
 
   return (
     <>
@@ -265,9 +246,6 @@ export default function TodayPage() {
 
         {hasAlerts && (
           <div className="mb-6 space-y-2">
-            {overdue.map((r) => (
-              <Alert key={r.id} href="/reminders" icon="🔔" tone="red" title={r.title} detail={r.notes ?? "Reminder due"} />
-            ))}
             {todoReminderDue && (
               <Alert
                 href="/todos"
@@ -416,15 +394,6 @@ export default function TodayPage() {
                     >
                       {t.title}
                     </span>
-                    {!t.completed && (
-                      <button
-                        onClick={() => quickStartTodoTimer(t)}
-                        title="Start a stopwatch for this to-do"
-                        className="shrink-0 text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300 crimson:text-crimson-text-secondary crimson:hover:text-crimson-text"
-                      >
-                        ⏱
-                      </button>
-                    )}
                   </li>
                 ))}
               </ul>

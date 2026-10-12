@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useIconStyle } from "@/components/IconStyleProvider";
 import { maskIconStyle } from "@/lib/navIcon";
 
-// Reminders and Settings live in TopBar instead (see components/TopBar.tsx)
+// Settings lives in TopBar instead (see components/TopBar.tsx)
 // — trimming this list keeps the remaining tabs closer to fitting a
 // 320–375px screen without scrolling.
 const TABS = [
@@ -15,7 +15,6 @@ const TABS = [
   { href: "/schedule", label: "Schedule", icon: "/icons/schedule.png", emoji: "🗓️" },
   { href: "/todos", label: "To-Do", icon: "/icons/todo.svg", emoji: "✅" },
   { href: "/notebook", label: "Notebook", icon: "/icons/notebook.png", emoji: "📓" },
-  { href: "/timers", label: "Timers", icon: "/icons/timers.png", emoji: "⏱️" },
   { href: "/habits", label: "Habits", icon: "/icons/habits.svg", emoji: "🔥" },
 ];
 

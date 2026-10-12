@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-// Route-level test: exercises the Reminder/Timer sweep (existing, working
-// behavior) and the new ScheduleItem reminder sweep side-by-side in the
-// same tick, via the real /api/cron/tick handler.
+// Route-level test: exercises todo rollover, the ScheduleItem reminder
+// sweep and the daily to-do reminder side-by-side in the same tick, via the
+// real /api/cron/tick handler.
 type FakeScheduleItem = Record<string, unknown> & { id: string; userId: string };
 type FakeSubscription = { id: string; userId: string; endpoint: string; p256dh: string; auth: string };
 type FakeDelivery = {
@@ -37,14 +37,6 @@ function applyData(row: FakeDelivery, data: Record<string, unknown>) {
 }
 
 const prismaMock = vi.hoisted(() => ({
-  reminder: {
-    findMany: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-  },
-  timer: {
-    findMany: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-  },
   user: {
     findMany: vi.fn().mockResolvedValue([]),
     update: vi.fn(),
@@ -147,8 +139,6 @@ beforeEach(() => {
   store.deliveries.length = 0;
   store.idCounter = 0;
   vi.clearAllMocks();
-  prismaMock.reminder.findMany.mockResolvedValue([]);
-  prismaMock.timer.findMany.mockResolvedValue([]);
   prismaMock.user.findMany.mockResolvedValue([]);
   prismaMock.todo.count.mockResolvedValue(0);
   prismaMock.todo.findMany.mockResolvedValue([]);
@@ -161,16 +151,14 @@ beforeEach(() => {
 });
 
 describe("GET /api/cron/tick — response shape", () => {
-  it("includes the new schedule-reminder counts alongside the existing ones", async () => {
+  it("reports counts for every phase", async () => {
     const res = await GET(tickRequest());
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toMatchObject({
-      sent: 0,
-      reminders: 0,
-      timersSent: 0,
-      timersTransitioned: 0,
+    expect(body).toEqual({
+      todoRolloverUsers: 0,
+      todoRolloverMoved: 0,
       scheduleRemindersDue: 0,
       schedulePushesSent: 0,
       scheduleRetries: 0,
@@ -183,14 +171,14 @@ describe("GET /api/cron/tick — response shape", () => {
   it("rejects an unauthorized request without touching any model", async () => {
     const res = await GET(new NextRequest("http://localhost/api/cron/tick?secret=wrong"));
     expect(res.status).toBe(401);
-    expect(prismaMock.reminder.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.user.findMany).not.toHaveBeenCalled();
     expect(prismaMock.scheduleItem.findMany).not.toHaveBeenCalled();
   });
 });
 
 describe("GET /api/cron/tick — phase isolation", () => {
-  it("still runs todo rollover and reports 200 when the reminder phase throws (e.g. a DB reconnect stall)", async () => {
-    prismaMock.reminder.findMany.mockRejectedValue(new Error("connection timeout"));
+  it("still runs todo rollover and reports 200 when the schedule phase throws (e.g. a DB reconnect stall)", async () => {
+    prismaMock.scheduleItem.findMany.mockRejectedValue(new Error("connection timeout"));
     // The rollover query has no `where` clause; the todoReminders query does
     // (`todoReminderEnabled: true`) — branch on that so this only feeds a
     // user into the rollover phase and leaves the unrelated todoReminders
@@ -207,19 +195,17 @@ describe("GET /api/cron/tick — phase isolation", () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.errors).toEqual(["reminders"]);
-    // Rollover ran normally even though the reminder phase blew up.
+    expect(body.errors).toEqual(["schedule"]);
+    // Rollover ran normally even though the schedule phase blew up.
     expect(body.todoRolloverUsers).toBe(1);
     expect(body.todoRolloverMoved).toBe(1);
     expect(prismaMock.todo.update).toHaveBeenCalled();
     // The failed phase falls back to zeroed counts instead of taking the whole response down.
-    expect(body.sent).toBe(0);
-    expect(body.reminders).toBe(0);
+    expect(body.scheduleRemindersDue).toBe(0);
+    expect(body.schedulePushesSent).toBe(0);
   });
 
   it("returns 500 only when every phase fails", async () => {
-    prismaMock.reminder.findMany.mockRejectedValue(new Error("db down"));
-    prismaMock.timer.findMany.mockRejectedValue(new Error("db down"));
     prismaMock.user.findMany.mockRejectedValue(new Error("db down"));
     prismaMock.scheduleItem.findMany.mockRejectedValue(new Error("db down"));
 
@@ -227,69 +213,17 @@ describe("GET /api/cron/tick — phase isolation", () => {
     const body = await res.json();
 
     expect(res.status).toBe(500);
-    expect(body.errors).toEqual(
-      expect.arrayContaining(["reminders", "timers", "todoRollover", "schedule", "todoReminders"])
-    );
+    expect(body.errors).toEqual(expect.arrayContaining(["todoRollover", "schedule", "todoReminders"]));
   });
 });
 
-describe("GET /api/cron/tick — existing Reminder/Timer behavior is unaffected", () => {
-  it("still sends a due regular Reminder and marks it notified", async () => {
-    prismaMock.reminder.findMany.mockResolvedValue([
-      { id: "rem-1", userId: "user-1", title: "Water plants", notes: null, dueAt: new Date(), recurrence: "none" },
-    ]);
-    addSubscription("user-1", "ep-1");
-
-    const res = await GET(tickRequest());
-    const body = await res.json();
-
-    expect(body.sent).toBe(1);
-    expect(body.reminders).toBe(1);
-    expect(prismaMock.reminder.update).toHaveBeenCalledWith({
-      where: { id: "rem-1" },
-      data: { notified: true },
-    });
-  });
-
-  it("still transitions a completed countdown timer and sends its push", async () => {
-    const startedAt = new Date(Date.now() - 120_000);
-    prismaMock.timer.findMany.mockResolvedValue([
-      {
-        id: "timer-1",
-        userId: "user-1",
-        mode: "countdown",
-        status: "running",
-        durationSeconds: 60,
-        workSeconds: null,
-        breakSeconds: null,
-        phase: null,
-        cyclesCompleted: 0,
-        accumulatedSeconds: 0,
-        startedAt,
-        label: "Focus block",
-      },
-    ]);
-    addSubscription("user-1", "ep-1");
-
-    const res = await GET(tickRequest());
-    const body = await res.json();
-
-    expect(body.timersTransitioned).toBe(1);
-    expect(body.timersSent).toBe(1);
-    expect(prismaMock.timer.update).toHaveBeenCalled();
-  });
-});
-
-describe("GET /api/cron/tick — schedule reminders run alongside the existing sweep", () => {
-  it("delivers a due ScheduleItem reminder without disturbing Reminder/Timer counts", async () => {
+describe("GET /api/cron/tick — schedule reminders", () => {
+  it("delivers a due ScheduleItem reminder exactly once", async () => {
     // A fixed clock so the ScheduleItem reminder below is deterministically
     // due (14:00 Africa/Johannesburg minus 30 min = 11:30 UTC).
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-15T11:30:00.000Z"));
     try {
-      prismaMock.reminder.findMany.mockResolvedValue([
-        { id: "rem-1", userId: "user-1", title: "Water plants", notes: null, dueAt: new Date(), recurrence: "none" },
-      ]);
       addSubscription("user-1", "ep-1");
 
       store.scheduleItems.set("item-1", {
@@ -312,10 +246,6 @@ describe("GET /api/cron/tick — schedule reminders run alongside the existing s
       const res = await GET(tickRequest());
       const body = await res.json();
 
-      // The existing Reminder sweep still fired normally, side-by-side.
-      expect(body.reminders).toBe(1);
-      expect(body.sent).toBe(1);
-      // ...and the new ScheduleItem reminder was also delivered, exactly once.
       expect(body.scheduleRemindersDue).toBe(1);
       expect(body.schedulePushesSent).toBe(1);
     } finally {

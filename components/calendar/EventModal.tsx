@@ -6,9 +6,6 @@ import { categoryChipStyle, priorityMeta } from "./categories";
 import { formatDateLabel, formatTime12h } from "@/lib/dates";
 import { CategoryDef, isDeadlineCategory } from "@/lib/calendar/categories";
 import { findConflicts } from "@/lib/calendar/conflicts";
-import { Timer } from "@/components/timers/types";
-import TimerCard from "@/components/timers/TimerCard";
-import NewTimerForm from "@/components/timers/NewTimerForm";
 import AttachmentList from "@/components/attachments/AttachmentList";
 
 const REMINDER_OPTIONS = [
@@ -760,26 +757,12 @@ function EventDetails({
   error: string;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [timers, setTimers] = useState<Timer[]>([]);
-  const [showNewTimer, setShowNewTimer] = useState(false);
   const [shares, setShares] = useState<EventShare[]>([]);
   const [sharing, setSharing] = useState(false);
   const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
   const isTask = event.itemType === "task";
   const multiDay = !isTask && event.endDate && event.endDate !== event.date;
   const pMeta = priorityMeta(event.priority);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/timers?linkedType=schedule&linkedId=${event.id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled) setTimers(data);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [event.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -792,16 +775,6 @@ function EventDetails({
       cancelled = true;
     };
   }, [event.id]);
-
-  function upsertTimer(timer: Timer) {
-    setTimers((prev) =>
-      prev.some((t) => t.id === timer.id) ? prev.map((t) => (t.id === timer.id ? timer : t)) : [timer, ...prev]
-    );
-  }
-
-  function removeTimer(id: string) {
-    setTimers((prev) => prev.filter((t) => t.id !== id));
-  }
 
   async function createShareLink() {
     setSharing(true);
@@ -892,39 +865,6 @@ function EventDetails({
           Reminder: {reminderOffsetLabel(event.reminderMinutesBefore, isTask)}
         </p>
       )}
-
-      <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800 crimson:border-crimson-border">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 crimson:text-crimson-text-muted">Timer</p>
-        {timers.length > 0 && (
-          <ul className="space-y-2">
-            {timers.map((t) => (
-              <li key={t.id}>
-                <TimerCard timer={t} showLink={false} onUpdated={upsertTimer} onDeleted={removeTimer} />
-              </li>
-            ))}
-          </ul>
-        )}
-        {showNewTimer ? (
-          <NewTimerForm
-            defaultLabel={event.title}
-            linkedType="schedule"
-            linkedId={event.id}
-            onCreated={(t) => {
-              upsertTimer(t);
-              setShowNewTimer(false);
-            }}
-            onCancel={() => setShowNewTimer(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowNewTimer(true)}
-            className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-500 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-secondary"
-          >
-            + Start timer for this event
-          </button>
-        )}
-      </div>
 
       <AttachmentList linkedType="schedule" linkedId={event.id} />
 

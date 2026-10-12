@@ -19,11 +19,7 @@ export async function loadDashboardData(userId: string, today: string) {
   const from = addDaysToDateStr(today, -OVERDUE_LOOKBACK_DAYS);
   const to = addDaysToDateStr(today, UPCOMING_WINDOW_DAYS);
 
-  const [reminders, events, todos, habits, me, journal] = await Promise.all([
-    prisma.reminder.findMany({
-      where: { userId, completed: false },
-      orderBy: { dueAt: "asc" },
-    }),
+  const [events, todos, habits, me, journal] = await Promise.all([
     loadScheduleOccurrences(userId, from, to),
     prisma.todo.findMany({
       where: { userId, date: today },
@@ -46,5 +42,5 @@ export async function loadDashboardData(userId: string, today: string) {
       .catch(() => null),
   ]);
 
-  return { reminders, events, todos, habits, me, journal };
+  return { events, todos, habits, me, journal };
 }

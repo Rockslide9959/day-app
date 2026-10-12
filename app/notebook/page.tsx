@@ -123,7 +123,7 @@ function NotebookPageInner() {
   }
 
   return (
-    // Extra top clearance below sm: TopBar's fixed Reminders/Settings buttons
+    // Extra top clearance below sm: TopBar's fixed Settings button
     // sit at the same top-right corner as this row's "+ New entry" button on
     // narrow screens (see components/TopBar.tsx) — pt-8 alone let them overlap.
     <main className="phase-in mx-auto max-w-2xl px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-8">

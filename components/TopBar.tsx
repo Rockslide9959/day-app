@@ -9,7 +9,6 @@ import { maskIconStyle } from "@/lib/navIcon";
 // — frequent but not "every day" destinations, so they stay reachable
 // without competing for space with the tabs used constantly.
 const TOP_TABS = [
-  { href: "/reminders", label: "Reminders", icon: "/icons/reminders.png", emoji: "🔔" },
   { href: "/settings", label: "Settings", icon: "/icons/settings.png", emoji: "⚙️" },
 ];
 

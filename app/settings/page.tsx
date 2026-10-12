@@ -9,6 +9,7 @@ import PasswordInput from "@/components/PasswordInput";
 import type { ThemePreference } from "@/lib/theme";
 import type { IconStyle } from "@/lib/iconStyle";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import PushToggle from "@/components/PushToggle";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
@@ -255,7 +256,7 @@ export default function SettingsPage() {
 
       <Section title="Navigation icons">
         <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
-          Choose how the bottom navigation and the Reminders/Settings icons look on this device.
+          Choose how the bottom navigation and the Settings icon look on this device.
         </p>
         <div
           role="group"
@@ -344,10 +345,14 @@ export default function SettingsPage() {
         {error && <p className="mt-2 text-xs text-red-500 crimson:text-crimson-highlight">{error}</p>}
       </Section>
 
+      <Section title="Notifications">
+        <PushToggle />
+      </Section>
+
       <Section title="Daily to-do reminder">
         <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           If you still have unfinished to-dos by this time, Day shows a reminder on Today and — if
-          you&apos;ve turned on push notifications under Reminders — sends a notification too.
+          you&apos;ve turned on push notifications above — sends a notification too.
         </p>
         <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <div>
@@ -391,10 +396,10 @@ export default function SettingsPage() {
       <Section title="About reminders & notifications">
         <p className="rounded-xl bg-white px-4 py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:text-crimson-text-secondary">
           Event reminders show up inside the app on the Today and Calendar screens. If you&apos;ve
-          turned on push notifications under Reminders, those also fire for event reminders when
+          turned on push notifications above, those also fire for event reminders when
           the app is installed — but like all web push, they can&apos;t reliably wake up your phone
           if the browser has been fully closed for a long time or the OS has aggressively stopped
-          it in the background. Check the Reminders page to turn push notifications on.
+          it in the background.
         </p>
       </Section>
     </main>

@@ -49,7 +49,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Reminder", body: "" , url: "/"};
+  let data = { title: "Day", body: "" , url: "/"};
   if (event.data) {
     try {
       data = { ...data, ...event.data.json() };

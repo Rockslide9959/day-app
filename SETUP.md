@@ -45,7 +45,7 @@ Vercel's free plan only runs cron jobs once a day, which isn't enough for timely
 2. Create a new cron job:
    - **URL**: `https://<your-app>.vercel.app/api/cron/tick?secret=<your CRON_SECRET value>`
    - **Schedule**: every 20 minutes
-3. Save it. From then on, this job checks for due reminders and sends push notifications every 20 minutes.
+3. Save it. From then on, this job rolls over unfinished to-dos and sends event and daily to-do reminder push notifications every 20 minutes.
 
 ### Why every 20 minutes and not every minute
 
@@ -61,14 +61,11 @@ At a 20-minute interval the database is asleep most of the time (~5 min awake pe
 tick, then idle), which keeps cron compute use around ~40–55 compute-hours/month
 — enough headroom for normal app use on top. The trade-offs:
 
-- **Reminders / plain timers** can fire up to ~20 minutes late. The reminder
+- **Event reminders** can fire up to ~20 minutes late. The reminder
   catch-up window (`CATCHUP_WINDOW_MINUTES` in `lib/calendar/reminders.ts`) is set
   to 30 min to cover this — nothing is missed, just delivered on the next tick.
 - **"Remind me 5 / 10 minutes before" event reminders** lose precision — pick a
   lead time of 30 min or more for anything you can't afford to get late.
-- **Pomodoro** is unaffected while the app is open: `components/timers/TimerCard.tsx`
-  advances work↔break and notifies client-side every second. The cron only backs
-  this up for when the app is fully closed.
 
 If you later move the database to a plan without a compute cap (or a different
 host), you can drop the interval back to every minute and restore
@@ -78,8 +75,7 @@ host), you can drop the interval back to every minute and restore
 
 Waking a scaled-to-zero Neon database from cold occasionally takes long enough
 that the first query of a tick times out. `app/api/cron/tick/route.ts` runs
-each phase (todo rollover, reminders, timers, schedule reminders, daily to-do
-nudge) in its own try/catch specifically so one phase's cold-start hiccup
+each phase (todo rollover, schedule reminders, daily to-do nudge) in its own try/catch specifically so one phase's cold-start hiccup
 can't take the whole tick down with it — the route only returns a 500 (and
 shows up as failed) if every phase failed, which means the database was
 genuinely unreachable, not just slow to wake. `DATABASE_URL` also carries
@@ -93,8 +89,8 @@ give a cold Neon compute more room before Prisma gives up — make sure the
 1. Open `https://day-app-six.vercel.app` in Chrome on your phone.
 2. Log in with your account (or sign up if it's your first time on this device).
 3. Tap the Chrome menu (⋮) → **Add to Home Screen** → **Install**. This makes it a real installed app, which Android needs for reliable background push notifications.
-4. Open the installed app from your home screen, go to **Reminders**, and tap **Turn on** under Notifications. Allow the permission prompt.
-5. To verify end-to-end: create a reminder ~2 minutes in the future and lock your phone. The notification should arrive on schedule.
+4. Open the installed app from your home screen, go to **Settings**, and tap **Turn on** under Notifications. Allow the permission prompt.
+5. To verify end-to-end: create a calendar event with a reminder that falls due shortly, then lock your phone. The notification should arrive on the next cron tick.
 
 ## Local development
 

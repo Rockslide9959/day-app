@@ -227,7 +227,7 @@ function EntryForm({ id, entry }: { id: string; entry: NotebookEntryFull }) {
   const isJournal = entry.entryType === "journal";
 
   return (
-    // Extra top clearance below sm: TopBar's fixed Reminders/Settings buttons
+    // Extra top clearance below sm: TopBar's fixed Settings button
     // sit at the same top-right corner as the Pin button below on narrow
     // screens (see components/TopBar.tsx) — pt-6 alone let them overlap.
     <main className="phase-in mx-auto flex max-w-2xl flex-col px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-6">
