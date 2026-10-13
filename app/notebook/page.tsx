@@ -7,6 +7,10 @@ import { monthLabel } from "@/lib/dates";
 import { NotebookEntryPreview, NotebookEntryFull } from "@/components/notebook/types";
 import NewEntryModal from "@/components/notebook/NewEntryModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import PageHeader from "@/components/ui/PageHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import EmptyState from "@/components/ui/EmptyState";
+import { CARD, GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SECTION_LABEL, stagger } from "@/components/ui/styles";
 
 type FilterTab = "all" | "journal" | "note" | "pinned";
 type SortOption = "updated" | "newest" | "oldest";
@@ -123,47 +127,36 @@ function NotebookPageInner() {
   }
 
   return (
-    // Extra top clearance below sm: TopBar's fixed Settings button
-    // sit at the same top-right corner as this row's "+ New entry" button on
-    // narrow screens (see components/TopBar.tsx) — pt-8 alone let them overlap.
-    <main className="phase-in mx-auto max-w-2xl px-4 pb-24 pt-[calc(env(safe-area-inset-top)+4rem)] sm:pt-8">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Notebook</h1>
-        <button
-          onClick={() => setShowNewEntry(true)}
-          className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
-        >
-          + New entry
-        </button>
-      </div>
+    <main className="phase-in mx-auto max-w-2xl px-4 pb-24 pt-8">
+      <PageHeader
+        eyebrow="Journal & notes"
+        title="Notebook"
+        subtitle={total > 0 ? `${total} ${total === 1 ? "entry" : "entries"}` : "Your thoughts, kept in one place."}
+        actions={
+          <button onClick={() => setShowNewEntry(true)} className={`${PRIMARY_BUTTON} px-5 py-2.5 text-sm`}>
+            ＋ New entry
+          </button>
+        }
+      />
 
       <label className="sr-only" htmlFor="notebook-search">
         Search notebook
       </label>
-      <input
-        id="notebook-search"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search titles, writing and tags…"
-        className="mb-3 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
-      />
+      <div className="relative mb-3">
+        <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-400 crimson:text-crimson-text-muted">
+          🔍
+        </span>
+        <input
+          id="notebook-search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search titles, writing and tags…"
+          className={`${INPUT} w-full pl-11`}
+        />
+      </div>
 
-      <div className="mb-3 flex items-center gap-2">
-        <div className="flex flex-1 rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className={`flex-1 rounded-md py-1.5 font-medium ${
-                filter === tab.value
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
-                  : "text-zinc-500 crimson:text-crimson-text-secondary"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+        <SegmentedControl label="Filter" options={FILTER_TABS} value={filter} onChange={setFilter} className="w-full min-w-0 sm:w-auto sm:flex-1" />
         <label className="sr-only" htmlFor="notebook-sort">
           Sort
         </label>
@@ -171,7 +164,7 @@ function NotebookPageInner() {
           id="notebook-sort"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortOption)}
-          className="shrink-0 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface"
+          className="shrink-0 rounded-2xl bg-white px-3 py-2.5 text-xs font-medium text-zinc-600 shadow-sm outline-none ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-white/10 crimson:bg-crimson-surface crimson:text-crimson-text-secondary crimson:ring-crimson-border"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -182,7 +175,7 @@ function NotebookPageInner() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight">
+        <div className="nudge mb-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight">
           {error}
         </div>
       )}
@@ -190,21 +183,19 @@ function NotebookPageInner() {
       {loading ? (
         <LoadingSpinner />
       ) : entries.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
-          {debouncedQ || filter !== "all"
-            ? "No entries match your search and filters."
-            : "Your notebook is empty. Start with a journal entry or a note."}
-        </div>
+        debouncedQ || filter !== "all" ? (
+          <EmptyState emoji="🔎" title="No entries match your search and filters." />
+        ) : (
+          <EmptyState emoji="📓" title="Your notebook is empty" hint="Start with a journal entry or a note." />
+        )
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-7">
           {groups.map(([key, groupEntries]) => (
             <div key={key}>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">
-                {monthLabel(`${key}-01`)}
-              </h2>
-              <ul className="space-y-2">
-                {groupEntries.map((entry) => (
-                  <EntryCard key={entry.id} entry={entry} />
+              <h2 className={`mb-2.5 px-1 ${SECTION_LABEL}`}>{monthLabel(`${key}-01`)}</h2>
+              <ul className="space-y-2.5">
+                {groupEntries.map((entry, i) => (
+                  <EntryCard key={entry.id} entry={entry} index={i} />
                 ))}
               </ul>
             </div>
@@ -216,7 +207,7 @@ function NotebookPageInner() {
         <button
           onClick={() => load(entries.length)}
           disabled={loadingMore}
-          className="mt-4 w-full rounded-xl border border-dashed border-zinc-300 py-2.5 text-sm font-medium text-zinc-500 disabled:opacity-60 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
+          className={`${GHOST_BUTTON} mt-5 w-full py-3 text-sm disabled:opacity-60`}
         >
           {loadingMore ? "Loading…" : "Load more"}
         </button>
@@ -227,49 +218,56 @@ function NotebookPageInner() {
   );
 }
 
-function EntryCard({ entry }: { entry: NotebookEntryPreview }) {
+function EntryCard({ entry, index }: { entry: NotebookEntryPreview; index: number }) {
   const isJournal = entry.entryType === "journal";
   const tags = entry.tags.split(",").map((t) => t.trim()).filter(Boolean);
 
   return (
-    <li>
+    <li className="item-in" style={stagger(index)}>
       <Link
         href={`/notebook/${entry.id}`}
-        className="relative block rounded-xl bg-white px-4 py-3 shadow-sm hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800/60 crimson:bg-crimson-surface crimson:hover:bg-crimson-raised/60 crimson:before:absolute crimson:before:inset-y-2 crimson:before:left-0 crimson:before:w-1 crimson:before:rounded-full crimson:before:bg-crimson-accent"
+        className={`${CARD} lift group relative flex gap-3 overflow-hidden px-4 py-3.5`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="shrink-0 text-sm" aria-hidden>
-              {isJournal ? "📓" : "📝"}
-            </span>
-            <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{entry.title}</span>
-          </span>
-          {entry.pinned && (
-            <span className="shrink-0 text-xs" aria-label="Pinned" title="Pinned">
-              📌
-            </span>
+        <span
+          aria-hidden="true"
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${
+            isJournal
+              ? "bg-violet-100 dark:bg-violet-950/50 crimson:bg-crimson-accent/15"
+              : "bg-sky-100 dark:bg-sky-950/50 crimson:bg-crimson-raised"
+          }`}
+        >
+          {isJournal ? "📓" : "📝"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">{entry.title}</span>
+            {entry.pinned && (
+              <span className="shrink-0 text-xs" aria-label="Pinned" title="Pinned">
+                📌
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
+            <span className="font-medium">{isJournal ? entry.journalDate : "Note"}</span>
+            {" · "}
+            Edited {relativeEdited(entry.updatedAt)}
+          </p>
+          {entry.preview && (
+            <p className="mt-1.5 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">{entry.preview}</p>
+          )}
+          {tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
-          <span className="font-medium">{isJournal ? entry.journalDate : "Note"}</span>
-          {" · "}
-          Edited {relativeEdited(entry.updatedAt)}
-        </p>
-        {entry.preview && (
-          <p className="mt-1.5 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-300 crimson:text-crimson-text-secondary">{entry.preview}</p>
-        )}
-        {tags.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 crimson:bg-crimson-raised crimson:text-crimson-text-secondary"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
       </Link>
     </li>
   );

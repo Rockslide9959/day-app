@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { formatDateLabel, addDaysToDateStr, formatTime12h, timeToMinutes } from "@/lib/dates";
-import { useSyncedDate } from "@/lib/useTodayStr";
+import { formatTime12h, timeToMinutes } from "@/lib/dates";
+import { useSyncedDate, useTodayStr } from "@/lib/useTodayStr";
 import EventModal, { EventDraft } from "@/components/calendar/EventModal";
 import { CalendarEvent } from "@/components/calendar/types";
 import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
@@ -11,11 +11,17 @@ import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { draftToPayload } from "@/lib/calendar/payload";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDataChanged } from "@/lib/useDataChanged";
+import PageHeader from "@/components/ui/PageHeader";
+import DateStepper from "@/components/ui/DateStepper";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import EmptyState from "@/components/ui/EmptyState";
+import { PRIMARY_BUTTON, SECTION_LABEL, stagger } from "@/components/ui/styles";
 
 type Filter = "all" | "events" | "tasks";
 
 export default function SchedulePage() {
   const [date, setDate] = useSyncedDate();
+  const today = useTodayStr();
   const [items, setItems] = useState<CalendarEvent[]>([]);
   const [categories, setCategories] = useState<CategoryDef[]>(DEFAULT_CATEGORIES);
   const [loading, setLoading] = useState(true);
@@ -139,56 +145,41 @@ export default function SchedulePage() {
 
   return (
     <main className="phase-in mx-auto max-w-2xl px-4 pt-8 pb-24">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
-        Schedule
-      </h1>
+      <PageHeader
+        eyebrow={date === today ? "Today" : date < today ? "Looking back" : "Coming up"}
+        title="Schedule"
+        subtitle={
+          loading
+            ? "Loading your day…"
+            : visibleItems.length === 0
+              ? "A free day so far."
+              : `${visibleItems.length} ${visibleItems.length === 1 ? "item" : "items"} on the agenda`
+        }
+      />
 
-      <div className="mb-4 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
-        <button
-          onClick={() => setDate((d) => addDaysToDateStr(d, -1))}
-          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
-          aria-label="Previous day"
-        >
-          ←
-        </button>
-        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
-          {formatDateLabel(date)}
-        </span>
-        <button
-          onClick={() => setDate((d) => addDaysToDateStr(d, 1))}
-          className="px-2 py-1 text-zinc-400 crimson:text-crimson-text-muted"
-          aria-label="Next day"
-        >
-          →
-        </button>
-      </div>
+      <DateStepper date={date} today={today} onChange={setDate} className="mb-3" />
 
-      <div className="mb-4 flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
-        {(["all", "events", "tasks"] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex-1 rounded-md py-1.5 font-medium capitalize ${
-              filter === f
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
-                : "text-zinc-500 crimson:text-crimson-text-secondary"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="Filter"
+        options={[
+          { value: "all", label: "All" },
+          { value: "events", label: "Events" },
+          { value: "tasks", label: "Tasks" },
+        ]}
+        value={filter}
+        onChange={setFilter}
+        className="mb-5"
+      />
 
       {loading ? (
         <LoadingSpinner />
       ) : visibleItems.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
-          Nothing scheduled for this day
-        </div>
+        <EmptyState emoji="🌤️" title="Nothing scheduled for this day" hint="Tap + New to plan something." className="mb-5" />
       ) : (
-        <ul className="mb-6 space-y-2">
-          {visibleItems.map((item) => {
+        <ul className="mb-5 space-y-2">
+          {visibleItems.map((item, i) => {
             const isTask = item.itemType === "task";
+            const color = categoryEventStyle(item.category, categories).backgroundColor;
             const timeLabel = isTask
               ? item.allDay
                 ? "Due today"
@@ -199,38 +190,51 @@ export default function SchedulePage() {
             return (
               <li
                 key={item.occurrenceId}
-                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+                style={stagger(i)}
+                className="item-in lift relative flex items-stretch gap-3 overflow-hidden rounded-2xl bg-white py-3 pl-4 pr-4 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10 crimson:bg-crimson-surface crimson:ring-crimson-border"
               >
+                <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} />
+                <div className="flex w-16 shrink-0 flex-col justify-center text-right">
+                  <span className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
+                    {item.allDay ? "All day" : formatTime12h(item.startTime)}
+                  </span>
+                  {!item.allDay && !isTask && (
+                    <span className="text-[10px] tabular-nums text-zinc-400 crimson:text-crimson-text-muted">{formatTime12h(item.endTime)}</span>
+                  )}
+                </div>
+                <span aria-hidden="true" className="w-px shrink-0 bg-zinc-100 dark:bg-zinc-800 crimson:bg-crimson-border" />
                 {isTask ? (
                   <input
                     type="checkbox"
                     checked={item.completed}
                     onChange={() => handleToggleComplete(item)}
                     aria-label={item.completed ? `Reopen task: ${item.title}` : `Mark task complete: ${item.title}`}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
+                    className="mt-0.5 h-4 w-4 shrink-0 self-center rounded border-zinc-300 dark:border-zinc-600 crimson:border-crimson-border"
                   />
-                ) : (
-                  <span
-                    className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: categoryEventStyle(item.category, categories).backgroundColor }}
-                  />
-                )}
+                ) : null}
                 <button
                   onClick={() => setModalState({ mode: "view", event: item })}
-                  className="min-w-0 flex-1 text-left"
+                  className="min-w-0 flex-1 text-left active:scale-100"
                 >
                   <p
-                    className={`text-sm ${
+                    className={`truncate text-sm font-medium ${
                       item.completed ? "text-zinc-400 line-through crimson:text-crimson-text-muted" : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
                     }`}
                   >
                     {item.title}
                   </p>
-                  <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
-                    {timeLabel}
-                    {item.category ? ` · ${item.category}` : ""}
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
+                    {isTask && (
+                      <span className="rounded-full bg-zinc-100 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide dark:bg-zinc-800 crimson:bg-crimson-raised">
+                        Task
+                      </span>
+                    )}
+                    <span className="truncate">
+                      {isTask ? timeLabel : item.category || timeLabel}
+                      {isTask && item.category ? ` · ${item.category}` : ""}
+                    </span>
                   </p>
-                  {item.notes && <p className="mt-0.5 truncate text-xs text-zinc-500 crimson:text-crimson-text-secondary">{item.notes}</p>}
+                  {item.notes && <p className="mt-0.5 truncate text-xs text-zinc-400 crimson:text-crimson-text-muted">{item.notes}</p>}
                 </button>
               </li>
             );
@@ -240,21 +244,20 @@ export default function SchedulePage() {
 
       <button
         onClick={() => setModalState({ mode: "create" })}
-        className="w-full rounded-xl border border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
+        className={`${PRIMARY_BUTTON} flex w-full items-center justify-center gap-2 py-3.5 text-sm`}
       >
-        + New
+        <span className="text-lg leading-none">＋</span> New event or task
       </button>
 
       {completedTasks.length > 0 && (
-        <div className="mt-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">
-            Completed
-          </h2>
+        <div className="mt-7">
+          <h2 className={`mb-2.5 px-1 ${SECTION_LABEL}`}>Completed · {completedTasks.length}</h2>
           <ul className="space-y-2">
-            {completedTasks.map((item) => (
+            {completedTasks.map((item, i) => (
               <li
                 key={item.occurrenceId}
-                className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 opacity-70 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+                style={stagger(i)}
+                className="item-in flex items-start gap-3 rounded-2xl bg-white/60 px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900/60 dark:ring-white/5 crimson:bg-crimson-surface/60 crimson:ring-crimson-border"
               >
                 <input
                   type="checkbox"

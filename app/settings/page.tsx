@@ -10,6 +10,9 @@ import type { ThemePreference } from "@/lib/theme";
 import type { IconStyle } from "@/lib/iconStyle";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PushToggle from "@/components/PushToggle";
+import PageHeader from "@/components/ui/PageHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import { PRIMARY_BUTTON, stagger } from "@/components/ui/styles";
 
 type Category = { id: string | null; name: string; colorHex: string; custom: boolean };
 
@@ -158,23 +161,31 @@ export default function SettingsPage() {
 
   return (
     <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
-      <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Settings</h1>
+      <PageHeader eyebrow="Preferences" title="Settings" subtitle="Make Day yours." />
 
       <Section title="Account">
-        <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
-          <span className="text-sm text-zinc-800 dark:text-zinc-100 crimson:text-crimson-text">
-            {username ? (
-              <>
-                Logged in as <span className="font-medium">{username}</span>
-              </>
-            ) : (
-              "…"
-            )}
+        <div className="flex items-center justify-between rounded-3xl bg-white px-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+          <span className="flex min-w-0 items-center gap-3 text-sm text-zinc-800 dark:text-zinc-100 crimson:text-crimson-text">
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-fuchsia-500 text-base font-bold uppercase text-white shadow-md shadow-fuchsia-500/30 crimson:from-crimson-accent crimson:to-crimson-highlight crimson:shadow-crimson-accent/30"
+            >
+              {username ? username[0] : "·"}
+            </span>
+            <span className="min-w-0 truncate">
+              {username ? (
+                <>
+                  Logged in as <span className="font-semibold">{username}</span>
+                </>
+              ) : (
+                "…"
+              )}
+            </span>
           </span>
           <button
             onClick={logout}
             disabled={loggingOut}
-            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 disabled:opacity-50 dark:border-zinc-700 crimson:border-crimson-accent crimson:text-crimson-accent"
+            className="shrink-0 rounded-full bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight crimson:hover:bg-crimson-accent/25"
           >
             {loggingOut ? "Logging out…" : "Log out"}
           </button>
@@ -184,7 +195,7 @@ export default function SettingsPage() {
       <Section title="Change password">
         <form
           onSubmit={changePassword}
-          className="space-y-2 rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+          className="space-y-2 rounded-3xl bg-white p-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
         >
           <PasswordInput
             value={currentPassword}
@@ -204,14 +215,14 @@ export default function SettingsPage() {
             placeholder="Confirm new password"
             autoComplete="new-password"
           />
-          {passwordError && <p className="text-xs text-red-500 crimson:text-crimson-highlight">{passwordError}</p>}
+          {passwordError && <p className="nudge text-xs text-red-500 crimson:text-crimson-highlight">{passwordError}</p>}
           {passwordSuccess && (
-            <p className="text-xs text-green-600 dark:text-green-400 crimson:text-emerald-400">Password updated.</p>
+            <p className="check-pop text-xs text-green-600 dark:text-green-400 crimson:text-emerald-400">✓ Password updated.</p>
           )}
           <button
             type="submit"
             disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
-            className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+            className={`${PRIMARY_BUTTON} w-full py-3 text-sm`}
           >
             {changingPassword ? "Updating…" : "Update password"}
           </button>
@@ -223,70 +234,14 @@ export default function SettingsPage() {
           Choose how Day looks on this device. System automatically matches your
           device&apos;s light or dark setting.
         </p>
-        <div
-          role="group"
-          aria-label="Theme"
-          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised"
-        >
-          {THEME_OPTIONS.map((opt) => {
-            const active = preference === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setPreference(opt.value)}
-                className={`flex-1 rounded-md py-2 font-medium ${
-                  active
-                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
-                    : "text-zinc-500 crimson:text-crimson-text-secondary"
-                }`}
-              >
-                {opt.label}
-                {active && (
-                  <span className="ml-1" aria-hidden="true">
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedControl label="Theme" options={THEME_OPTIONS} value={preference} onChange={setPreference} />
       </Section>
 
       <Section title="Navigation icons">
         <p className="mb-3 text-xs text-zinc-500 crimson:text-crimson-text-secondary">
           Choose how the bottom navigation and the Settings icon look on this device.
         </p>
-        <div
-          role="group"
-          aria-label="Icon style"
-          className="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised"
-        >
-          {ICON_STYLE_OPTIONS.map((opt) => {
-            const active = style === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setStyle(opt.value)}
-                className={`flex-1 rounded-md py-2 font-medium ${
-                  active
-                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
-                    : "text-zinc-500 crimson:text-crimson-text-secondary"
-                }`}
-              >
-                {opt.label}
-                {active && (
-                  <span className="ml-1" aria-hidden="true">
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedControl label="Icon style" options={ICON_STYLE_OPTIONS} value={style} onChange={setStyle} />
       </Section>
 
       <Section title="Categories">
@@ -298,10 +253,11 @@ export default function SettingsPage() {
           <LoadingSpinner />
         ) : (
           <ul className="mb-3 space-y-1.5">
-            {categories.map((c) => (
+            {categories.map((c, i) => (
               <li
                 key={c.name}
-                className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+                style={stagger(i)}
+                className="item-in flex items-center justify-between rounded-2xl bg-white px-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border py-2.5 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
               >
                 <span className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100 crimson:text-crimson-text">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.colorHex }} />
@@ -322,7 +278,7 @@ export default function SettingsPage() {
           </ul>
         )}
 
-        <form onSubmit={addCategory} className="flex gap-2 rounded-xl bg-white p-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+        <form onSubmit={addCategory} className="flex gap-2 rounded-3xl bg-white p-3 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -337,7 +293,7 @@ export default function SettingsPage() {
           />
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+            className={`${PRIMARY_BUTTON} shrink-0 px-4 text-sm`}
           >
             Add
           </button>
@@ -354,7 +310,7 @@ export default function SettingsPage() {
           If you still have unfinished to-dos by this time, Day shows a reminder on Today and — if
           you&apos;ve turned on push notifications above — sends a notification too.
         </p>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+        <div className="flex items-center justify-between gap-3 rounded-3xl bg-white px-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <div>
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Remind me</p>
             <p className="text-xs text-zinc-500 crimson:text-crimson-text-secondary">
@@ -381,7 +337,7 @@ export default function SettingsPage() {
             />
           </button>
         </div>
-        <label className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
+        <label className="mt-2 flex items-center justify-between gap-3 rounded-3xl bg-white px-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border py-3 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Reminder time</span>
           <input
             type="time"
@@ -394,7 +350,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="About notifications">
-        <p className="rounded-xl bg-white px-4 py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:text-crimson-text-secondary">
+        <p className="rounded-3xl bg-white px-4 ring-1 ring-zinc-900/5 dark:ring-white/10 crimson:ring-crimson-border py-3 text-xs text-zinc-500 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface crimson:text-crimson-text-secondary">
           Push notifications are used for the daily to-do reminder and work best when the app is
           installed — but like all web push, they can&apos;t reliably wake up your phone if the
           browser has been fully closed for a long time or the OS has aggressively stopped it in
@@ -405,11 +361,32 @@ export default function SettingsPage() {
   );
 }
 
+const SECTION_ICONS: Record<string, string> = {
+  Account: "👤",
+  "Change password": "🔑",
+  Appearance: "🎨",
+  "Navigation icons": "🧭",
+  Categories: "🏷️",
+  Notifications: "🔔",
+  "Daily to-do reminder": "⏰",
+  "About notifications": "ℹ️",
+};
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-8">
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 crimson:text-crimson-text-secondary">{title}</h2>
+    <section className="mb-8">
+      <h2 className="mb-2.5 flex items-center gap-2 px-1 text-base font-bold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
+        {SECTION_ICONS[title] && (
+          <span
+            aria-hidden="true"
+            className="flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-100 text-sm dark:bg-zinc-800 crimson:bg-crimson-raised"
+          >
+            {SECTION_ICONS[title]}
+          </span>
+        )}
+        {title}
+      </h2>
       {children}
-    </div>
+    </section>
   );
 }

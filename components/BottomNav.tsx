@@ -48,21 +48,31 @@ export default function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2.5 text-xs ${
+                className={`flex flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
                   active
-                    ? "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-accent"
-                    : "text-zinc-400 dark:text-zinc-500 crimson:text-crimson-text-muted"
+                    ? "font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-accent"
+                    : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary"
                 }`}
               >
-                {style === "emoji" ? (
-                  <span className="text-lg leading-none">{tab.emoji}</span>
-                ) : (
+                {/* The pill behind the icon grows in and the icon bounces when
+                    a tab becomes active. */}
+                <span className="relative flex h-7 w-12 items-center justify-center">
                   <span
                     aria-hidden="true"
-                    className="block h-5 w-5 bg-current"
-                    style={maskIconStyle(tab.icon)}
+                    className={`absolute inset-0 rounded-full bg-zinc-900/[0.07] transition-[opacity,scale] duration-300 dark:bg-white/10 crimson:bg-crimson-accent/15 ${
+                      active ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                    }`}
                   />
-                )}
+                  {style === "emoji" ? (
+                    <span className={`relative text-lg leading-none ${active ? "nav-pop" : ""}`}>{tab.emoji}</span>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className={`relative block h-5 w-5 bg-current ${active ? "nav-pop" : ""}`}
+                      style={maskIconStyle(tab.icon)}
+                    />
+                  )}
+                </span>
                 {tab.label}
               </Link>
             </li>

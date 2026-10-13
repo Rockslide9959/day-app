@@ -66,9 +66,9 @@ export default function NewEntryModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="modal-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
       <div
-        className="w-full max-w-sm rounded-t-2xl bg-white p-5 shadow-lg sm:rounded-2xl dark:bg-zinc-900 crimson:bg-crimson-surface"
+        className="w-full max-w-sm rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl dark:bg-zinc-900 crimson:bg-crimson-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {step === "choose" && (

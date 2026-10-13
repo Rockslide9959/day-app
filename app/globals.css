@@ -431,3 +431,268 @@ body {
     animation: none;
   }
 }
+
+/* ── Shared motion for buttons, cards and lists ──────────────────────────
+   Every button gets a tactile press (a small scale-down while held) and
+   smooth color changes. It lives in the base layer so any utility class on
+   an element (e.g. `active:scale-90`, `transition-colors`) still wins. */
+@layer base {
+  button,
+  [role="button"],
+  summary {
+    transition-property: scale, background-color, border-color, color, box-shadow, opacity, filter;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.21, 0.9, 0.32, 1);
+  }
+  button:not(:disabled):active,
+  [role="button"]:active {
+    scale: 0.97;
+  }
+}
+
+/* Cards that respond to a hover pointer by rising slightly. Touch screens
+   skip the lift (no hover) and just get the press. */
+.lift {
+  transition-property: translate, box-shadow, background-color, scale;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.21, 0.9, 0.32, 1);
+}
+.lift:active {
+  scale: 0.99;
+}
+@media (hover: hover) {
+  .lift:hover {
+    translate: 0 -2px;
+    /* Feeds the shadow-* utility so any ring-* on the card is kept. */
+    --tw-shadow: 0 12px 24px -12px rgb(0 0 0 / 0.28);
+  }
+}
+
+/* Primary buttons get a soft light sweep across them on hover. Kept in the
+   components layer so utilities like `fixed` still override `position`. */
+@layer components {
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+  translate: -110% 0;
+  transition: translate 600ms cubic-bezier(0.21, 0.9, 0.32, 1);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .shine:hover::after {
+    translate: 110% 0;
+  }
+}
+}
+
+/* List rows sliding in one after another. Rows set `--i` (their capped
+   index) inline so the stagger is short no matter how long the list is. */
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.item-in {
+  animation: item-in 340ms cubic-bezier(0.21, 0.9, 0.32, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* A check mark springing into its circle. */
+@keyframes check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.check-pop {
+  animation: check-pop 380ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+/* A label swapping in when its value changes (date steppers, counters);
+   the element is re-keyed so it remounts and replays. */
+@keyframes swap-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes swap-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.swap-in-next {
+  animation: swap-in-next 260ms cubic-bezier(0.21, 0.9, 0.32, 1);
+}
+.swap-in-prev {
+  animation: swap-in-prev 260ms cubic-bezier(0.21, 0.9, 0.32, 1);
+}
+
+/* Empty-state illustrations bob gently. */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.float {
+  animation: float 3.2s ease-in-out infinite;
+}
+
+/* Floating action buttons pop in. */
+@keyframes fab-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fab-in {
+  animation: fab-in 420ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+  animation-delay: 250ms;
+}
+
+/* Bottom-nav icon bouncing as its tab becomes active. */
+@keyframes nav-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25) translateY(-2px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.nav-pop {
+  animation: nav-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+/* Modals: the backdrop fades in and the panel (its first child) rises. */
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.modal-in {
+  animation: modal-fade 200ms ease-out both;
+}
+.modal-in > :first-child {
+  animation: modal-rise 300ms cubic-bezier(0.21, 0.9, 0.32, 1) both;
+}
+
+/* Error / notice banners shake in briefly so they're noticed. */
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+.nudge {
+  animation: nudge 380ms ease-in-out;
+}
+
+/* Slow drifting color blobs behind hero headers and auth screens. */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(12px, -10px) scale(1.08);
+  }
+}
+.drift {
+  animation: drift 9s ease-in-out infinite;
+}
+.drift-slow {
+  animation: drift 13s ease-in-out infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  [role="button"]:active,
+  .lift:active {
+    scale: none;
+  }
+  .lift:hover {
+    translate: none;
+  }
+  .shine::after {
+    display: none;
+  }
+  .item-in,
+  .check-pop,
+  .swap-in-next,
+  .swap-in-prev,
+  .float,
+  .fab-in,
+  .nav-pop,
+  .modal-in,
+  .modal-in > :first-child,
+  .nudge,
+  .drift,
+  .drift-slow {
+    animation: none;
+  }
+}

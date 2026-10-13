@@ -21,6 +21,8 @@ import CelebrationToast from "@/components/habits/CelebrationToast";
 import { useHabitLogger } from "@/components/habits/useHabitLogger";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDataChanged } from "@/lib/useDataChanged";
+import PageHeader from "@/components/ui/PageHeader";
+import { stagger } from "@/components/ui/styles";
 
 export default function HabitsPage() {
   const today = useTodayStr();
@@ -69,12 +71,7 @@ export default function HabitsPage() {
   return (
     <>
     <main className="phase-in mx-auto max-w-2xl px-4 pt-8">
-      <div className="mb-5 flex items-center justify-between pr-24">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Habits</h1>
-          <p className="text-sm text-zinc-500 crimson:text-crimson-text-secondary">Small things, every day.</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="Daily rituals" title="Habits" subtitle="Small things, every day." />
 
       {active.length > 0 && (
         <section
@@ -84,7 +81,8 @@ export default function HabitsPage() {
               : "bg-linear-to-br from-zinc-900 to-zinc-700 dark:from-zinc-800 dark:to-zinc-900 crimson:from-crimson-accent crimson:to-crimson-raised"
           }`}
         >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+          <div aria-hidden="true" className="drift pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+          <div aria-hidden="true" className="drift-slow pointer-events-none absolute -bottom-16 -left-8 h-36 w-36 rounded-full bg-white/5 blur-2xl" />
           <div className="relative flex items-center gap-5">
             <ProgressDial done={doneCount} total={dueToday.length} />
             <div className="min-w-0 flex-1">
@@ -108,8 +106,8 @@ export default function HabitsPage() {
       ) : (
         <>
           <ul className="mb-4 space-y-3">
-            {dueToday.map((h) => (
-              <HabitCard key={h.id} habit={h} today={today} onSet={setCount} />
+            {dueToday.map((h, i) => (
+              <HabitCard key={h.id} habit={h} today={today} onSet={setCount} index={i} />
             ))}
           </ul>
           {resting.length > 0 && (
@@ -118,8 +116,8 @@ export default function HabitsPage() {
                 Resting today
               </h2>
               <ul className="mb-4 space-y-3 opacity-75">
-                {resting.map((h) => (
-                  <HabitCard key={h.id} habit={h} today={today} onSet={setCount} />
+                {resting.map((h, i) => (
+                  <HabitCard key={h.id} habit={h} today={today} onSet={setCount} index={i} />
                 ))}
               </ul>
             </>
@@ -130,9 +128,9 @@ export default function HabitsPage() {
       {active.length > 0 && (
         <button
           onClick={() => setCreating(true)}
-          className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-200 py-4 text-sm font-medium text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-800 dark:hover:border-zinc-700 dark:hover:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary crimson:hover:border-crimson-accent"
+          className="group mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-200 py-4 text-sm font-medium text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-800 dark:hover:border-zinc-700 dark:hover:text-zinc-300 crimson:border-crimson-border crimson:text-crimson-text-secondary crimson:hover:border-crimson-accent"
         >
-          <span className="text-lg leading-none">＋</span> New habit
+          <span className="text-lg leading-none transition-transform duration-300 group-hover:rotate-90">＋</span> New habit
         </button>
       )}
 
@@ -211,10 +209,12 @@ function HabitCard({
   habit,
   today,
   onSet,
+  index,
 }: {
   habit: HabitWithLogs;
   today: string;
   onSet: (habit: HabitWithLogs, date: string, count: number) => void;
+  index: number;
 }) {
   const s = summarizeHabit(habit, today);
   const hex = habitColor(habit.color);
@@ -223,8 +223,8 @@ function HabitCard({
 
   return (
     <li
-      className="relative overflow-hidden rounded-3xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 transition dark:bg-zinc-900 dark:ring-white/10 crimson:bg-crimson-surface crimson:ring-crimson-border"
-      style={s.doneToday ? { boxShadow: `0 10px 30px -18px ${hex}` } : undefined}
+      className="item-in relative overflow-hidden rounded-3xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 transition dark:bg-zinc-900 dark:ring-white/10 crimson:bg-crimson-surface crimson:ring-crimson-border"
+      style={{ ...stagger(index), ...(s.doneToday ? { boxShadow: `0 10px 30px -18px ${hex}` } : {}) }}
     >
       {s.doneToday && (
         <div

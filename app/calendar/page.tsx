@@ -27,6 +27,10 @@ import { CategoryDef, DEFAULT_CATEGORIES } from "@/lib/calendar/categories";
 import { isScheduleItemVisible } from "@/lib/calendar/visibility";
 import { draftToPayload } from "@/lib/calendar/payload";
 import { useDataChanged } from "@/lib/useDataChanged";
+import PageHeader from "@/components/ui/PageHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import EmptyState from "@/components/ui/EmptyState";
+import { CARD, GHOST_BUTTON, INPUT, PRIMARY_BUTTON, stagger } from "@/components/ui/styles";
 
 const HIDDEN_CATEGORIES_KEY = "day:calendar:hiddenCategories";
 const VIEW_MODE_KEY = "day:calendar:viewMode";
@@ -298,30 +302,33 @@ export default function CalendarPage() {
 
   return (
     <main className="phase-in mx-auto max-w-3xl px-4 pb-24 pt-8">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">Calendar</h1>
-        <div className="hidden items-center gap-2 sm:flex">
-          <button
-            onClick={() => setShowFreeTime(true)}
-            className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-700 crimson:border-crimson-border crimson:text-crimson-text-secondary"
-          >
-            Find Free Time
-          </button>
-          <button
-            onClick={() => setModalState({ mode: "create", date: anchorDate })}
-            className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
-          >
-            + New
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+        title="Calendar"
+        actions={
+          <>
+            <button
+              onClick={() => setModalState({ mode: "create", date: anchorDate })}
+              className={`${PRIMARY_BUTTON} hidden px-5 py-2.5 text-sm sm:block`}
+            >
+              ＋ New
+            </button>
+            <button onClick={() => setShowFreeTime(true)} className={`${GHOST_BUTTON} px-4 py-2.5 text-sm`}>
+              🕊️ Find free time
+            </button>
+          </>
+        }
+      />
 
-      <div className="mb-3 flex gap-2">
+      <div className="relative mb-3">
+        <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-400 crimson:text-crimson-text-muted">
+          🔍
+        </span>
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search events and tasks…"
-          className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 crimson:border-crimson-border crimson:bg-crimson-surface crimson:focus:border-crimson-accent"
+          className={`${INPUT} w-full pl-11`}
         />
       </div>
 
@@ -338,49 +345,43 @@ export default function CalendarPage() {
         />
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white px-2 py-2 shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface">
-            <div className="flex min-w-0 items-center gap-0.5">
+          <div className={`${CARD} mb-4 flex flex-col gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between`}>
+            <div className="flex min-w-0 items-center justify-between gap-0.5 sm:justify-start">
               <button
                 onClick={goPrev}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
                 aria-label="Previous"
               >
                 ←
               </button>
               <button
+                key={title}
                 onClick={goToday}
-                className="truncate rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800 crimson:text-crimson-text crimson:hover:bg-crimson-raised"
+                title="Jump to today"
+                className="swap-in-next truncate rounded-full px-2.5 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800 crimson:text-crimson-text crimson:hover:bg-crimson-raised"
               >
                 {title}
               </button>
               <button
                 onClick={goNext}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised"
                 aria-label="Next"
               >
                 →
               </button>
             </div>
-            <div className="flex shrink-0 rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800 crimson:bg-crimson-raised">
-              {(["month", "week", "day"] as ViewMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`rounded-md px-2.5 py-1.5 font-medium capitalize ${
-                    viewMode === mode
-                      ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50 crimson:bg-crimson-surface crimson:text-crimson-text"
-                      : "text-zinc-500 crimson:text-crimson-text-secondary"
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              label="View"
+              options={(["month", "week", "day"] as ViewMode[]).map((mode) => ({ value: mode, label: mode }))}
+              value={viewMode}
+              onChange={setViewMode}
+              className="w-full shrink-0 sm:w-48"
+            />
           </div>
 
           {error && (
             <div
-              className={`mb-4 rounded-xl px-4 py-3 text-sm ${
+              className={`nudge mb-4 rounded-2xl px-4 py-3 text-sm ${
                 usingCache
                   ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 crimson:bg-amber-950/40 crimson:text-amber-300"
                   : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 crimson:bg-crimson-accent/15 crimson:text-crimson-highlight"
@@ -392,7 +393,9 @@ export default function CalendarPage() {
 
           {loading ? (
             <LoadingSpinner />
-          ) : viewMode === "month" ? (
+          ) : (
+            <div key={viewMode} className="item-in">
+            {viewMode === "month" ? (
             <MonthView
               anchorDate={anchorDate}
               events={visibleEvents}
@@ -418,6 +421,8 @@ export default function CalendarPage() {
               onSelectEvent={(event) => setModalState({ mode: "view", event })}
             />
           )}
+            </div>
+          )}
         </>
       )}
 
@@ -425,7 +430,7 @@ export default function CalendarPage() {
       <button
         onClick={() => setModalState({ mode: "create", date: anchorDate })}
         aria-label="New item"
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl text-white shadow-lg sm:hidden dark:bg-zinc-50 dark:text-zinc-900 crimson:bg-crimson-accent crimson:text-crimson-text"
+        className={`${PRIMARY_BUTTON} fab-in fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center text-2xl shadow-xl sm:hidden`}
       >
         +
       </button>
@@ -476,22 +481,18 @@ function SearchResults({
   onSelect: (event: CalendarEvent) => void;
 }) {
   if (results.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400 dark:border-zinc-800 crimson:border-crimson-border crimson:text-crimson-text-muted">
-        No matching events
-      </div>
-    );
+    return <EmptyState emoji="🔎" title="No matching events" />;
   }
   return (
     <ul className="space-y-2">
-      {results.map((ev) => (
-        <li key={ev.id}>
+      {results.map((ev, i) => (
+        <li key={ev.id} className="item-in" style={stagger(i)}>
           <button
             onClick={() => onSelect(ev)}
-            className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left shadow-sm dark:bg-zinc-900 crimson:bg-crimson-surface"
+            className={`${CARD} lift flex w-full items-center justify-between gap-3 px-4 py-3 text-left`}
           >
-            <div>
-              <p className="text-sm text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text">
                 {ev.itemType === "task" && <span className="mr-1">{ev.completed ? "☑" : "☐"}</span>}
                 {ev.title}
               </p>
@@ -500,6 +501,7 @@ function SearchResults({
                 {ev.category ? ` · ${ev.category}` : ""}
               </p>
             </div>
+            <span className="shrink-0 text-zinc-300 crimson:text-crimson-text-muted">→</span>
           </button>
         </li>
       ))}
