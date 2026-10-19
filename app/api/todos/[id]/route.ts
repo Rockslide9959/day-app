@@ -16,7 +16,11 @@ export async function PATCH(
   const body = await req.json();
   const data: Record<string, unknown> = {};
 
-  if (typeof body.title === "string") data.title = body.title;
+  if (typeof body.title === "string") {
+    const title = body.title.trim();
+    if (!title) return NextResponse.json({ error: "title cannot be empty" }, { status: 400 });
+    data.title = title;
+  }
   if (typeof body.completed === "boolean") data.completed = body.completed;
   if (typeof body.sortOrder === "number") data.sortOrder = body.sortOrder;
 

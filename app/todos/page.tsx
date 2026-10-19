@@ -19,6 +19,8 @@ export default function TodosPage() {
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +57,28 @@ export default function TodosPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ completed: !todo.completed }),
     });
+  }
+
+  function startEditing(todo: Todo) {
+    setEditingId(todo.id);
+    setEditTitle(todo.title);
+  }
+
+  async function saveEdit(todo: Todo) {
+    // Blur fires after Enter/Escape already closed the editor; ignore it.
+    if (editingId !== todo.id) return;
+    setEditingId(null);
+    const title = editTitle.trim();
+    if (!title || title === todo.title) return;
+    setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, title } : t)));
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) {
+      setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, title: todo.title } : t)));
+    }
   }
 
   async function deleteTodo(id: string) {
@@ -152,18 +176,46 @@ export default function TodosPage() {
                 >
                   {t.completed && <span className="check-pop">✓</span>}
                 </button>
-                <span
-                  onClick={() => toggleTodo(t)}
-                  className={`flex-1 cursor-pointer text-sm transition-colors ${
-                    t.completed
-                      ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
-                      : t.rolledOver
-                        ? "text-amber-800 dark:text-amber-300 crimson:text-crimson-text"
-                        : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
-                  }`}
+                {editingId === t.id ? (
+                  <input
+                    autoFocus
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onBlur={() => saveEdit(t)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveEdit(t);
+                      } else if (e.key === "Escape") {
+                        setEditingId(null);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    aria-label={`Edit ${t.title}`}
+                    className="min-w-0 flex-1 rounded-lg bg-zinc-100 px-2 py-1 text-sm text-zinc-900 outline-none ring-2 ring-zinc-900/15 dark:bg-zinc-800 dark:text-zinc-50 dark:ring-white/25 crimson:bg-crimson-raised crimson:text-crimson-text crimson:ring-crimson-accent/60"
+                  />
+                ) : (
+                  <span
+                    onClick={() => toggleTodo(t)}
+                    className={`flex-1 cursor-pointer text-sm transition-colors ${
+                      t.completed
+                        ? "text-zinc-400 line-through crimson:text-crimson-text-muted"
+                        : t.rolledOver
+                          ? "text-amber-800 dark:text-amber-300 crimson:text-crimson-text"
+                          : "text-zinc-900 dark:text-zinc-50 crimson:text-crimson-text"
+                    }`}
+                  >
+                    {t.title}
+                  </span>
+                )}
+                <button
+                  onClick={() => startEditing(t)}
+                  aria-label={`Edit ${t.title}`}
+                  title="Edit"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs text-zinc-300 hover:bg-zinc-100 hover:text-zinc-500 dark:hover:bg-zinc-800 crimson:text-crimson-text-muted crimson:hover:bg-crimson-raised crimson:hover:text-crimson-text-secondary"
                 >
-                  {t.title}
-                </span>
+                  ✎
+                </button>
                 <button
                   onClick={() => setExpandedId((cur) => (cur === t.id ? null : t.id))}
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 crimson:hover:bg-crimson-raised ${expandedId === t.id ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 crimson:bg-crimson-raised crimson:text-crimson-text-secondary" : "text-zinc-300 hover:text-zinc-500 crimson:text-crimson-text-muted crimson:hover:text-crimson-text-secondary"}`}
