@@ -49,9 +49,12 @@ export default function DateStepper({
             onClick={() => {
               onChange(today);
             }}
+            title="Jump back to today"
+            aria-label="Jump back to today"
             className="check-pop shrink-0 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 crimson:bg-crimson-raised crimson:text-crimson-highlight"
           >
-            Today
+            {/* Arrow points the way back so it reads as an action, not a second label. */}
+            {date > today ? "← Today" : "Today →"}
           </button>
         )}
       </div>
